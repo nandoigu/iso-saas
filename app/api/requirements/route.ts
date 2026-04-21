@@ -1,25 +1,32 @@
+import { NextResponse } from "next/server";
 import { prisma } from "../../lib/prisma";
 
-// GET -> obtener requisitos de un proyecto
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
     const projectId = searchParams.get("projectId");
 
     if (!projectId) {
-      return Response.json({ error: "Falta projectId" }, { status: 400 });
+      return NextResponse.json(
+        { error: "projectId requerido" },
+        { status: 400 }
+      );
     }
 
-    const data = await prisma.requirement.findMany({
-      where: { projectId },
-      orderBy: { createdAt: "desc" },
+    const requirements = await prisma.requirement.findMany({
+      where: {
+        projectId,
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
     });
 
-    return Response.json({ data });
+    return NextResponse.json({ data: requirements });
   } catch (error) {
-    console.error("ERROR GET /api/requirements:", error);
-    return Response.json(
-      { error: "Error al obtener requisitos" },
+    console.error(error);
+    return NextResponse.json(
+      { error: "Error cargando requirements" },
       { status: 500 }
     );
   }
@@ -29,61 +36,51 @@ export async function POST(req: Request) {
   try {
     const body = await req.json();
 
-    const requirement = await prisma.requirement.create({
+    const newRequirement = await prisma.requirement.create({
       data: {
         projectId: body.projectId,
-        norma: body.norma?.trim() || null,
-        item: body.item?.trim() || null, // 🔥 ESTE ES EL QUE FALTA
+        norma: body.norma || null,
+        item: body.item || null,
         name: body.name,
-        evidencia: body.evidencia?.trim() || null,
-        status: body.status || "no_conforme",
-        deadline: body.deadline ? new Date(body.deadline) : null,
+        evidencia: body.evidencia || null,
+        status: body.status,
         completed: body.status === "total",
+        deadline: body.deadline ? new Date(body.deadline) : null,
       },
     });
 
-    return Response.json({
-      success: true,
-      data: requirement,
-    });
+    return NextResponse.json({ data: newRequirement });
   } catch (error) {
-    console.error("ERROR POST:", error);
-    return Response.json(
-      { error: "Error creando requisito" },
+    console.error(error);
+    return NextResponse.json(
+      { error: "Error creando requirement" },
       { status: 500 }
     );
   }
 }
 
-// PUT -> actualizar estado
 export async function PUT(req: Request) {
   try {
     const body = await req.json();
 
-    if (!body.id) {
-      return Response.json({ error: "Falta id" }, { status: 400 });
-    }
-
-    const normalizedStatus =
-      body.status === "total" ||
-      body.status === "parcial" ||
-      body.status === "no_conforme"
-        ? body.status
-        : "no_conforme";
-
     const updated = await prisma.requirement.update({
       where: { id: body.id },
       data: {
-        status: normalizedStatus,
-        completed: normalizedStatus === "total",
+        norma: body.norma || null,
+        item: body.item || null,
+        name: body.name,
+        evidencia: body.evidencia || null,
+        status: body.status,
+        completed: body.status === "total",
+        deadline: body.deadline ? new Date(body.deadline) : null,
       },
     });
 
-    return Response.json({ success: true, data: updated });
+    return NextResponse.json({ data: updated });
   } catch (error) {
-    console.error("ERROR PUT /api/requirements:", error);
-    return Response.json(
-      { error: "Error actualizando requisito" },
+    console.error(error);
+    return NextResponse.json(
+      { error: "Error actualizando requirement" },
       { status: 500 }
     );
   }

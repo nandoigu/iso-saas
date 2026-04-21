@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useParams } from "next/navigation";
 
 type RequirementStatus = "total" | "parcial" | "no_conforme";
 
@@ -25,10 +24,11 @@ type EditData = {
   deadline: string;
 };
 
-export default function ProjectClient() {
-  const params = useParams();
-  const projectId = params?.id as string;
+type ProjectClientProps = {
+  projectId: string;
+};
 
+export default function ProjectClient({ projectId }: ProjectClientProps) {
   const [requirements, setRequirements] = useState<Requirement[]>([]);
 
   const [norma, setNorma] = useState("");
@@ -54,11 +54,16 @@ export default function ProjectClient() {
   const loadRequirements = async () => {
     if (!projectId) return;
 
-    const res = await fetch(`/api/requirements?projectId=${projectId}`, {
-      cache: "no-store",
-    });
-    const data = await res.json();
-    setRequirements(data.data || []);
+    try {
+      const res = await fetch(`/api/requirements?projectId=${projectId}`, {
+        cache: "no-store",
+      });
+      const data = await res.json();
+      setRequirements(data.data || []);
+    } catch (error) {
+      console.error("Error cargando requirements:", error);
+      setRequirements([]);
+    }
   };
 
   useEffect(() => {
@@ -123,11 +128,11 @@ export default function ProjectClient() {
     setEditingId(r.id);
     setEditData({
       id: r.id,
-      norma: r.norma || "",
-      item: r.item || "",
-      name: r.name || "",
-      evidencia: r.evidencia || "",
-      status: (r.status || "no_conforme") as RequirementStatus,
+      norma: r.norma ?? "",
+      item: r.item ?? "",
+      name: r.name ?? "",
+      evidencia: r.evidencia ?? "",
+      status: r.status ?? "no_conforme",
       deadline: r.deadline ? r.deadline.slice(0, 10) : "",
     });
   };
@@ -191,9 +196,16 @@ export default function ProjectClient() {
     }
   };
 
+  // Métricas principales
   const total = requirements.length;
-  const completed = requirements.filter((r) => r.status === "total").length;
-  const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+  const score = requirements.reduce((sum, r) => {
+    if (r.status === "total") return sum + 1;
+    if (r.status === "parcial") return sum + 0.5;
+    return sum;
+  }, 0);
+
+  const percent = total > 0 ? Math.round((score / total) * 100) : 0;
 
   const overdue = requirements.filter(
     (r) =>
@@ -201,21 +213,6 @@ export default function ProjectClient() {
       new Date(r.deadline) < new Date() &&
       r.status !== "total"
   ).length;
-
-  const matrixData = useMemo(() => {
-    return Object.entries(
-      requirements.reduce((acc: Record<string, Record<string, Requirement[]>>, r) => {
-        const normaKey = r.norma || "Sin norma";
-        const itemKey = r.item || "Sin ítem";
-
-        if (!acc[normaKey]) acc[normaKey] = {};
-        if (!acc[normaKey][itemKey]) acc[normaKey][itemKey] = [];
-
-        acc[normaKey][itemKey].push(r);
-        return acc;
-      }, {})
-    );
-  }, [requirements]);
 
   const getProgressColor = () => {
     if (percent === 100) return "green";
@@ -237,10 +234,29 @@ export default function ProjectClient() {
     return "🔴 No conforme";
   };
 
+  const matrixData = useMemo(() => {
+    return Object.entries(
+      requirements.reduce(
+        (acc: Record<string, Record<string, Requirement[]>>, r) => {
+          const normaKey = r.norma || "Sin norma";
+          const itemKey = r.item || "Sin ítem";
+
+          if (!acc[normaKey]) acc[normaKey] = {};
+          if (!acc[normaKey][itemKey]) acc[normaKey][itemKey] = [];
+
+          acc[normaKey][itemKey].push(r);
+          return acc;
+        },
+        {}
+      )
+    );
+  }, [requirements]);
+
   return (
     <div style={{ padding: 40 }}>
       <h2>Gestión de Cumplimiento</h2>
 
+      {/* FORMULARIO */}
       <div
         style={{
           marginBottom: 20,
@@ -293,7 +309,8 @@ export default function ProjectClient() {
         </button>
       </div>
 
-      <p>Cumplimiento: {percent}%</p>
+      {/* PROGRESO */}
+      <p style={{ fontWeight: "bold" }}>Cumplimiento: {percent}%</p>
 
       <div
         style={{
@@ -310,14 +327,19 @@ export default function ProjectClient() {
             height: "100%",
             background: getProgressColor(),
             borderRadius: 10,
+            transition: "0.3s",
           }}
         />
       </div>
 
+      {/* ALERTA */}
       {overdue > 0 && (
-        <p style={{ color: "red" }}>⚠️ {overdue} requisitos vencidos</p>
+        <p style={{ color: "red", marginBottom: 20 }}>
+          ⚠️ {overdue} requisitos vencidos
+        </p>
       )}
 
+      {/* LISTA */}
       {requirements.map((r) => {
         const st = (r.status || "no_conforme") as RequirementStatus;
 
@@ -444,7 +466,10 @@ export default function ProjectClient() {
         );
       })}
 
+      {/* MATRIZ */}
       <h3 style={{ marginTop: 40 }}>📊 Matriz de Cumplimiento</h3>
+
+      {matrixData.length === 0 && <p>No hay requisitos aún.</p>}
 
       {matrixData.map(([normaKey, items]) => (
         <div
@@ -461,14 +486,14 @@ export default function ProjectClient() {
           {Object.entries(items).map(([itemKey, reqs]) => {
             const totalReqs = reqs.length;
 
-            const score = reqs.reduce((sum, req) => {
+            const matrixScore = reqs.reduce((sum, req) => {
               if (req.status === "total") return sum + 1;
               if (req.status === "parcial") return sum + 0.5;
               return sum;
             }, 0);
 
             const matrixPercent = totalReqs
-              ? Math.round((score / totalReqs) * 100)
+              ? Math.round((matrixScore / totalReqs) * 100)
               : 0;
 
             let matrixColor = "red";

@@ -7,11 +7,34 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Project {
-  id        String   @id @default(cuid())
+model Company {
+  id        String    @id @default(cuid())
   name      String
-  code      String
+  createdAt DateTime  @default(now())
+
+  users     User[]
+  projects  Project[]
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
   createdAt DateTime @default(now())
+
+  companyId String
+  company   Company  @relation(fields: [companyId], references: [id])
+}
+
+model Project {
+  id          String   @id @default(cuid())
+  name        String
+  code        String?
+  createdAt   DateTime @default(now())
+
+  // 🔥 CLAVE SaaS → OBLIGATORIO
+  companyId   String
+  company     Company  @relation(fields: [companyId], references: [id])
 
   requirements Requirement[]
 }
@@ -27,7 +50,6 @@ model Requirement {
   deadline  DateTime?
   createdAt DateTime  @default(now())
 
-  // 🔗 RELACIÓN CORRECTA
   projectId String
   project   Project @relation(fields: [projectId], references: [id])
 }

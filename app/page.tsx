@@ -1,79 +1,110 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
+import Image from "next/image";
+
+type Project = {
+  id: string;
+  name: string;
+  code?: string | null;
+};
 
 export default function Home() {
-  const [projects, setProjects] = useState<any[]>([]);
-  const [name, setName] = useState("");
-  const [code, setCode] = useState("");
+  const [projects, setProjects] = useState<Project[]>([]);
 
   const loadProjects = async () => {
-    const res = await fetch("/api/projects");
-    const data = await res.json();
-    setProjects(data.data || []);
+    try {
+      const res = await fetch("/api/projects", { cache: "no-store" });
+      const data = await res.json();
+      setProjects(Array.isArray(data) ? data : data.data || []);
+    } catch (error) {
+      console.error("Error cargando proyectos:", error);
+      setProjects([]);
+    }
   };
 
   useEffect(() => {
     loadProjects();
   }, []);
 
-  const createProject = async () => {
-    if (!name || !code) return;
-
-    const res = await fetch("/api/projects", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ name, code }),
-    });
-
-    if (!res.ok) {
-      console.error("Error creando proyecto");
-      return;
-    }
-
-    setName("");
-    setCode("");
-    loadProjects();
-  };
-
   return (
-    <div style={{ padding: 40 }}>
-      <h1>ISO 19650 SaaS</h1>
-
-      <h2>Crear proyecto</h2>
-
-      <input
-        placeholder="Nombre"
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-      />
-
-      <input
-        placeholder="Código"
-        value={code}
-        onChange={(e) => setCode(e.target.value)}
-        style={{ marginLeft: 10 }}
-      />
-
-      <button onClick={createProject} style={{ marginLeft: 10 }}>
-        Crear
-      </button>
-
-      <h2 style={{ marginTop: 20 }}>Proyectos</h2>
-
-      {projects.map((p: any) => (
-        <div key={p.id}>
-          <Link href={`/projects/${p.id}`}>
-            {p.name} ({p.code})
-          </Link>
+    <div style={{ maxWidth: 900, margin: "0 auto" }}>
+      {/* HEADER */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 20,
+          marginBottom: 30,
+        }}
+      >
+        <div style={{ width: 160, height: 70, position: "relative" }}>
+          <Image
+            src="/logo.png"
+            alt="Logo"
+            fill
+            sizes="160px"
+            style={{ objectFit: "contain" }}
+            priority
+          />
         </div>
-      ))}
 
+        <div>
+          <h1 style={{ margin: 0 }}>BMO ISO 19650 SaaS</h1>
+          <p style={{ margin: 0, color: "#666" }}>
+            Monitorización de cumplimiento de requisitos
+          </p>
+        </div>
+      </div>
+
+      {/* BOTÓN DASHBOARD */}
+      <div style={{ marginBottom: 30 }}>
+        <a
+          href="/dashboard"
+          style={{
+            display: "inline-block",
+            background: "#4caf50",
+            color: "white",
+            padding: "12px 20px",
+            borderRadius: 8,
+            textDecoration: "none",
+            fontSize: 16,
+            fontWeight: 600,
+          }}
+        >
+          Ir al Dashboard →
+        </a>
+      </div>
+
+      {/* PROYECTOS */}
       <div style={{ marginTop: 20 }}>
-        <Link href="/dashboard">Ir al dashboard</Link>
+        <h2>Proyectos</h2>
+
+        {projects.length === 0 && (
+          <p style={{ color: "#888" }}>No hay proyectos</p>
+        )}
+
+        {projects.map((p) => (
+          <a
+            key={p.id}
+            href={`/projects/${p.id}`}
+            style={{
+              display: "block",
+              padding: 15,
+              border: "1px solid #eee",
+              borderRadius: 10,
+              marginBottom: 10,
+              textDecoration: "none",
+              color: "inherit",
+              background: "white",
+            }}
+          >
+            <strong>{p.name}</strong>
+            <div style={{ fontSize: 12, color: "#666" }}>
+              {p.code || "Sin código"}
+            </div>
+          </a>
+        ))}
       </div>
     </div>
   );
