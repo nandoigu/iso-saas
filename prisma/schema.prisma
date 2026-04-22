@@ -17,24 +17,34 @@ model Company {
 }
 
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
+  id        String    @id @default(cuid())
+  email     String    @unique
   name      String?
-  createdAt DateTime @default(now())
+  password  String
+  role      String    @default("user")
+  createdAt DateTime  @default(now())
+  notifyAlerts Boolean @default(true)
+  notifyReports Boolean @default(false)
+  reportFrequency String @default("weekly")
+  lastAlertEmailAt DateTime?
+  lastReportEmailAt DateTime?
 
-  companyId String
-  company   Company  @relation(fields: [companyId], references: [id])
+  companyId String?
+  company   Company?  @relation(fields: [companyId], references: [id])
+  projects  Project[]
 }
 
 model Project {
-  id          String   @id @default(cuid())
-  name        String
-  code        String?
-  createdAt   DateTime @default(now())
+  id        String   @id @default(cuid())
+  name      String
+  code      String?
+  createdAt DateTime @default(now())
 
-  // 🔥 CLAVE SaaS → OBLIGATORIO
-  companyId   String
-  company     Company  @relation(fields: [companyId], references: [id])
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+
+  companyId String?
+  company   Company? @relation(fields: [companyId], references: [id])
 
   requirements Requirement[]
 }
@@ -52,4 +62,17 @@ model Requirement {
 
   projectId String
   project   Project @relation(fields: [projectId], references: [id])
+}
+
+model RequirementTemplate {
+  id            String    @id @default(cuid())
+  norma         String
+  item          String
+  name          String
+  evidencia     String?
+  defaultStatus String    @default("no_conforme")
+  deadline      DateTime?
+  createdAt     DateTime  @default(now())
+
+  @@unique([norma, item, name])
 }

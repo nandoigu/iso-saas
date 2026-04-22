@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 
 type Project = {
   id: string;
@@ -12,24 +13,20 @@ type Project = {
 export default function Home() {
   const [projects, setProjects] = useState<Project[]>([]);
 
-  const loadProjects = async () => {
-    try {
-      const res = await fetch("/api/projects", { cache: "no-store" });
-      const data = await res.json();
-      setProjects(Array.isArray(data) ? data : data.data || []);
-    } catch (error) {
-      console.error("Error cargando proyectos:", error);
-      setProjects([]);
-    }
-  };
-
   useEffect(() => {
-    loadProjects();
+    fetch("/api/projects", { cache: "no-store" })
+      .then((res) => res.json())
+      .then((data) => {
+        setProjects(Array.isArray(data) ? data : data.data || []);
+      })
+      .catch((error) => {
+        console.error("Error cargando proyectos:", error);
+        setProjects([]);
+      });
   }, []);
 
   return (
-    <div style={{ maxWidth: 900, margin: "0 auto" }}>
-      {/* HEADER */}
+    <main style={{ maxWidth: 900, margin: "0 auto", padding: 40 }}>
       <div
         style={{
           display: "flex",
@@ -52,14 +49,13 @@ export default function Home() {
         <div>
           <h1 style={{ margin: 0 }}>BMO ISO 19650 SaaS</h1>
           <p style={{ margin: 0, color: "#666" }}>
-            Monitorización de cumplimiento de requisitos
+            Monitorizacion de cumplimiento de requisitos
           </p>
         </div>
       </div>
 
-      {/* BOTÓN DASHBOARD */}
       <div style={{ marginBottom: 30 }}>
-        <a
+        <Link
           href="/dashboard"
           style={{
             display: "inline-block",
@@ -72,11 +68,10 @@ export default function Home() {
             fontWeight: 600,
           }}
         >
-          Ir al Dashboard →
-        </a>
+          Ir al Dashboard
+        </Link>
       </div>
 
-      {/* PROYECTOS */}
       <div style={{ marginTop: 20 }}>
         <h2>Proyectos</h2>
 
@@ -85,9 +80,9 @@ export default function Home() {
         )}
 
         {projects.map((p) => (
-          <a
+          <Link
             key={p.id}
-            href={`/projects/${p.id}`}
+            href={`/projects/${encodeURIComponent(p.id)}`}
             style={{
               display: "block",
               padding: 15,
@@ -101,11 +96,11 @@ export default function Home() {
           >
             <strong>{p.name}</strong>
             <div style={{ fontSize: 12, color: "#666" }}>
-              {p.code || "Sin código"}
+              {p.code || "Sin codigo"}
             </div>
-          </a>
+          </Link>
         ))}
       </div>
-    </div>
+    </main>
   );
 }

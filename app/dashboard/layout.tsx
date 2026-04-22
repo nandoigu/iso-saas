@@ -1,58 +1,34 @@
-"use client";
-
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const router = useRouter();
-
   return (
-    <div style={{ display: "flex", minHeight: "100vh" }}>
-      
-      {/* SIDEBAR */}
+    <div style={{ display: "flex", minHeight: "calc(100vh - 61px)" }}>
       <aside
         style={{
           width: 240,
-          background: "#111",
+          flexShrink: 0,
+          background: "#111827",
           color: "white",
           padding: 20,
           display: "flex",
           flexDirection: "column",
-          gap: 20,
+          gap: 10,
         }}
       >
-        <h2 style={{ marginBottom: 20 }}>BMO</h2>
-
-        <button
-          onClick={() => router.push("/dashboard")}
-          style={btnStyle}
-        >
-          📊 Dashboard
-        </button>
-
-        <button
-          onClick={() => router.push("/")}
-          style={btnStyle}
-        >
-          🏠 Inicio
-        </button>
-
-        <button style={btnStyle}>
-          📁 Proyectos
-        </button>
-
-        <button style={btnStyle}>
-          ⚙️ Ajustes
-        </button>
+        <h2 style={{ margin: "0 0 20px" }}>BMO</h2>
+        <SidebarLink href="/dashboard">Dashboard</SidebarLink>
+        <SidebarLink href="/">Inicio</SidebarLink>
+        <SidebarLink href="/projects">Proyectos</SidebarLink>
       </aside>
 
-      {/* CONTENIDO */}
       <main
         style={{
           flex: 1,
+          minWidth: 0,
           padding: 40,
           background: "#f7f9fc",
         }}
@@ -63,12 +39,24 @@ export default function DashboardLayout({
   );
 }
 
-const btnStyle: React.CSSProperties = {
-  background: "transparent",
-  border: "none",
-  color: "white",
-  textAlign: "left",
-  padding: "10px 0",
-  cursor: "pointer",
-  fontSize: 14,
-};
+function SidebarLink({
+  href,
+  children,
+}: {
+  href: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <Link
+      href={href}
+      style={{
+        borderRadius: 8,
+        color: "white",
+        padding: "10px 12px",
+        textDecoration: "none",
+      }}
+    >
+      {children}
+    </Link>
+  );
+}
