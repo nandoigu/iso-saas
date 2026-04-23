@@ -1,99 +1,139 @@
 import { NextResponse } from "next/server";
-import {
-  buildComplianceReport,
-  flattenProjectRequirements,
-  shouldSendDailyEmail,
-  shouldSendReportEmail,
-} from "@/app/lib/alerts";
 import { getAuthSession, unauthorized } from "@/app/lib/auth";
-import { sendComplianceEmail } from "@/app/lib/email";
 import { prisma } from "@/app/lib/prisma";
+import { sendAlertDigestEmail } from "@/lib/email";
 
-const DEFAULT_UPCOMING_DAYS = 7;
+export const runtime = "nodejs";
+
+const UPCOMING_DAYS = 7;
 
 export async function GET(req: Request) {
   try {
-    const authError = validateCronRequest(req);
-
-    if (authError) {
-      return authError;
+    if (!isAuthorizedCronRequest(req)) {
+      return NextResponse.json({ success: false }, { status: 401 });
     }
 
     const users = await prisma.user.findMany({
       where: {
-        OR: [{ notifyAlerts: true }, { notifyReports: true }],
+        notifyAlerts: true,
       },
       select: {
         id: true,
         email: true,
         name: true,
-        notifyAlerts: true,
-        notifyReports: true,
-        reportFrequency: true,
-        lastAlertEmailAt: true,
-        lastReportEmailAt: true,
         projects: {
-          include: {
-            requirements: true,
+          select: {
+            id: true,
+            name: true,
+            requirements: {
+              where: {
+                deadline: {
+                  not: null,
+                },
+                NOT: {
+                  status: "total",
+                },
+              },
+              select: {
+                id: true,
+                norma: true,
+                item: true,
+                name: true,
+                status: true,
+                deadline: true,
+                lastNotifiedAt: true,
+              },
+            },
           },
         },
       },
     });
 
-    const results = [];
+    const startOfToday = getStartOfToday();
+    const endOfUpcomingWindow = getUpcomingLimit(startOfToday, UPCOMING_DAYS);
+    let emailsSent = 0;
 
     for (const user of users) {
-      const report = buildComplianceReport(
-        flattenProjectRequirements(user.projects),
-        DEFAULT_UPCOMING_DAYS
-      );
-      const hasAlerts =
-        report.overdueRequirements.length > 0 || report.upcomingRequirements.length > 0;
-      const shouldSendAlerts =
-        user.notifyAlerts && hasAlerts && shouldSendDailyEmail(user.lastAlertEmailAt);
-      const shouldSendReport =
-        user.notifyReports &&
-        shouldSendReportEmail(user.reportFrequency, user.lastReportEmailAt);
+      try {
+        const overdueRequirements = [];
+        const upcomingRequirements = [];
 
-      if (!shouldSendAlerts && !shouldSendReport) {
-        results.push({ userId: user.id, sent: false, reason: "Sin envios pendientes" });
-        continue;
-      }
+        for (const project of user.projects) {
+          for (const requirement of project.requirements) {
+            if (!requirement.deadline) {
+              continue;
+            }
 
-      const subject = shouldSendAlerts
-        ? "Alertas de vencimiento ISO 19650"
-        : "Informe periodico ISO 19650";
-      const emailResult = await sendComplianceEmail({
-        to: user.email,
-        userName: user.name,
-        subject,
-        report,
-      });
+            const deadline = new Date(requirement.deadline);
+            if (Number.isNaN(deadline.getTime())) {
+              continue;
+            }
 
-      if (emailResult.sent) {
-        await prisma.user.update({
-          where: { id: user.id },
+            if (wasNotifiedToday(requirement.lastNotifiedAt, startOfToday)) {
+              continue;
+            }
+
+            const enrichedRequirement = {
+              ...requirement,
+              projectName: project.name,
+            };
+
+            if (deadline < startOfToday) {
+              overdueRequirements.push(enrichedRequirement);
+              continue;
+            }
+
+            if (deadline <= endOfUpcomingWindow) {
+              upcomingRequirements.push(enrichedRequirement);
+            }
+          }
+        }
+
+        if (overdueRequirements.length === 0 && upcomingRequirements.length === 0) {
+          continue;
+        }
+
+        await sendAlertDigestEmail({
+          to: user.email,
+          userName: user.name,
+          overdueRequirements,
+          upcomingRequirements,
+        });
+
+        const requirementIds = [...overdueRequirements, ...upcomingRequirements].map(
+          (requirement) => requirement.id
+        );
+
+        await prisma.requirement.updateMany({
+          where: {
+            id: {
+              in: requirementIds,
+            },
+          },
           data: {
-            ...(shouldSendAlerts ? { lastAlertEmailAt: new Date() } : {}),
-            ...(shouldSendReport ? { lastReportEmailAt: new Date() } : {}),
+            lastNotifiedAt: new Date(),
           },
         });
-      }
 
-      results.push({
-        userId: user.id,
-        sent: emailResult.sent,
-        skipped: emailResult.skipped,
-        reason: "reason" in emailResult ? emailResult.reason : undefined,
-        alerts: report.metrics.overdue + report.metrics.upcoming,
-      });
+        emailsSent += 1;
+      } catch (error) {
+        console.error(`ERROR /api/cron/alerts user ${user.id}:`, error);
+      }
     }
 
-    return NextResponse.json({ data: { processed: users.length, results } });
+    return NextResponse.json({
+      success: true,
+      usersProcessed: users.length,
+      emailsSent,
+    });
   } catch (error) {
     console.error("ERROR GET /api/cron/alerts:", error);
     return NextResponse.json(
-      { error: "Error ejecutando alertas programadas" },
+      {
+        success: false,
+        usersProcessed: 0,
+        emailsSent: 0,
+      },
       { status: 500 }
     );
   }
@@ -114,8 +154,28 @@ export async function POST(req: Request) {
         email: true,
         name: true,
         projects: {
-          include: {
-            requirements: true,
+          select: {
+            id: true,
+            name: true,
+            requirements: {
+              where: {
+                deadline: {
+                  not: null,
+                },
+                NOT: {
+                  status: "total",
+                },
+              },
+              select: {
+                id: true,
+                norma: true,
+                item: true,
+                name: true,
+                status: true,
+                deadline: true,
+                lastNotifiedAt: true,
+              },
+            },
           },
         },
       },
@@ -125,57 +185,94 @@ export async function POST(req: Request) {
       return unauthorized();
     }
 
-    const report = buildComplianceReport(
-      flattenProjectRequirements(fullUser.projects),
-      DEFAULT_UPCOMING_DAYS
-    );
-    const emailResult = await sendComplianceEmail({
-      to: fullUser.email,
-      userName: fullUser.name,
-      subject: "Informe manual ISO 19650",
-      report,
-    });
+    const startOfToday = getStartOfToday();
+    const endOfUpcomingWindow = getUpcomingLimit(startOfToday, UPCOMING_DAYS);
+    const overdueRequirements = [];
+    const upcomingRequirements = [];
 
-    if (!emailResult.sent) {
-      return NextResponse.json(
-        {
-          error:
-            "No se pudo enviar el email. Revisa la configuracion de RESEND_API_KEY.",
-          details: "reason" in emailResult ? emailResult.reason : undefined,
-        },
-        { status: 503 }
-      );
+    for (const project of fullUser.projects) {
+      for (const requirement of project.requirements) {
+        if (!requirement.deadline) {
+          continue;
+        }
+
+        const deadline = new Date(requirement.deadline);
+        if (Number.isNaN(deadline.getTime())) {
+          continue;
+        }
+
+        const enrichedRequirement = {
+          ...requirement,
+          projectName: project.name,
+        };
+
+        if (deadline < startOfToday) {
+          overdueRequirements.push(enrichedRequirement);
+          continue;
+        }
+
+        if (deadline <= endOfUpcomingWindow) {
+          upcomingRequirements.push(enrichedRequirement);
+        }
+      }
     }
 
+    await sendAlertDigestEmail({
+      to: fullUser.email,
+      userName: fullUser.name,
+      overdueRequirements,
+      upcomingRequirements,
+    });
+
     return NextResponse.json({
-      data: {
-        sent: true,
-        overdue: report.metrics.overdue,
-        upcoming: report.metrics.upcoming,
-        totalRequirements: report.metrics.totalRequirements,
-      },
+      success: true,
+      usersProcessed: 1,
+      emailsSent: 1,
     });
   } catch (error) {
     console.error("ERROR POST /api/cron/alerts:", error);
     return NextResponse.json(
-      { error: "Error enviando informe manual" },
+      {
+        success: false,
+        usersProcessed: 1,
+        emailsSent: 0,
+      },
       { status: 500 }
     );
   }
 }
 
-function validateCronRequest(req: Request) {
+function isAuthorizedCronRequest(req: Request) {
   const cronSecret = process.env.CRON_SECRET;
-
-  if (!cronSecret && process.env.NODE_ENV !== "production") {
-    return null;
-  }
-
   const authorization = req.headers.get("authorization");
 
-  if (authorization !== `Bearer ${cronSecret}`) {
-    return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+  if (!cronSecret) {
+    console.error("CRON_SECRET is missing");
+    return false;
   }
 
-  return null;
+  return authorization === `Bearer ${cronSecret}`;
+}
+
+function wasNotifiedToday(
+  lastNotifiedAt: Date | null,
+  startOfToday: Date
+) {
+  if (!lastNotifiedAt) {
+    return false;
+  }
+
+  return lastNotifiedAt >= startOfToday;
+}
+
+function getStartOfToday() {
+  const date = new Date();
+  date.setHours(0, 0, 0, 0);
+  return date;
+}
+
+function getUpcomingLimit(startOfToday: Date, upcomingDays: number) {
+  const limit = new Date(startOfToday);
+  limit.setDate(limit.getDate() + upcomingDays);
+  return limit;
 }

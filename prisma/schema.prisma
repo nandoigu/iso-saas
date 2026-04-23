@@ -58,6 +58,7 @@ model Requirement {
   status    String
   completed Boolean   @default(false)
   deadline  DateTime?
+  lastNotifiedAt DateTime?
   createdAt DateTime  @default(now())
 
   projectId String

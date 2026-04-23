@@ -342,6 +342,9 @@ export default function DashboardPage() {
         </div>
 
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+          <Link href="/dashboard/email-test" style={secondaryLinkStyle}>
+            Probar email
+          </Link>
           <button
             onClick={downloadPDF}
             disabled={filteredRequirements.length === 0 || generatingPdf}
@@ -448,7 +451,7 @@ function FiltersPanel({
           <h2 style={{ fontSize: 18, margin: 0 }}>Filtros globales</h2>
           <p style={{ color: "#64748b", fontSize: 13, margin: "6px 0 0" }}>
             {resultCount} de {totalCount} requerimientos visibles
-            {activeFilterCount > 0 ? ` · ${activeFilterCount} filtros activos` : ""}
+            {activeFilterCount > 0 ? ` - ${activeFilterCount} filtros activos` : ""}
           </p>
         </div>
 
@@ -1485,6 +1488,16 @@ const primaryLinkStyle: React.CSSProperties = {
   background: "#2563eb",
   borderRadius: 10,
   color: "white",
+  fontWeight: 700,
+  padding: "10px 14px",
+  textDecoration: "none",
+};
+
+const secondaryLinkStyle: React.CSSProperties = {
+  background: "white",
+  border: "1px solid #cbd5e1",
+  borderRadius: 10,
+  color: "#0f172a",
   fontWeight: 700,
   padding: "10px 14px",
   textDecoration: "none",
