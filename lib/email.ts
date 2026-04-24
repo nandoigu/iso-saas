@@ -55,6 +55,12 @@ type SendAlertDigestEmailInput = {
   upcomingRequirements: AlertDigestItem[];
 };
 
+type SendPasswordResetEmailInput = {
+  to: string;
+  userName: string | null;
+  resetUrl: string;
+};
+
 export async function sendEmail({
   to,
   subject,
@@ -144,6 +150,28 @@ export async function sendAlertDigestEmail({
     tags: [
       { name: "category", value: "compliance_alerts" },
       { name: "type", value: "cron" },
+    ],
+  });
+}
+
+export async function sendPasswordResetEmail({
+  to,
+  userName,
+  resetUrl,
+}: SendPasswordResetEmailInput) {
+  const template = getPasswordResetEmailTemplate({
+    userName,
+    resetUrl,
+  });
+
+  return sendEmail({
+    to,
+    subject: "Restablece tu contrasena en BMO ISO 19650",
+    html: template.html,
+    text: template.text,
+    tags: [
+      { name: "category", value: "password_reset" },
+      { name: "type", value: "auth" },
     ],
   });
 }
@@ -303,6 +331,45 @@ export function getAlertDigestEmailTemplate({
       </div>
       ${buildAlertSection("Vencidos", overdueRequirements, "#dc2626")}
       ${buildAlertSection("Proximos a vencer", upcomingRequirements, "#d97706")}
+    `,
+  });
+}
+
+export function getPasswordResetEmailTemplate({
+  userName,
+  resetUrl,
+}: {
+  userName: string | null;
+  resetUrl: string;
+}) {
+  return getBaseEmailTemplate({
+    previewText: "Has solicitado restablecer tu contrasena.",
+    title: "Restablecimiento de contrasena",
+    subtitle: "Este enlace caduca en 1 hora y solo puede usarse una vez.",
+    bodyHtml: `
+      <p style="margin:0 0 16px;font-size:15px;line-height:1.7;">
+        Hola ${escapeHtml(userName || "usuario")},
+      </p>
+      <p style="margin:0 0 16px;font-size:15px;line-height:1.7;">
+        Hemos recibido una solicitud para restablecer la contrasena de tu cuenta en <strong>BMO ISO 19650</strong>.
+      </p>
+      <div style="margin:24px 0;">
+        <a
+          href="${escapeHtml(resetUrl)}"
+          style="display:inline-block;background:#2563eb;color:#ffffff;text-decoration:none;padding:12px 18px;border-radius:10px;font-weight:700;"
+        >
+          Restablecer contrasena
+        </a>
+      </div>
+      <p style="margin:0 0 12px;font-size:14px;line-height:1.7;color:#475569;">
+        Si el boton no funciona, copia y pega este enlace en tu navegador:
+      </p>
+      <p style="margin:0;font-size:13px;line-height:1.7;word-break:break-all;color:#0f172a;">
+        ${escapeHtml(resetUrl)}
+      </p>
+      <p style="margin:16px 0 0;font-size:14px;line-height:1.7;color:#475569;">
+        Si no has solicitado este cambio, puedes ignorar este correo con tranquilidad.
+      </p>
     `,
   });
 }

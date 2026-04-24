@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getAuthSession, unauthorized } from "@/app/lib/auth";
+import { forbidden, getAuthSession, isAdminRole, unauthorized } from "@/app/lib/auth";
 import { parseRequirementTemplateWorkbook } from "@/app/lib/requirementImport";
 import { prisma } from "@/app/lib/prisma";
 
@@ -11,6 +11,10 @@ export async function POST(req: Request) {
 
     if (!user) {
       return unauthorized();
+    }
+
+    if (!isAdminRole(user.role)) {
+      return forbidden("Solo el administrador puede importar plantillas globales.");
     }
 
     const formData = await req.formData();

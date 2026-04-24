@@ -2,8 +2,10 @@ import { NextResponse } from "next/server";
 import {
   createSessionToken,
   isValidEmail,
+  needsPasswordRehash,
   normalizeEmail,
   setSessionCookie,
+  hashPassword,
   verifyPassword,
 } from "@/app/lib/auth";
 import { prisma } from "@/app/lib/prisma";
@@ -47,6 +49,15 @@ export async function POST(req: Request) {
         { error: "Email o contrasena incorrectos" },
         { status: 401 }
       );
+    }
+
+    if (needsPasswordRehash(user.password)) {
+      const passwordHash = await hashPassword(password);
+
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { password: passwordHash },
+      });
     }
 
     const publicUser = {

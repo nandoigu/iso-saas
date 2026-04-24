@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 export default function DashboardLayout({
   children,
@@ -6,12 +9,12 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div style={{ display: "flex", minHeight: "calc(100vh - 61px)" }}>
+    <div style={{ display: "flex", minHeight: "calc(100vh - 70px)" }}>
       <aside
         style={{
           width: 240,
           flexShrink: 0,
-          background: "#111827",
+          background: "#002a4e",
           color: "white",
           padding: 20,
           display: "flex",
@@ -30,7 +33,7 @@ export default function DashboardLayout({
           flex: 1,
           minWidth: 0,
           padding: 40,
-          background: "#f7f9fc",
+          background: "#f4f6fc",
         }}
       >
         {children}
@@ -46,14 +49,19 @@ function SidebarLink({
   href: string;
   children: React.ReactNode;
 }) {
+  const pathname = usePathname();
+  const active = pathname === href || pathname.startsWith(`${href}/`);
+
   return (
     <Link
       href={href}
       style={{
         borderRadius: 8,
         color: "white",
+        background: active ? "#0025df" : "transparent",
         padding: "10px 12px",
         textDecoration: "none",
+        transition: "background-color 160ms ease",
       }}
     >
       {children}

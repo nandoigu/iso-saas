@@ -1,76 +1,34 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
-
-type RequirementStatus = "total" | "parcial" | "no_conforme";
-type SortMode = "natural" | "deadline" | "status" | "created";
-type DateFilter = "all" | "overdue" | "upcoming" | "no_date";
-
-type Requirement = {
-  id: string;
-  norma?: string | null;
-  item?: string | null;
-  name: string;
-  evidencia?: string | null;
-  status?: RequirementStatus | null;
-  deadline?: string | null;
-};
-
-type EditData = {
-  id: string;
-  norma: string;
-  item: string;
-  name: string;
-  evidencia: string;
-  status: RequirementStatus;
-  deadline: string;
-};
+import Link from "next/link";
+import { useMemo, useState } from "react";
+import {
+  compareRequirementsNaturally,
+  EMPTY_EDIT_DATA,
+  formatDate,
+  getDeadlineTime,
+  getDisplayValue,
+  isRequirementOverdue,
+  matchesDateFilter,
+  naturalTextCompare,
+  normalizeStatus,
+  STATUS_META,
+  type DateFilter,
+  type EditData,
+  type Requirement,
+  type RequirementStatus,
+  type SortMode,
+} from "@/app/projects/[id]/project-requirements";
+import { useProjectRequirements } from "@/app/projects/[id]/useProjectRequirements";
 
 type ProjectClientProps = {
   projectId: string;
 };
 
-const STATUS_META: Record<
-  RequirementStatus,
-  { label: string; color: string; background: string; border: string; order: number }
-> = {
-  total: {
-    label: "Total",
-    color: "#166534",
-    background: "#dcfce7",
-    border: "#86efac",
-    order: 3,
-  },
-  parcial: {
-    label: "Parcial",
-    color: "#92400e",
-    background: "#fef3c7",
-    border: "#fcd34d",
-    order: 2,
-  },
-  no_conforme: {
-    label: "No conforme",
-    color: "#991b1b",
-    background: "#fee2e2",
-    border: "#fca5a5",
-    order: 1,
-  },
-};
-
-const EMPTY_EDIT_DATA: EditData = {
-  id: "",
-  norma: "",
-  item: "",
-  name: "",
-  evidencia: "",
-  status: "no_conforme",
-  deadline: "",
-};
-
 export default function ProjectClient({ projectId }: ProjectClientProps) {
-  const [requirements, setRequirements] = useState<Requirement[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState("");
+  const { requirements, loading, loadError, reloadRequirements } =
+    useProjectRequirements(projectId);
+
   const [sortMode, setSortMode] = useState<SortMode>("natural");
   const [selectedNorma, setSelectedNorma] = useState("all");
   const [selectedStatuses, setSelectedStatuses] = useState<RequirementStatus[]>([]);
@@ -87,36 +45,6 @@ export default function ProjectClient({ projectId }: ProjectClientProps) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editData, setEditData] = useState<EditData>(EMPTY_EDIT_DATA);
   const [savingEdit, setSavingEdit] = useState(false);
-
-  const loadRequirements = useCallback(async () => {
-    if (!projectId) return;
-
-    setLoading(true);
-    setLoadError("");
-
-    try {
-      const res = await fetch(`/api/requirements?projectId=${projectId}`, {
-        cache: "no-store",
-      });
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.error || "Error cargando requirements");
-      }
-
-      setRequirements(Array.isArray(data.data) ? data.data : []);
-    } catch (error) {
-      console.error("Error cargando requirements:", error);
-      setRequirements([]);
-      setLoadError("No se pudieron cargar los requerimientos del proyecto.");
-    } finally {
-      setLoading(false);
-    }
-  }, [projectId]);
-
-  useEffect(() => {
-    loadRequirements();
-  }, [loadRequirements]);
 
   const createRequirement = async () => {
     if (!projectId) {
@@ -163,7 +91,7 @@ export default function ProjectClient({ projectId }: ProjectClientProps) {
       setStatus("no_conforme");
       setDeadline("");
 
-      await loadRequirements();
+      await reloadRequirements();
     } catch (error) {
       console.error("ERROR FRONT CREATE:", error);
       alert("Error inesperado creando requisito");
@@ -227,7 +155,7 @@ export default function ProjectClient({ projectId }: ProjectClientProps) {
       }
 
       cancelEditing();
-      await loadRequirements();
+      await reloadRequirements();
     } catch (error) {
       console.error("ERROR FRONT EDIT:", error);
       alert("Error inesperado actualizando");
@@ -268,9 +196,9 @@ export default function ProjectClient({ projectId }: ProjectClientProps) {
   const filteredRequirements = useMemo(() => {
     const filtered = requirements.filter((requirement) => {
       const currentStatus = normalizeStatus(requirement.status);
-      const norma = getDisplayValue(requirement.norma, "Sin norma");
+      const normaValue = getDisplayValue(requirement.norma, "Sin norma");
 
-      if (selectedNorma !== "all" && norma !== selectedNorma) {
+      if (selectedNorma !== "all" && normaValue !== selectedNorma) {
         return false;
       }
 
@@ -288,22 +216,23 @@ export default function ProjectClient({ projectId }: ProjectClientProps) {
       return true;
     });
 
-    return filtered.sort((a, b) => {
+    return filtered.sort((left, right) => {
       if (sortMode === "natural") {
-        return compareRequirementsNaturally(a, b);
+        return compareRequirementsNaturally(left, right);
       }
 
       if (sortMode === "status") {
         return (
-          STATUS_META[normalizeStatus(a.status)].order -
-          STATUS_META[normalizeStatus(b.status)].order
-        ) || compareRequirementsNaturally(a, b);
+          STATUS_META[normalizeStatus(left.status)].order -
+            STATUS_META[normalizeStatus(right.status)].order ||
+          compareRequirementsNaturally(left, right)
+        );
       }
 
       if (sortMode === "deadline") {
-        const aTime = getDeadlineTime(a.deadline);
-        const bTime = getDeadlineTime(b.deadline);
-        return (aTime - bTime) || compareRequirementsNaturally(a, b);
+        const leftTime = getDeadlineTime(left.deadline);
+        const rightTime = getDeadlineTime(right.deadline);
+        return leftTime - rightTime || compareRequirementsNaturally(left, right);
       }
 
       return 0;
@@ -330,54 +259,35 @@ export default function ProjectClient({ projectId }: ProjectClientProps) {
     setSortMode("natural");
   };
 
-  const matrixData = useMemo(() => {
-    return Object.entries(
-      filteredRequirements.reduce(
-        (acc: Record<string, Record<string, Requirement[]>>, requirement) => {
-          const normaKey = getDisplayValue(requirement.norma, "Sin norma");
-          const itemKey = getDisplayValue(requirement.item, "Sin item");
-
-          if (!acc[normaKey]) acc[normaKey] = {};
-          if (!acc[normaKey][itemKey]) acc[normaKey][itemKey] = [];
-
-          acc[normaKey][itemKey].push(requirement);
-          return acc;
-        },
-        {}
-      )
-    );
-  }, [filteredRequirements]);
-
   return (
     <main style={{ padding: 40 }}>
       <header
         style={{
-          display: "flex",
-          justifyContent: "space-between",
-          gap: 20,
           alignItems: "flex-start",
-          marginBottom: 28,
+          display: "flex",
           flexWrap: "wrap",
+          gap: 20,
+          justifyContent: "space-between",
+          marginBottom: 28,
         }}
       >
         <div>
-          <h2 style={{ margin: 0 }}>Gestion de Cumplimiento</h2>
+          <h2 style={{ margin: 0 }}>Gestion de requerimientos</h2>
           <p style={{ color: "#6b7280", margin: "8px 0 0" }}>
-            Requerimientos, evidencias, estados y fechas limite del proyecto.
+            Alta, edicion y seguimiento de requerimientos, evidencias, estados y
+            fechas limite del proyecto.
           </p>
         </div>
 
         <div
           style={{
-            display: "flex",
-            gap: 12,
             alignItems: "center",
+            display: "flex",
             flexWrap: "wrap",
+            gap: 12,
           }}
         >
-          <label style={{ color: "#4b5563", fontSize: 13 }}>
-            Ordenar por
-          </label>
+          <label style={{ color: "#4b5563", fontSize: 13 }}>Ordenar por</label>
           <select
             value={sortMode}
             onChange={(event) => setSortMode(event.target.value as SortMode)}
@@ -388,6 +298,10 @@ export default function ProjectClient({ projectId }: ProjectClientProps) {
             <option value="status">Estado</option>
             <option value="created">Orden original</option>
           </select>
+
+          <Link href={`/projects/${projectId}/matrix`} style={linkButtonStyle}>
+            Ver matriz de cumplimiento
+          </Link>
         </div>
       </header>
 
@@ -409,9 +323,9 @@ export default function ProjectClient({ projectId }: ProjectClientProps) {
           background: "white",
           border: "1px solid #e5e7eb",
           borderRadius: 12,
-          padding: 20,
-          marginBottom: 24,
           boxShadow: "0 2px 6px rgba(0,0,0,0.04)",
+          marginBottom: 24,
+          padding: 20,
         }}
       >
         <h3 style={{ margin: "0 0 16px" }}>Nuevo requerimiento</h3>
@@ -419,41 +333,43 @@ export default function ProjectClient({ projectId }: ProjectClientProps) {
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
             gap: 12,
+            gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
           }}
         >
           <input
             placeholder="Norma"
             value={norma}
-            onChange={(e) => setNorma(e.target.value)}
+            onChange={(event) => setNorma(event.target.value)}
             style={controlStyle}
           />
 
           <input
             placeholder="Item"
             value={item}
-            onChange={(e) => setItem(e.target.value)}
+            onChange={(event) => setItem(event.target.value)}
             style={controlStyle}
           />
 
           <input
             placeholder="Descripcion del requerimiento"
             value={name}
-            onChange={(e) => setName(e.target.value)}
+            onChange={(event) => setName(event.target.value)}
             style={controlStyle}
           />
 
           <input
             placeholder="Evidencia"
             value={evidencia}
-            onChange={(e) => setEvidencia(e.target.value)}
+            onChange={(event) => setEvidencia(event.target.value)}
             style={controlStyle}
           />
 
           <select
             value={status}
-            onChange={(e) => setStatus(e.target.value as RequirementStatus)}
+            onChange={(event) =>
+              setStatus(event.target.value as RequirementStatus)
+            }
             style={controlStyle}
           >
             <option value="total">Total</option>
@@ -464,7 +380,7 @@ export default function ProjectClient({ projectId }: ProjectClientProps) {
           <input
             type="date"
             value={deadline}
-            onChange={(e) => setDeadline(e.target.value)}
+            onChange={(event) => setDeadline(event.target.value)}
             style={controlStyle}
           />
         </div>
@@ -499,12 +415,12 @@ export default function ProjectClient({ projectId }: ProjectClientProps) {
 
         <div
           style={{
-            display: "flex",
-            justifyContent: "space-between",
-            gap: 16,
             alignItems: "center",
-            marginBottom: 14,
+            display: "flex",
             flexWrap: "wrap",
+            gap: 16,
+            justifyContent: "space-between",
+            marginBottom: 14,
           }}
         >
           <h3 style={{ margin: 0 }}>Requerimientos</h3>
@@ -513,7 +429,12 @@ export default function ProjectClient({ projectId }: ProjectClientProps) {
           </span>
         </div>
 
-        {loading && <EmptyState title="Cargando" description="Obteniendo requerimientos del proyecto." />}
+        {loading && (
+          <EmptyState
+            title="Cargando"
+            description="Obteniendo requerimientos del proyecto."
+          />
+        )}
 
         {!loading && loadError && (
           <EmptyState title="Error de carga" description={loadError} tone="risk" />
@@ -548,86 +469,6 @@ export default function ProjectClient({ projectId }: ProjectClientProps) {
           </div>
         )}
       </section>
-
-      <section>
-        <h3 style={{ marginTop: 40 }}>Matriz de Cumplimiento</h3>
-
-        {matrixData.length === 0 && (
-          <EmptyState
-            title="Sin matriz"
-            description="No hay requerimientos suficientes para agrupar por norma e item."
-          />
-        )}
-
-        {matrixData.map(([normaKey, items]) => (
-          <div
-            key={normaKey}
-            style={{
-              background: "white",
-              border: "1px solid #e5e7eb",
-              padding: 18,
-              borderRadius: 12,
-              marginBottom: 16,
-            }}
-          >
-            <h4 style={{ margin: "0 0 12px" }}>{normaKey}</h4>
-
-            {Object.entries(items).map(([itemKey, reqs]) => {
-              const matrixPercent = getCompletionPercent(reqs);
-              const matrixStatus = getMatrixStatus(matrixPercent);
-
-              return (
-                <div
-                  key={itemKey}
-                  style={{
-                    marginTop: 10,
-                    padding: 14,
-                    border: "1px solid #eef2f7",
-                    borderRadius: 10,
-                  }}
-                >
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      gap: 12,
-                      flexWrap: "wrap",
-                    }}
-                  >
-                    <strong>{itemKey}</strong>
-                    <StatusBadge status={matrixStatus} label={`${matrixPercent}%`} />
-                  </div>
-
-                  <div style={{ marginTop: 10, display: "grid", gap: 8 }}>
-                    {reqs.map((req) => {
-                      const currentStatus = normalizeStatus(req.status);
-
-                      return (
-                        <div
-                          key={req.id}
-                          style={{
-                            display: "grid",
-                            gridTemplateColumns: "minmax(0, 1fr) auto",
-                            gap: 12,
-                            alignItems: "center",
-                            borderTop: "1px solid #f3f4f6",
-                            paddingTop: 8,
-                          }}
-                        >
-                          <span style={{ color: "#374151", fontSize: 13 }}>
-                            {getDisplayValue(req.name, "Sin descripcion")}
-                          </span>
-                          <StatusBadge status={currentStatus} />
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        ))}
-      </section>
     </main>
   );
 }
@@ -659,7 +500,9 @@ function RequirementCard({
       style={{
         background: "white",
         border: `1px solid ${overdue ? "#fecaca" : "#e5e7eb"}`,
-        borderLeft: `5px solid ${overdue ? "#dc2626" : STATUS_META[currentStatus].color}`,
+        borderLeft: `5px solid ${
+          overdue ? "#dc2626" : STATUS_META[currentStatus].color
+        }`,
         borderRadius: 12,
         boxShadow: "0 2px 6px rgba(0,0,0,0.04)",
         padding: 18,
@@ -677,11 +520,11 @@ function RequirementCard({
         <>
           <div
             style={{
-              display: "flex",
-              justifyContent: "space-between",
-              gap: 14,
               alignItems: "flex-start",
+              display: "flex",
               flexWrap: "wrap",
+              gap: 14,
+              justifyContent: "space-between",
             }}
           >
             <div>
@@ -703,7 +546,7 @@ function RequirementCard({
               </h4>
             </div>
 
-            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            <div style={{ alignItems: "center", display: "flex", gap: 8 }}>
               {overdue && <OverdueBadge />}
               <StatusBadge status={currentStatus} />
             </div>
@@ -712,8 +555,8 @@ function RequirementCard({
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
               gap: 12,
+              gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
               marginTop: 16,
             }}
           >
@@ -760,35 +603,41 @@ function EditRequirementForm({
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
           gap: 12,
+          gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
         }}
       >
         <input
           value={editData.norma}
-          onChange={(e) => onEditChange({ ...editData, norma: e.target.value })}
+          onChange={(event) =>
+            onEditChange({ ...editData, norma: event.target.value })
+          }
           placeholder="Norma"
           style={controlStyle}
         />
 
         <input
           value={editData.item}
-          onChange={(e) => onEditChange({ ...editData, item: e.target.value })}
+          onChange={(event) =>
+            onEditChange({ ...editData, item: event.target.value })
+          }
           placeholder="Item"
           style={controlStyle}
         />
 
         <input
           value={editData.name}
-          onChange={(e) => onEditChange({ ...editData, name: e.target.value })}
+          onChange={(event) =>
+            onEditChange({ ...editData, name: event.target.value })
+          }
           placeholder="Descripcion"
           style={controlStyle}
         />
 
         <input
           value={editData.evidencia}
-          onChange={(e) =>
-            onEditChange({ ...editData, evidencia: e.target.value })
+          onChange={(event) =>
+            onEditChange({ ...editData, evidencia: event.target.value })
           }
           placeholder="Evidencia"
           style={controlStyle}
@@ -796,10 +645,10 @@ function EditRequirementForm({
 
         <select
           value={editData.status}
-          onChange={(e) =>
+          onChange={(event) =>
             onEditChange({
               ...editData,
-              status: e.target.value as RequirementStatus,
+              status: event.target.value as RequirementStatus,
             })
           }
           style={controlStyle}
@@ -812,8 +661,8 @@ function EditRequirementForm({
         <input
           type="date"
           value={editData.deadline}
-          onChange={(e) =>
-            onEditChange({ ...editData, deadline: e.target.value })
+          onChange={(event) =>
+            onEditChange({ ...editData, deadline: event.target.value })
           }
           style={controlStyle}
         />
@@ -827,10 +676,18 @@ function EditRequirementForm({
           marginTop: 14,
         }}
       >
-        <button onClick={onCancelEditing} disabled={savingEdit} style={secondaryButtonStyle}>
+        <button
+          onClick={onCancelEditing}
+          disabled={savingEdit}
+          style={secondaryButtonStyle}
+        >
           Cancelar
         </button>
-        <button onClick={onSaveEditing} disabled={savingEdit} style={primaryButtonStyle}>
+        <button
+          onClick={onSaveEditing}
+          disabled={savingEdit}
+          style={primaryButtonStyle}
+        >
           {savingEdit ? "Guardando..." : "Guardar cambios"}
         </button>
       </div>
@@ -876,11 +733,11 @@ function FilterPanel({
     >
       <div
         style={{
-          display: "flex",
-          justifyContent: "space-between",
-          gap: 12,
           alignItems: "center",
+          display: "flex",
           flexWrap: "wrap",
+          gap: 12,
+          justifyContent: "space-between",
           marginBottom: 16,
         }}
       >
@@ -888,7 +745,9 @@ function FilterPanel({
           <h3 style={{ margin: 0 }}>Filtros</h3>
           <p style={{ color: "#6b7280", fontSize: 13, margin: "6px 0 0" }}>
             {filteredCount} de {totalCount} requerimientos visibles
-            {activeFilterCount > 0 ? ` · ${activeFilterCount} filtros activos` : ""}
+            {activeFilterCount > 0
+              ? ` - ${activeFilterCount} filtros activos`
+              : ""}
           </p>
         </div>
 
@@ -898,8 +757,8 @@ function FilterPanel({
           disabled={activeFilterCount === 0}
           style={{
             ...secondaryButtonStyle,
-            opacity: activeFilterCount === 0 ? 0.5 : 1,
             cursor: activeFilterCount === 0 ? "not-allowed" : "pointer",
+            opacity: activeFilterCount === 0 ? 0.5 : 1,
           }}
         >
           Limpiar filtros
@@ -908,10 +767,10 @@ function FilterPanel({
 
       <div
         style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-          gap: 14,
           alignItems: "start",
+          display: "grid",
+          gap: 14,
+          gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
         }}
       >
         <label style={filterLabelStyle}>
@@ -970,7 +829,9 @@ function FilterPanel({
           Fecha
           <select
             value={dateFilter}
-            onChange={(event) => onDateFilterChange(event.target.value as DateFilter)}
+            onChange={(event) =>
+              onDateFilterChange(event.target.value as DateFilter)
+            }
             style={controlStyle}
           >
             <option value="all">Todas las fechas</option>
@@ -1128,132 +989,6 @@ function EmptyState({
   );
 }
 
-function normalizeStatus(status?: RequirementStatus | string | null): RequirementStatus {
-  if (status === "total" || status === "parcial" || status === "no_conforme") {
-    return status;
-  }
-
-  return "no_conforme";
-}
-
-function getDisplayValue(value: string | null | undefined, fallback: string) {
-  const trimmed = value?.trim();
-  return trimmed ? trimmed : fallback;
-}
-
-function formatDate(value?: string | null) {
-  if (!value) return "Sin fecha";
-
-  const date = new Date(value);
-
-  if (Number.isNaN(date.getTime())) {
-    return "Fecha no valida";
-  }
-
-  return new Intl.DateTimeFormat("es-ES", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  }).format(date);
-}
-
-function getDeadlineTime(value?: string | null) {
-  if (!value) return Number.POSITIVE_INFINITY;
-
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? Number.POSITIVE_INFINITY : date.getTime();
-}
-
-function matchesDateFilter(requirement: Requirement, dateFilter: DateFilter) {
-  if (dateFilter === "all") return true;
-
-  if (!requirement.deadline) {
-    return dateFilter === "no_date";
-  }
-
-  const deadlineDate = new Date(requirement.deadline);
-  if (Number.isNaN(deadlineDate.getTime())) {
-    return dateFilter === "no_date";
-  }
-
-  const today = startOfToday();
-  const upcomingLimit = new Date(today);
-  upcomingLimit.setDate(today.getDate() + 7);
-
-  if (dateFilter === "overdue") {
-    return deadlineDate < today && normalizeStatus(requirement.status) !== "total";
-  }
-
-  if (dateFilter === "upcoming") {
-    return deadlineDate >= today && deadlineDate <= upcomingLimit;
-  }
-
-  return false;
-}
-
-function isRequirementOverdue(requirement: Requirement) {
-  if (!requirement.deadline || normalizeStatus(requirement.status) === "total") {
-    return false;
-  }
-
-  const deadlineDate = new Date(requirement.deadline);
-  if (Number.isNaN(deadlineDate.getTime())) return false;
-
-  return deadlineDate < startOfToday();
-}
-
-function startOfToday() {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  return today;
-}
-
-function getCompletionPercent(requirements: Requirement[]) {
-  if (requirements.length === 0) return 0;
-
-  const score = requirements.reduce((sum, requirement) => {
-    const status = normalizeStatus(requirement.status);
-
-    if (status === "total") return sum + 1;
-    if (status === "parcial") return sum + 0.5;
-    return sum;
-  }, 0);
-
-  return Math.round((score / requirements.length) * 100);
-}
-
-function getMatrixStatus(percent: number): RequirementStatus {
-  if (percent === 100) return "total";
-  if (percent > 0) return "parcial";
-  return "no_conforme";
-}
-
-const naturalCollator = new Intl.Collator("es", {
-  numeric: true,
-  sensitivity: "base",
-});
-
-function naturalTextCompare(a: string, b: string) {
-  return naturalCollator.compare(a, b);
-}
-
-function compareRequirementsNaturally(a: Requirement, b: Requirement) {
-  return (
-    naturalTextCompare(
-      getDisplayValue(a.norma, "Sin norma"),
-      getDisplayValue(b.norma, "Sin norma")
-    ) ||
-    naturalTextCompare(
-      getDisplayValue(a.item, "Sin item"),
-      getDisplayValue(b.item, "Sin item")
-    ) ||
-    naturalTextCompare(
-      getDisplayValue(a.name, "Sin descripcion"),
-      getDisplayValue(b.name, "Sin descripcion")
-    )
-  );
-}
-
 const controlStyle: React.CSSProperties = {
   border: "1px solid #d1d5db",
   borderRadius: 8,
@@ -1289,4 +1024,16 @@ const secondaryButtonStyle: React.CSSProperties = {
   fontWeight: 700,
   minHeight: 40,
   padding: "9px 14px",
+};
+
+const linkButtonStyle: React.CSSProperties = {
+  background: "white",
+  border: "1px solid #d1d5db",
+  borderRadius: 8,
+  color: "#111827",
+  display: "inline-flex",
+  fontWeight: 700,
+  minHeight: 40,
+  padding: "9px 14px",
+  textDecoration: "none",
 };

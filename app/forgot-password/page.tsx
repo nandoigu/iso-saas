@@ -1,50 +1,42 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useState } from "react";
 
-export default function LoginPage() {
-  const router = useRouter();
-
+export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [nextPath, setNextPath] = useState("/dashboard");
-
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const next = params.get("next");
-
-    if (next?.startsWith("/")) {
-      setNextPath(next);
-    }
-  }, []);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setError("");
     setLoading(true);
+    setError("");
+    setSuccess("");
 
     try {
-      const res = await fetch("/api/auth/login", {
+      const res = await fetch("/api/auth/forgot-password", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email }),
       });
 
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.error || "No se pudo iniciar sesion");
+        setError(data.error || "No se pudo procesar la solicitud.");
         return;
       }
 
-      router.push(nextPath);
-      router.refresh();
+      setSuccess(
+        data?.data?.message ||
+          "Si existe una cuenta con ese email, te enviaremos un enlace de recuperacion."
+      );
     } catch {
-      setError("Error inesperado iniciando sesion");
+      setError("No se pudo procesar la solicitud.");
     } finally {
       setLoading(false);
     }
@@ -53,9 +45,9 @@ export default function LoginPage() {
   return (
     <main style={pageStyle}>
       <section style={cardStyle}>
-        <h1 style={{ margin: 0 }}>Iniciar sesion</h1>
-        <p style={{ color: "#6b7280", margin: "8px 0 24px" }}>
-          Accede a tus proyectos y requerimientos ISO 19650.
+        <h1 style={{ margin: 0 }}>Recuperar contrasena</h1>
+        <p style={subtitleStyle}>
+          Introduce tu email y te enviaremos un enlace seguro para restablecerla.
         </p>
 
         <form onSubmit={submit} style={{ display: "grid", gap: 14 }}>
@@ -70,34 +62,17 @@ export default function LoginPage() {
             />
           </label>
 
-          <label style={labelStyle}>
-            Contrasena
-            <input
-              type="password"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              required
-              style={inputStyle}
-            />
-          </label>
-
           {error && <p style={errorStyle}>{error}</p>}
+          {success && <p style={successStyle}>{success}</p>}
 
           <button type="submit" disabled={loading} style={buttonStyle}>
-            {loading ? "Entrando..." : "Entrar"}
+            {loading ? "Enviando..." : "Enviar enlace"}
           </button>
         </form>
 
-        <p style={{ margin: "14px 0 0" }}>
-          <Link href="/forgot-password" style={{ color: "#2563eb", fontWeight: 700 }}>
-            He olvidado mi contrasena
-          </Link>
-        </p>
-
         <p style={{ color: "#6b7280", marginTop: 18 }}>
-          No tienes cuenta?{" "}
-          <Link href="/register" style={{ color: "#2563eb", fontWeight: 700 }}>
-            Crear cuenta
+          <Link href="/login" style={{ color: "#2563eb", fontWeight: 700 }}>
+            Volver al login
           </Link>
         </p>
       </section>
@@ -107,7 +82,7 @@ export default function LoginPage() {
 
 const pageStyle: React.CSSProperties = {
   display: "grid",
-  minHeight: "calc(100vh - 65px)",
+  minHeight: "calc(100vh - 70px)",
   placeItems: "center",
   padding: 24,
 };
@@ -117,9 +92,14 @@ const cardStyle: React.CSSProperties = {
   border: "1px solid #e5e7eb",
   borderRadius: 14,
   boxShadow: "0 10px 30px rgba(15,23,42,0.08)",
-  maxWidth: 440,
+  maxWidth: 460,
   padding: 28,
   width: "100%",
+};
+
+const subtitleStyle: React.CSSProperties = {
+  color: "#6b7280",
+  margin: "8px 0 24px",
 };
 
 const labelStyle: React.CSSProperties = {
@@ -152,6 +132,15 @@ const errorStyle: React.CSSProperties = {
   border: "1px solid #fecaca",
   borderRadius: 8,
   color: "#991b1b",
+  margin: 0,
+  padding: 10,
+};
+
+const successStyle: React.CSSProperties = {
+  background: "#f0fdf4",
+  border: "1px solid #bbf7d0",
+  borderRadius: 8,
+  color: "#166534",
   margin: 0,
   padding: 10,
 };

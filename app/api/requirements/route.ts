@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getAuthSession, unauthorized } from "@/app/lib/auth";
+import { getAuthSession, isAdminRole, unauthorized } from "@/app/lib/auth";
 import { prisma } from "../../lib/prisma";
 
 const VALID_STATUSES = ["total", "parcial", "no_conforme"] as const;
@@ -27,7 +27,7 @@ export async function GET(req: Request) {
     const project = await prisma.project.findFirst({
       where: {
         id: projectId,
-        userId: user.id,
+        ...(isAdminRole(user.role) ? {} : { userId: user.id }),
       },
       select: { id: true },
     });
@@ -88,7 +88,7 @@ export async function POST(req: Request) {
     const project = await prisma.project.findFirst({
       where: {
         id: projectId,
-        userId: user.id,
+        ...(isAdminRole(user.role) ? {} : { userId: user.id }),
       },
       select: { id: true },
     });
@@ -153,9 +153,13 @@ export async function PUT(req: Request) {
     const requirement = await prisma.requirement.findFirst({
       where: {
         id: requirementId,
-        project: {
-          userId: user.id,
-        },
+        ...(isAdminRole(user.role)
+          ? {}
+          : {
+              project: {
+                userId: user.id,
+              },
+            }),
       },
       select: { id: true },
     });

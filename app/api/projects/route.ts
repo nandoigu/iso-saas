@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
-import { getAuthSession, unauthorized } from "@/app/lib/auth";
+import { getAuthSession, isAdminRole, unauthorized } from "@/app/lib/auth";
 import { prisma } from "@/app/lib/prisma";
+
+const USER_PROJECT_LIMIT = 5;
 
 export async function GET(req: Request) {
   try {
@@ -11,12 +13,21 @@ export async function GET(req: Request) {
     }
 
     const projects = await prisma.project.findMany({
-      where: {
-        userId: user.id,
-      },
+      where: isAdminRole(user.role)
+        ? undefined
+        : {
+            userId: user.id,
+          },
       orderBy: { createdAt: "desc" },
       include: {
         requirements: true,
+        user: {
+          select: {
+            id: true,
+            email: true,
+            name: true,
+          },
+        },
       },
     });
 
@@ -49,6 +60,19 @@ export async function POST(req: Request) {
       );
     }
 
+    if (!isAdminRole(user.role)) {
+      const userProjectsCount = await prisma.project.count({
+        where: { userId: user.id },
+      });
+
+      if (userProjectsCount >= USER_PROJECT_LIMIT) {
+        return NextResponse.json(
+          { error: `Has alcanzado el limite de proyectos (${USER_PROJECT_LIMIT})` },
+          { status: 403 }
+        );
+      }
+    }
+
     const templates = await prisma.requirementTemplate.findMany({
       orderBy: [{ norma: "asc" }, { item: "asc" }, { name: "asc" }],
     });
@@ -73,6 +97,13 @@ export async function POST(req: Request) {
       },
       include: {
         requirements: true,
+        user: {
+          select: {
+            id: true,
+            email: true,
+            name: true,
+          },
+        },
       },
     });
 

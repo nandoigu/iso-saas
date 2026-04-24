@@ -1,0 +1,76 @@
+import { NextResponse } from "next/server";
+import {
+  createPasswordResetToken,
+  hashPasswordResetToken,
+  isValidEmail,
+  normalizeEmail,
+} from "@/app/lib/auth";
+import { prisma } from "@/app/lib/prisma";
+import { sendPasswordResetEmail } from "@/lib/email";
+
+const GENERIC_SUCCESS_MESSAGE =
+  "Si existe una cuenta con ese email, te enviaremos un enlace para restablecer la contrasena.";
+
+export async function POST(req: Request) {
+  try {
+    const body = await req.json();
+    const email = normalizeEmail(body.email || "");
+
+    if (!isValidEmail(email)) {
+      return NextResponse.json({ error: "Email no valido." }, { status: 400 });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { email },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+      },
+    });
+
+    if (user) {
+      const rawToken = createPasswordResetToken();
+      const token = hashPasswordResetToken(rawToken);
+      const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
+      const origin = new URL(req.url).origin;
+      const resetUrl = `${origin}/reset-password?token=${rawToken}`;
+
+      await prisma.passwordResetToken.deleteMany({
+        where: { userId: user.id },
+      });
+
+      await prisma.passwordResetToken.create({
+        data: {
+          userId: user.id,
+          token,
+          expiresAt,
+        },
+      });
+
+      await sendPasswordResetEmail({
+        to: user.email,
+        userName: user.name,
+        resetUrl,
+      });
+    }
+
+    return NextResponse.json({
+      data: {
+        sent: true,
+        message: GENERIC_SUCCESS_MESSAGE,
+      },
+    });
+  } catch (error) {
+    console.error("ERROR POST /api/auth/forgot-password:", error);
+    return NextResponse.json(
+      {
+        data: {
+          sent: true,
+          message: GENERIC_SUCCESS_MESSAGE,
+        },
+      },
+      { status: 200 }
+    );
+  }
+}

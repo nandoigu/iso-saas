@@ -5,6 +5,7 @@ import {
   isValidEmail,
   normalizeEmail,
   setSessionCookie,
+  validatePassword,
 } from "@/app/lib/auth";
 import { prisma } from "@/app/lib/prisma";
 
@@ -19,11 +20,10 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Email no valido" }, { status: 400 });
     }
 
-    if (password.length < 8) {
-      return NextResponse.json(
-        { error: "La contrasena debe tener al menos 8 caracteres" },
-        { status: 400 }
-      );
+    const passwordError = validatePassword(password);
+
+    if (passwordError) {
+      return NextResponse.json({ error: passwordError }, { status: 400 });
     }
 
     const existingUser = await prisma.user.findUnique({
@@ -51,6 +51,7 @@ export async function POST(req: Request) {
         email,
         name: name || null,
         password: passwordHash,
+        role: "user",
         companyId: company.id,
       },
       select: {

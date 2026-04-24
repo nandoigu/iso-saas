@@ -17,11 +17,12 @@ export default function RootLayout({
         style={{
           margin: 0,
           fontFamily: "Arial, sans-serif",
-          background: "#f7f9fc",
+          background: "#f4f6fc",
+          color: "#002a4e",
         }}
       >
         <Navbar />
-        {children}
+        <div style={{ minHeight: "calc(100vh - 70px)" }}>{children}</div>
       </body>
     </html>
   );

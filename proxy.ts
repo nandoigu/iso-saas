@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 const SESSION_COOKIE_NAME = "bmo_session";
-const protectedRoutes = ["/", "/dashboard", "/projects"];
+const protectedRoutes = ["/", "/dashboard", "/projects", "/matrix", "/admin", "/account"];
 const authRoutes = ["/login", "/register"];
 
 export function proxy(req: NextRequest) {
@@ -26,5 +26,14 @@ export function proxy(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/", "/dashboard/:path*", "/projects/:path*", "/login", "/register"],
+  matcher: [
+    "/",
+    "/dashboard/:path*",
+    "/projects/:path*",
+    "/matrix/:path*",
+    "/admin/:path*",
+    "/account/:path*",
+    "/login",
+    "/register",
+  ],
 };

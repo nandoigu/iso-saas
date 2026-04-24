@@ -1,9 +1,11 @@
 import crypto from "crypto";
+import { compare as bcryptCompare, hash as bcryptHash } from "bcryptjs";
 import { NextResponse } from "next/server";
 import { prisma } from "@/app/lib/prisma";
 
 export const SESSION_COOKIE_NAME = "bmo_session";
 const SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 7;
+export const MIN_PASSWORD_LENGTH = 8;
 
 export type AuthSession = {
   userId: string;
@@ -21,6 +23,8 @@ type PublicUser = {
   role: string;
   companyId: string | null;
 };
+
+export type AuthUser = PublicUser;
 
 const getSecret = () => {
   return (
@@ -40,18 +44,48 @@ export function normalizeEmail(email: string) {
 }
 
 export async function hashPassword(password: string) {
-  const salt = crypto.randomBytes(16).toString("hex");
-  const hash = await scrypt(password, salt);
-  return `${salt}:${hash}`;
+  return bcryptHash(password, 12);
 }
 
 export async function verifyPassword(password: string, storedHash: string) {
+  if (isBcryptHash(storedHash)) {
+    return bcryptCompare(password, storedHash);
+  }
+
   const [salt, hash] = storedHash.split(":");
 
   if (!salt || !hash) return false;
 
   const candidate = await scrypt(password, salt);
   return crypto.timingSafeEqual(Buffer.from(hash, "hex"), Buffer.from(candidate, "hex"));
+}
+
+export function needsPasswordRehash(storedHash: string) {
+  return !isBcryptHash(storedHash);
+}
+
+export function isAdminRole(role: string | null | undefined) {
+  return role === "admin";
+}
+
+export function validatePassword(password: string) {
+  if (password.length < MIN_PASSWORD_LENGTH) {
+    return `La contrasena debe tener al menos ${MIN_PASSWORD_LENGTH} caracteres`;
+  }
+
+  return null;
+}
+
+export function forbidden(message = "Prohibido") {
+  return NextResponse.json({ error: message }, { status: 403 });
+}
+
+export function createPasswordResetToken() {
+  return crypto.randomBytes(32).toString("hex");
+}
+
+export function hashPasswordResetToken(token: string) {
+  return crypto.createHash("sha256").update(token).digest("hex");
 }
 
 export function createSessionToken(user: PublicUser) {
@@ -109,6 +143,23 @@ export async function getAuthSession(req: Request) {
   });
 
   return user;
+}
+
+export async function getSessionUserFromToken(token?: string | null) {
+  const session = verifySessionToken(token);
+
+  if (!session) return null;
+
+  return prisma.user.findUnique({
+    where: { id: session.userId },
+    select: {
+      id: true,
+      email: true,
+      name: true,
+      role: true,
+      companyId: true,
+    },
+  });
 }
 
 export function setSessionCookie(response: NextResponse, token: string) {
@@ -175,4 +226,8 @@ function getCookieValue(cookieHeader: string, name: string) {
     .map((cookie) => cookie.trim())
     .find((cookie) => cookie.startsWith(`${name}=`))
     ?.split("=")[1];
+}
+
+function isBcryptHash(value: string) {
+  return value.startsWith("$2a$") || value.startsWith("$2b$") || value.startsWith("$2y$");
 }
