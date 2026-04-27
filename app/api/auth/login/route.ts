@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 import {
   createSessionToken,
+  forbidden,
   isValidEmail,
+  isBlockedStatus,
   needsPasswordRehash,
   normalizeEmail,
   setSessionCookie,
@@ -31,6 +33,7 @@ export async function POST(req: Request) {
         name: true,
         password: true,
         role: true,
+        status: true,
         companyId: true,
       },
     });
@@ -51,6 +54,10 @@ export async function POST(req: Request) {
       );
     }
 
+    if (isBlockedStatus(user.status)) {
+      return forbidden("Tu cuenta esta bloqueada. Contacta con el administrador.");
+    }
+
     if (needsPasswordRehash(user.password)) {
       const passwordHash = await hashPassword(password);
 
@@ -65,6 +72,7 @@ export async function POST(req: Request) {
       email: user.email,
       name: user.name,
       role: user.role,
+      status: user.status,
       companyId: user.companyId,
     };
 

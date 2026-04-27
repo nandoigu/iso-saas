@@ -3,8 +3,10 @@ import { forbidden, getAuthSession, isAdminRole, unauthorized } from "@/app/lib/
 import { prisma } from "@/app/lib/prisma";
 
 const VALID_ROLES = ["admin", "user"] as const;
+const VALID_STATUSES = ["active", "suspended", "blocked"] as const;
 
 type ValidRole = (typeof VALID_ROLES)[number];
+type ValidStatus = (typeof VALID_STATUSES)[number];
 
 export async function GET(req: Request) {
   try {
@@ -25,6 +27,12 @@ export async function GET(req: Request) {
         email: true,
         name: true,
         role: true,
+        status: true,
+        company: {
+          select: {
+            name: true,
+          },
+        },
         createdAt: true,
         _count: {
           select: {
@@ -40,6 +48,8 @@ export async function GET(req: Request) {
         email: entry.email,
         name: entry.name,
         role: entry.role,
+        status: entry.status,
+        companyName: entry.company?.name ?? null,
         createdAt: entry.createdAt,
         projectCount: entry._count.projects,
       })),
@@ -67,30 +77,52 @@ export async function PATCH(req: Request) {
 
     const body = await req.json();
     const userId = String(body.userId || "");
-    const role = String(body.role || "") as ValidRole;
+    const role = body.role ? (String(body.role || "") as ValidRole) : null;
+    const status = body.status ? (String(body.status || "") as ValidStatus) : null;
 
-    if (!userId || !VALID_ROLES.includes(role)) {
+    if (
+      !userId ||
+      (!role && !status) ||
+      (role && !VALID_ROLES.includes(role)) ||
+      (status && !VALID_STATUSES.includes(status))
+    ) {
       return NextResponse.json(
         { error: "Datos de actualizacion no validos." },
         { status: 400 }
       );
     }
 
-    if (userId === currentUser.id && role !== "admin") {
+    if (userId === currentUser.id && role === "user") {
       return NextResponse.json(
         { error: "No puedes retirar tu propio acceso de administrador." },
         { status: 400 }
       );
     }
 
+    if (userId === currentUser.id && status === "blocked") {
+      return NextResponse.json(
+        { error: "No puedes bloquear tu propia cuenta de administrador." },
+        { status: 400 }
+      );
+    }
+
     const updatedUser = await prisma.user.update({
       where: { id: userId },
-      data: { role },
+      data: {
+        ...(role ? { role } : {}),
+        ...(status ? { status } : {}),
+      },
       select: {
         id: true,
         email: true,
         name: true,
         role: true,
+        status: true,
+        company: {
+          select: {
+            name: true,
+          },
+        },
         createdAt: true,
         _count: {
           select: {
@@ -106,6 +138,8 @@ export async function PATCH(req: Request) {
         email: updatedUser.email,
         name: updatedUser.name,
         role: updatedUser.role,
+        status: updatedUser.status,
+        companyName: updatedUser.company?.name ?? null,
         createdAt: updatedUser.createdAt,
         projectCount: updatedUser._count.projects,
       },

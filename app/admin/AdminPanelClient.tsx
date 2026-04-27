@@ -7,6 +7,8 @@ type AdminUser = {
   email: string;
   name: string | null;
   role: string;
+  status: string;
+  companyName: string | null;
   createdAt: string;
   projectCount: number;
 };
@@ -25,8 +27,10 @@ type Project = {
 
 export default function AdminPanelClient({
   currentUserEmail,
+  currentUserId,
 }: {
   currentUserEmail: string;
+  currentUserId: string;
 }) {
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
@@ -67,7 +71,15 @@ export default function AdminPanelClient({
     loadData();
   }, [loadData]);
 
-  const updateUserRole = async (userId: string, role: string) => {
+  const updateUser = async ({
+    userId,
+    role,
+    status,
+  }: {
+    userId: string;
+    role?: string;
+    status?: string;
+  }) => {
     setSavingUserId(userId);
     setError("");
 
@@ -77,7 +89,7 @@ export default function AdminPanelClient({
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ userId, role }),
+        body: JSON.stringify({ userId, role, status }),
       });
 
       const data = await res.json();
@@ -94,7 +106,7 @@ export default function AdminPanelClient({
       setError(
         updateError instanceof Error
           ? updateError.message
-          : "No se pudo actualizar el rol."
+          : "No se pudo actualizar el usuario."
       );
     } finally {
       setSavingUserId(null);
@@ -128,10 +140,12 @@ export default function AdminPanelClient({
             <thead>
               <tr>
                 <th style={thStyle}>Email</th>
+                <th style={thStyle}>Empresa</th>
                 <th style={thStyle}>Rol</th>
+                <th style={thStyle}>Estado</th>
                 <th style={thStyle}>Proyectos</th>
                 <th style={thStyle}>Fecha alta</th>
-                <th style={thStyle}>Accion</th>
+                <th style={thStyle}>Acciones</th>
               </tr>
             </thead>
             <tbody>
@@ -141,25 +155,54 @@ export default function AdminPanelClient({
                     <div style={{ fontWeight: 700 }}>{user.name || user.email}</div>
                     <div style={{ color: "#64748b", fontSize: 13 }}>{user.email}</div>
                   </td>
-                  <td style={tdStyle}>{user.role}</td>
+                  <td style={tdStyle}>{user.companyName || "Sin empresa"}</td>
+                  <td style={tdStyle}>
+                    <span style={getRoleBadgeStyle(user.role)}>{user.role}</span>
+                  </td>
+                  <td style={tdStyle}>
+                    <span style={getStatusBadgeStyle(user.status)}>{getStatusLabel(user.status)}</span>
+                  </td>
                   <td style={tdStyle}>{user.projectCount}</td>
                   <td style={tdStyle}>{formatDate(user.createdAt)}</td>
                   <td style={tdStyle}>
-                    <select
-                      value={user.role}
-                      onChange={(event) => updateUserRole(user.id, event.target.value)}
-                      disabled={savingUserId === user.id}
-                      style={selectStyle}
-                    >
-                      <option value="user">user</option>
-                      <option value="admin">admin</option>
-                    </select>
+                    <div style={{ display: "grid", gap: 8 }}>
+                      <select
+                        value={user.role}
+                        onChange={(event) =>
+                          updateUser({ userId: user.id, role: event.target.value })
+                        }
+                        disabled={savingUserId === user.id || user.id === currentUserId}
+                        style={selectStyle}
+                      >
+                        <option value="user">user</option>
+                        <option value="admin">admin</option>
+                      </select>
+
+                      <select
+                        value={user.status}
+                        onChange={(event) =>
+                          updateUser({ userId: user.id, status: event.target.value })
+                        }
+                        disabled={savingUserId === user.id || user.id === currentUserId}
+                        style={selectStyle}
+                      >
+                        <option value="active">Activo</option>
+                        <option value="suspended">Suspendido</option>
+                        <option value="blocked">Bloqueado</option>
+                      </select>
+
+                      {user.id === currentUserId && (
+                        <span style={helperTextStyle}>
+                          Tu propia cuenta se protege desde la interfaz.
+                        </span>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}
               {!loading && users.length === 0 && (
                 <tr>
-                  <td style={emptyStyle} colSpan={5}>
+                  <td style={emptyStyle} colSpan={7}>
                     No hay usuarios registrados.
                   </td>
                 </tr>
@@ -213,6 +256,46 @@ function formatDate(value: string) {
   return new Intl.DateTimeFormat("es-ES", {
     dateStyle: "medium",
   }).format(new Date(value));
+}
+
+function getStatusLabel(status: string) {
+  if (status === "blocked") return "Bloqueado";
+  if (status === "suspended") return "Suspendido";
+  return "Activo";
+}
+
+function getRoleBadgeStyle(role: string): React.CSSProperties {
+  return {
+    background: role === "admin" ? "#dbeafe" : "#eef2ff",
+    border: `1px solid ${role === "admin" ? "#93c5fd" : "#c7d2fe"}`,
+    borderRadius: 999,
+    color: role === "admin" ? "#1d4ed8" : "#4338ca",
+    display: "inline-flex",
+    fontSize: 12,
+    fontWeight: 800,
+    padding: "6px 10px",
+  };
+}
+
+function getStatusBadgeStyle(status: string): React.CSSProperties {
+  const map = {
+    active: { background: "#f0fdf4", border: "#bbf7d0", color: "#166534" },
+    suspended: { background: "#fff7ed", border: "#fdba74", color: "#c2410c" },
+    blocked: { background: "#fef2f2", border: "#fecaca", color: "#b91c1c" },
+  } as const;
+
+  const current = map[status as keyof typeof map] || map.active;
+
+  return {
+    background: current.background,
+    border: `1px solid ${current.border}`,
+    borderRadius: 999,
+    color: current.color,
+    display: "inline-flex",
+    fontSize: 12,
+    fontWeight: 800,
+    padding: "6px 10px",
+  };
 }
 
 const heroCardStyle: React.CSSProperties = {
@@ -310,4 +393,10 @@ const errorStyle: React.CSSProperties = {
   color: "#991b1b",
   margin: 0,
   padding: 12,
+};
+
+const helperTextStyle: React.CSSProperties = {
+  color: "#64748b",
+  fontSize: 12,
+  lineHeight: 1.4,
 };

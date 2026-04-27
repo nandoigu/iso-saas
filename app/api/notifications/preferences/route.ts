@@ -1,13 +1,23 @@
 import { NextResponse } from "next/server";
-import { getAuthSession, unauthorized } from "@/app/lib/auth";
+import {
+  BLOCKED_ACCOUNT_MESSAGE,
+  forbidden,
+  getAuthSession,
+  isBlockedStatus,
+  unauthorized,
+} from "@/app/lib/auth";
 import { prisma } from "@/app/lib/prisma";
 
 export async function GET(req: Request) {
   try {
-    const user = await getAuthSession(req);
+    const user = await getAuthSession(req, { allowBlocked: true });
 
     if (!user) {
       return unauthorized();
+    }
+
+    if (isBlockedStatus(user.status)) {
+      return forbidden(BLOCKED_ACCOUNT_MESSAGE);
     }
 
     const preferences = await prisma.user.findUnique({
@@ -37,10 +47,14 @@ export async function GET(req: Request) {
 
 export async function PATCH(req: Request) {
   try {
-    const user = await getAuthSession(req);
+    const user = await getAuthSession(req, { allowBlocked: true });
 
     if (!user) {
       return unauthorized();
+    }
+
+    if (isBlockedStatus(user.status)) {
+      return forbidden(BLOCKED_ACCOUNT_MESSAGE);
     }
 
     const body = await req.json();

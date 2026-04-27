@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
 import {
+  BLOCKED_ACCOUNT_MESSAGE,
+  forbidden,
   getAuthSession,
   hashPassword,
+  isBlockedStatus,
   unauthorized,
   validatePassword,
   verifyPassword,
@@ -10,10 +13,14 @@ import { prisma } from "@/app/lib/prisma";
 
 export async function POST(req: Request) {
   try {
-    const user = await getAuthSession(req);
+    const user = await getAuthSession(req, { allowBlocked: true });
 
     if (!user) {
       return unauthorized();
+    }
+
+    if (isBlockedStatus(user.status)) {
+      return forbidden(BLOCKED_ACCOUNT_MESSAGE);
     }
 
     const body = await req.json();

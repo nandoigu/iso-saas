@@ -1,15 +1,26 @@
 import { NextResponse } from "next/server";
-import { getAuthSession, isAdminRole, unauthorized } from "@/app/lib/auth";
+import {
+  BLOCKED_ACCOUNT_MESSAGE,
+  forbidden,
+  getAuthSession,
+  isAdminRole,
+  isBlockedStatus,
+  unauthorized,
+} from "@/app/lib/auth";
 import { prisma } from "@/app/lib/prisma";
 
 const USER_PROJECT_LIMIT = 5;
 
 export async function GET(req: Request) {
   try {
-    const user = await getAuthSession(req);
+    const user = await getAuthSession(req, { allowBlocked: true });
 
     if (!user) {
       return unauthorized();
+    }
+
+    if (isBlockedStatus(user.status)) {
+      return forbidden(BLOCKED_ACCOUNT_MESSAGE);
     }
 
     const projects = await prisma.project.findMany({
@@ -43,10 +54,14 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
-    const user = await getAuthSession(req);
+    const user = await getAuthSession(req, { allowBlocked: true });
 
     if (!user) {
       return unauthorized();
+    }
+
+    if (isBlockedStatus(user.status)) {
+      return forbidden(BLOCKED_ACCOUNT_MESSAGE);
     }
 
     const body = await req.json();

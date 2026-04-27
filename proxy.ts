@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 const SESSION_COOKIE_NAME = "bmo_session";
-const protectedRoutes = ["/", "/dashboard", "/projects", "/matrix", "/admin", "/account"];
+const protectedRoutes = ["/", "/dashboard", "/projects", "/matrix", "/admin", "/account", "/profile"];
 const authRoutes = ["/login", "/register"];
 
 export function proxy(req: NextRequest) {
@@ -33,6 +33,7 @@ export const config = {
     "/matrix/:path*",
     "/admin/:path*",
     "/account/:path*",
+    "/profile/:path*",
     "/login",
     "/register",
   ],

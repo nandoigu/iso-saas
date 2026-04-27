@@ -4,6 +4,7 @@ import AdminPanelClient from "./AdminPanelClient";
 import {
   getSessionUserFromToken,
   isAdminRole,
+  isBlockedStatus,
   SESSION_COOKIE_NAME,
 } from "@/app/lib/auth";
 
@@ -16,9 +17,13 @@ export default async function AdminPage() {
     redirect("/login?next=/admin");
   }
 
+  if (isBlockedStatus(user.status)) {
+    redirect("/login");
+  }
+
   if (!isAdminRole(user.role)) {
     redirect("/dashboard");
   }
 
-  return <AdminPanelClient currentUserEmail={user.email} />;
+  return <AdminPanelClient currentUserEmail={user.email} currentUserId={user.id} />;
 }

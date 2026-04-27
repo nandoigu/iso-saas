@@ -52,6 +52,7 @@ export async function POST(req: Request) {
         name: name || null,
         password: passwordHash,
         role: "user",
+        status: "active",
         companyId: company.id,
       },
       select: {
@@ -59,6 +60,7 @@ export async function POST(req: Request) {
         email: true,
         name: true,
         role: true,
+        status: true,
         companyId: true,
       },
     });

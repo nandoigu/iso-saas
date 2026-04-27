@@ -6,12 +6,15 @@ import { prisma } from "@/app/lib/prisma";
 export const SESSION_COOKIE_NAME = "bmo_session";
 const SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 7;
 export const MIN_PASSWORD_LENGTH = 8;
+export const BLOCKED_ACCOUNT_MESSAGE =
+  "Tu cuenta esta bloqueada. Contacta con el administrador.";
 
 export type AuthSession = {
   userId: string;
   email: string;
   name: string | null;
   role: string;
+  status: string;
   companyId: string | null;
   exp: number;
 };
@@ -21,10 +24,14 @@ type PublicUser = {
   email: string;
   name: string | null;
   role: string;
+  status: string;
   companyId: string | null;
 };
 
 export type AuthUser = PublicUser;
+type AuthOptions = {
+  allowBlocked?: boolean;
+};
 
 const getSecret = () => {
   return (
@@ -68,6 +75,14 @@ export function isAdminRole(role: string | null | undefined) {
   return role === "admin";
 }
 
+export function isBlockedStatus(status: string | null | undefined) {
+  return status === "blocked";
+}
+
+export function isSuspendedStatus(status: string | null | undefined) {
+  return status === "suspended";
+}
+
 export function validatePassword(password: string) {
   if (password.length < MIN_PASSWORD_LENGTH) {
     return `La contrasena debe tener al menos ${MIN_PASSWORD_LENGTH} caracteres`;
@@ -94,6 +109,7 @@ export function createSessionToken(user: PublicUser) {
     email: user.email,
     name: user.name,
     role: user.role,
+    status: user.status,
     companyId: user.companyId,
     exp: Math.floor(Date.now() / 1000) + SESSION_MAX_AGE_SECONDS,
   };
@@ -124,7 +140,7 @@ export function verifySessionToken(token?: string | null): AuthSession | null {
   }
 }
 
-export async function getAuthSession(req: Request) {
+export async function getAuthSession(req: Request, options: AuthOptions = {}) {
   const cookieHeader = req.headers.get("cookie") || "";
   const token = getCookieValue(cookieHeader, SESSION_COOKIE_NAME);
   const session = verifySessionToken(token);
@@ -138,28 +154,40 @@ export async function getAuthSession(req: Request) {
       email: true,
       name: true,
       role: true,
+      status: true,
       companyId: true,
     },
   });
 
+  if (user && isBlockedStatus(user.status) && !options.allowBlocked) {
+    return null;
+  }
+
   return user;
 }
 
-export async function getSessionUserFromToken(token?: string | null) {
+export async function getSessionUserFromToken(token?: string | null, options: AuthOptions = {}) {
   const session = verifySessionToken(token);
 
   if (!session) return null;
 
-  return prisma.user.findUnique({
+  const user = await prisma.user.findUnique({
     where: { id: session.userId },
     select: {
       id: true,
       email: true,
       name: true,
       role: true,
+      status: true,
       companyId: true,
     },
   });
+
+  if (user && isBlockedStatus(user.status) && !options.allowBlocked) {
+    return null;
+  }
+
+  return user;
 }
 
 export function setSessionCookie(response: NextResponse, token: string) {

@@ -9,6 +9,7 @@ type CurrentUser = {
   email: string;
   name: string | null;
   role: string;
+  status: string;
 };
 
 const BRAND = "#002a4e";
@@ -16,9 +17,9 @@ const ACTION = "#0025df";
 const SURFACE = "#f4f6fc";
 
 const navigationItems = [
-  { href: "/projects", label: "Proyectos" },
-  { href: "/matrix", label: "Matriz" },
   { href: "/dashboard", label: "Dashboard" },
+  { href: "/projects", label: "Proyectos" },
+  { href: "/profile", label: "Perfil" },
 ];
 
 export default function Navbar() {
@@ -28,20 +29,35 @@ export default function Navbar() {
   const [loadingUser, setLoadingUser] = useState(true);
 
   useEffect(() => {
-    fetch("/api/auth/me", { cache: "no-store" })
-      .then((res) => {
-        if (!res.ok) return null;
-        return res.json();
-      })
-      .then((data) => {
-        setUser(data?.data?.user || null);
-      })
-      .catch(() => {
-        setUser(null);
-      })
-      .finally(() => {
-        setLoadingUser(false);
-      });
+    const loadUser = () => {
+      setLoadingUser(true);
+
+      fetch("/api/auth/me", { cache: "no-store" })
+        .then((res) => {
+          if (!res.ok) return null;
+          return res.json();
+        })
+        .then((data) => {
+          setUser(data?.data?.user || null);
+        })
+        .catch(() => {
+          setUser(null);
+        })
+        .finally(() => {
+          setLoadingUser(false);
+        });
+    };
+
+    const handleUserUpdated = () => {
+      loadUser();
+    };
+
+    loadUser();
+    window.addEventListener("bmo:user-updated", handleUserUpdated);
+
+    return () => {
+      window.removeEventListener("bmo:user-updated", handleUserUpdated);
+    };
   }, [pathname]);
 
   const isAuthPage = pathname === "/login" || pathname === "/register";
@@ -208,21 +224,7 @@ export default function Navbar() {
 
           {user && (
             <>
-              <div
-                style={{
-                  alignItems: "center",
-                  background: SURFACE,
-                  border: "1px solid #dbe3f1",
-                  borderRadius: 10,
-                  color: BRAND,
-                  display: "inline-flex",
-                  fontSize: 13,
-                  fontWeight: 700,
-                  maxWidth: 220,
-                  minHeight: 40,
-                  padding: "0 12px",
-                }}
-              >
+              <div style={userPillStyle}>
                 <span
                   style={{
                     overflow: "hidden",
@@ -234,13 +236,18 @@ export default function Navbar() {
                 </span>
               </div>
 
+              <span style={getRoleBadgeStyle(user.role)}>{user.role === "admin" ? "ADMIN" : "USER"}</span>
+
+              {user.status !== "active" && (
+                <span style={getStatusBadgeStyle(user.status)}>
+                  {user.status === "blocked" ? "BLOCKED" : "SUSPENDED"}
+                </span>
+              )}
+
               <button onClick={logout} style={ghostButtonStyle}>
                 Logout
               </button>
 
-              <Link href="/account/security" style={ghostLinkStyle}>
-                Seguridad
-              </Link>
             </>
           )}
         </div>
@@ -258,8 +265,63 @@ function isRouteActive(pathname: string, href: string) {
     return pathname === "/admin" || pathname.startsWith("/admin/");
   }
 
+  if (href === "/profile") {
+    return pathname === "/profile" || pathname.startsWith("/profile/");
+  }
+
   return pathname === href || pathname.startsWith(`${href}/`);
 }
+
+function getRoleBadgeStyle(role: string): React.CSSProperties {
+  return {
+    background: role === "admin" ? "#dbeafe" : "#eef2ff",
+    border: `1px solid ${role === "admin" ? "#93c5fd" : "#c7d2fe"}`,
+    borderRadius: 999,
+    color: role === "admin" ? "#1d4ed8" : "#4338ca",
+    fontSize: 12,
+    fontWeight: 800,
+    letterSpacing: "0.04em",
+    minHeight: 40,
+    padding: "10px 12px",
+    whiteSpace: "nowrap",
+  };
+}
+
+function getStatusBadgeStyle(status: string): React.CSSProperties {
+  const map = {
+    suspended: { background: "#fff7ed", border: "#fdba74", color: "#c2410c" },
+    blocked: { background: "#fef2f2", border: "#fecaca", color: "#b91c1c" },
+  } as const;
+
+  const current = map[status as keyof typeof map] || map.suspended;
+
+  return {
+    background: current.background,
+    border: `1px solid ${current.border}`,
+    borderRadius: 999,
+    color: current.color,
+    fontSize: 12,
+    fontWeight: 800,
+    letterSpacing: "0.04em",
+    minHeight: 40,
+    padding: "10px 12px",
+    whiteSpace: "nowrap",
+  };
+}
+
+const userPillStyle: React.CSSProperties = {
+  alignItems: "center",
+  background: SURFACE,
+  border: "1px solid #dbe3f1",
+  borderRadius: 10,
+  color: BRAND,
+  display: "inline-flex",
+  fontSize: 13,
+  fontWeight: 700,
+  maxWidth: 220,
+  minHeight: 40,
+  padding: "0 12px",
+};
 
 const ghostLinkStyle: React.CSSProperties = {
   border: "1px solid #dbe3f1",
