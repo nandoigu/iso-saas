@@ -152,3 +152,122 @@ export async function PATCH(req: Request) {
     );
   }
 }
+
+export async function DELETE(req: Request) {
+  try {
+    const currentUser = await getAuthSession(req);
+
+    if (!currentUser) {
+      return unauthorized();
+    }
+
+    if (!isAdminRole(currentUser.role)) {
+      return forbidden();
+    }
+
+    const { searchParams } = new URL(req.url);
+    const userId = String(searchParams.get("userId") || "");
+
+    if (!userId) {
+      return NextResponse.json(
+        { error: "Debes indicar el usuario a eliminar." },
+        { status: 400 }
+      );
+    }
+
+    if (userId === currentUser.id) {
+      return NextResponse.json(
+        { error: "No puedes eliminar tu propia cuenta de administrador." },
+        { status: 400 }
+      );
+    }
+
+    const targetUser = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        companyId: true,
+        projects: {
+          select: {
+            id: true,
+          },
+        },
+      },
+    });
+
+    if (!targetUser) {
+      return NextResponse.json(
+        { error: "Usuario no encontrado." },
+        { status: 404 }
+      );
+    }
+
+    const projectIds = targetUser.projects.map((project) => project.id);
+
+    await prisma.$transaction(async (tx) => {
+      if (projectIds.length > 0) {
+        await tx.requirement.deleteMany({
+          where: {
+            projectId: {
+              in: projectIds,
+            },
+          },
+        });
+
+        await tx.project.deleteMany({
+          where: {
+            id: {
+              in: projectIds,
+            },
+          },
+        });
+      }
+
+      await tx.passwordResetToken.deleteMany({
+        where: {
+          userId,
+        },
+      });
+
+      await tx.user.delete({
+        where: { id: userId },
+      });
+
+      if (targetUser.companyId) {
+        const [usersUsingCompany, projectsUsingCompany] = await Promise.all([
+          tx.user.count({
+            where: {
+              companyId: targetUser.companyId,
+            },
+          }),
+          tx.project.count({
+            where: {
+              companyId: targetUser.companyId,
+            },
+          }),
+        ]);
+
+        if (usersUsingCompany === 0 && projectsUsingCompany === 0) {
+          await tx.company.delete({
+            where: {
+              id: targetUser.companyId,
+            },
+          });
+        }
+      }
+    });
+
+    return NextResponse.json({
+      data: {
+        deleted: true,
+        userId,
+      },
+    });
+  } catch (error) {
+    console.error("ERROR DELETE /api/admin/users:", error);
+    return NextResponse.json(
+      { error: "No se pudo eliminar el usuario." },
+      { status: 500 }
+    );
+  }
+}

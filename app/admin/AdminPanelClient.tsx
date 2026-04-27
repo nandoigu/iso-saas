@@ -36,11 +36,13 @@ export default function AdminPanelClient({
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const [savingUserId, setSavingUserId] = useState<string | null>(null);
 
   const loadData = useCallback(async () => {
     setLoading(true);
     setError("");
+    setSuccess("");
 
     try {
       const [usersRes, projectsRes] = await Promise.all([
@@ -82,6 +84,7 @@ export default function AdminPanelClient({
   }) => {
     setSavingUserId(userId);
     setError("");
+    setSuccess("");
 
     try {
       const res = await fetch("/api/admin/users", {
@@ -113,6 +116,47 @@ export default function AdminPanelClient({
     }
   };
 
+  const deleteUser = async (user: AdminUser) => {
+    const confirmed = window.confirm(
+      `Vas a eliminar al usuario ${user.email} y todos sus proyectos y requerimientos. Esta accion no se puede deshacer.`
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setSavingUserId(user.id);
+    setError("");
+    setSuccess("");
+
+    try {
+      const res = await fetch(`/api/admin/users?userId=${encodeURIComponent(user.id)}`, {
+        method: "DELETE",
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || "No se pudo eliminar el usuario.");
+      }
+
+      setUsers((current) => current.filter((entry) => entry.id !== user.id));
+      setProjects((current) =>
+        current.filter((project) => project.user?.id !== user.id)
+      );
+      setSuccess(`Usuario ${user.email} eliminado correctamente.`);
+    } catch (deleteError) {
+      console.error(deleteError);
+      setError(
+        deleteError instanceof Error
+          ? deleteError.message
+          : "No se pudo eliminar el usuario."
+      );
+    } finally {
+      setSavingUserId(null);
+    }
+  };
+
   return (
     <main style={{ display: "grid", gap: 24 }}>
       <section style={heroCardStyle}>
@@ -126,6 +170,7 @@ export default function AdminPanelClient({
       </section>
 
       {error && <p style={errorStyle}>{error}</p>}
+      {success && <p style={successStyle}>{success}</p>}
 
       <section style={sectionStyle}>
         <div style={sectionHeaderStyle}>
@@ -195,6 +240,21 @@ export default function AdminPanelClient({
                         <span style={helperTextStyle}>
                           Tu propia cuenta se protege desde la interfaz.
                         </span>
+                      )}
+
+                      {user.id !== currentUserId && (
+                        <button
+                          type="button"
+                          onClick={() => deleteUser(user)}
+                          disabled={savingUserId === user.id}
+                          style={{
+                            ...dangerButtonStyle,
+                            opacity: savingUserId === user.id ? 0.6 : 1,
+                            cursor: savingUserId === user.id ? "not-allowed" : "pointer",
+                          }}
+                        >
+                          {savingUserId === user.id ? "Eliminando..." : "Eliminar usuario"}
+                        </button>
                       )}
                     </div>
                   </td>
@@ -395,8 +455,27 @@ const errorStyle: React.CSSProperties = {
   padding: 12,
 };
 
+const successStyle: React.CSSProperties = {
+  background: "#f0fdf4",
+  border: "1px solid #bbf7d0",
+  borderRadius: 10,
+  color: "#166534",
+  margin: 0,
+  padding: 12,
+};
+
 const helperTextStyle: React.CSSProperties = {
   color: "#64748b",
   fontSize: 12,
   lineHeight: 1.4,
+};
+
+const dangerButtonStyle: React.CSSProperties = {
+  background: "#ffffff",
+  border: "1px solid #fecaca",
+  borderRadius: 8,
+  color: "#b91c1c",
+  fontWeight: 700,
+  minHeight: 38,
+  padding: "0 12px",
 };
