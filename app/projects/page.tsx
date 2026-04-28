@@ -24,6 +24,7 @@ export default function ProjectsPage() {
   const [code, setCode] = useState("");
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
+  const [deletingProjectId, setDeletingProjectId] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
@@ -113,6 +114,49 @@ export default function ProjectsPage() {
       setError(err instanceof Error ? err.message : "Error creando proyecto.");
     } finally {
       setCreating(false);
+    }
+  };
+
+  const deleteProject = async (project: Project) => {
+    const confirmed = window.confirm(
+      `¿Seguro que quieres eliminar el proyecto "${project.name}"?`
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setDeletingProjectId(project.id);
+    setError("");
+    setSuccess("");
+
+    try {
+      const res = await fetch(`/api/projects/${encodeURIComponent(project.id)}`, {
+        method: "DELETE",
+      });
+
+      if (res.status === 401) {
+        router.push("/login");
+        return;
+      }
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || "No se pudo eliminar el proyecto.");
+      }
+
+      setProjects((current) => current.filter((entry) => entry.id !== project.id));
+      setSuccess("Proyecto eliminado.");
+    } catch (deleteError) {
+      console.error("Error eliminando proyecto:", deleteError);
+      setError(
+        deleteError instanceof Error
+          ? deleteError.message
+          : "No se pudo eliminar el proyecto."
+      );
+    } finally {
+      setDeletingProjectId(null);
     }
   };
 
@@ -313,25 +357,37 @@ export default function ProjectsPage() {
 
         {!loading &&
           projects.map((project) => (
-            <Link
-              key={project.id}
-              href={`/projects/${encodeURIComponent(project.id)}`}
-              style={{
-                display: "block",
-                padding: 12,
-                border: "1px solid #ddd",
-                borderRadius: 8,
-                marginBottom: 10,
-                color: "inherit",
-                textDecoration: "none",
-                background: "white",
-              }}
-            >
-              <strong>{project.name}</strong>
-              <div style={{ color: "#6b7280", fontSize: 12, marginTop: 4 }}>
-                {project.code || "Sin codigo"}
-              </div>
-            </Link>
+            <article key={project.id} style={projectCardStyle}>
+              <Link
+                href={`/projects/${encodeURIComponent(project.id)}`}
+                style={{
+                  color: "inherit",
+                  display: "block",
+                  flex: 1,
+                  minWidth: 0,
+                  textDecoration: "none",
+                }}
+              >
+                <strong>{project.name}</strong>
+                <div style={{ color: "#6b7280", fontSize: 12, marginTop: 4 }}>
+                  {project.code || "Sin codigo"}
+                </div>
+              </Link>
+
+              <button
+                type="button"
+                onClick={() => deleteProject(project)}
+                disabled={deletingProjectId === project.id}
+                style={{
+                  ...dangerButtonStyle,
+                  cursor:
+                    deletingProjectId === project.id ? "not-allowed" : "pointer",
+                  opacity: deletingProjectId === project.id ? 0.6 : 1,
+                }}
+              >
+                {deletingProjectId === project.id ? "Eliminando..." : "Eliminar"}
+              </button>
+            </article>
           ))}
       </section>
     </main>
@@ -397,4 +453,26 @@ const detailsStyle: React.CSSProperties = {
   color: "#9a3412",
   margin: "14px 0 0",
   padding: "10px 10px 10px 28px",
+};
+
+const projectCardStyle: React.CSSProperties = {
+  alignItems: "center",
+  background: "white",
+  border: "1px solid #ddd",
+  borderRadius: 8,
+  display: "flex",
+  gap: 16,
+  marginBottom: 10,
+  padding: 12,
+};
+
+const dangerButtonStyle: React.CSSProperties = {
+  background: "#ffffff",
+  border: "1px solid #fecaca",
+  borderRadius: 8,
+  color: "#b91c1c",
+  fontWeight: 700,
+  minHeight: 40,
+  padding: "9px 14px",
+  whiteSpace: "nowrap",
 };
