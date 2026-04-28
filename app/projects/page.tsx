@@ -1,8 +1,8 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { FormEvent, useEffect, useState } from "react";
 
 type Project = {
   id: string;
@@ -54,9 +54,9 @@ export default function ProjectsPage() {
           throw new Error(data.error || "Error cargando proyectos");
         }
 
-        setProjects(Array.isArray(data) ? data : data.data || []);
-      } catch (err) {
-        console.error("Error cargando proyectos:", err);
+        setProjects(data);
+      } catch (loadError) {
+        console.error("Error cargando proyectos:", loadError);
         setProjects([]);
         setError("No se pudieron cargar los proyectos.");
       } finally {
@@ -105,13 +105,17 @@ export default function ProjectsPage() {
         throw new Error(data.error || "Error creando proyecto");
       }
 
-      setProjects((prev) => [data.data as Project, ...prev]);
+      setProjects((current) => [data as Project, ...current]);
       setName("");
       setCode("");
       setSuccess("Proyecto creado correctamente.");
-    } catch (err) {
-      console.error("Error creando proyecto:", err);
-      setError(err instanceof Error ? err.message : "Error creando proyecto.");
+    } catch (createError) {
+      console.error("Error creando proyecto:", createError);
+      setError(
+        createError instanceof Error
+          ? createError.message
+          : "Error creando proyecto."
+      );
     } finally {
       setCreating(false);
     }
@@ -197,12 +201,20 @@ export default function ProjectsPage() {
 
       setImportResult(data.data);
       setImportFile(null);
-      const input = document.getElementById("requirements-import-file") as HTMLInputElement | null;
-      if (input) input.value = "";
-    } catch (err) {
-      console.error("Error importando requisitos:", err);
+
+      const input = document.getElementById(
+        "requirements-import-file"
+      ) as HTMLInputElement | null;
+
+      if (input) {
+        input.value = "";
+      }
+    } catch (loadError) {
+      console.error("Error importando requisitos:", loadError);
       setImportError(
-        err instanceof Error ? err.message : "Error importando archivo."
+        loadError instanceof Error
+          ? loadError.message
+          : "Error importando archivo."
       );
     } finally {
       setImporting(false);
@@ -221,8 +233,9 @@ export default function ProjectsPage() {
       <section style={panelStyle}>
         <h3 style={{ margin: "0 0 8px" }}>Importar requisitos desde Excel</h3>
         <p style={{ color: "#6b7280", margin: "0 0 16px" }}>
-          El archivo debe incluir exactamente: norma, item, requerimiento, evidencia, estado, fecha_limite.
-          Los requisitos importados se aplicaran automaticamente a los nuevos proyectos.
+          El archivo debe incluir exactamente: norma, item, requerimiento, evidencia,
+          estado, fecha_limite. Los requisitos importados se aplicaran automaticamente
+          a los nuevos proyectos.
         </p>
 
         <form
@@ -245,17 +258,7 @@ export default function ProjectsPage() {
             />
           </label>
 
-          <label
-            style={{
-              color: "#374151",
-              display: "flex",
-              gap: 8,
-              alignItems: "center",
-              fontSize: 14,
-              fontWeight: 700,
-              minHeight: 40,
-            }}
-          >
+          <label style={checkboxLabelStyle}>
             <input
               type="checkbox"
               checked={replaceTemplates}
@@ -408,6 +411,16 @@ const labelStyle: React.CSSProperties = {
   fontSize: 14,
   fontWeight: 700,
   gap: 6,
+};
+
+const checkboxLabelStyle: React.CSSProperties = {
+  color: "#374151",
+  display: "flex",
+  gap: 8,
+  alignItems: "center",
+  fontSize: 14,
+  fontWeight: 700,
+  minHeight: 40,
 };
 
 const inputStyle: React.CSSProperties = {

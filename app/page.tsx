@@ -17,7 +17,7 @@ export default function Home() {
     fetch("/api/projects", { cache: "no-store" })
       .then((res) => res.json())
       .then((data) => {
-        setProjects(Array.isArray(data) ? data : data.data || []);
+        setProjects(Array.isArray(data) ? data : []);
       })
       .catch((error) => {
         console.error("Error cargando proyectos:", error);

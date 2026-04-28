@@ -60,7 +60,7 @@ export default function AdminPanelClient({
       ]);
 
       setUsers(Array.isArray(usersData.data) ? usersData.data : []);
-      setProjects(Array.isArray(projectsData.data) ? projectsData.data : []);
+      setProjects(Array.isArray(projectsData) ? projectsData : []);
     } catch (loadError) {
       console.error(loadError);
       setError("No se pudo cargar el panel de administracion.");

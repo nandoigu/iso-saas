@@ -25,7 +25,7 @@ export default function MatrixIndexPage() {
         return res.json();
       })
       .then((data) => {
-        setProjects(Array.isArray(data.data) ? data.data : []);
+        setProjects(Array.isArray(data) ? data : []);
       })
       .catch((err) => {
         console.error("Error cargando matrices:", err);

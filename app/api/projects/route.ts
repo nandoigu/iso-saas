@@ -42,7 +42,7 @@ export async function GET(req: Request) {
       },
     });
 
-    return NextResponse.json({ data: projects });
+    return NextResponse.json(projects);
   } catch (error) {
     console.error("ERROR GET /api/projects:", error);
     return NextResponse.json(
@@ -122,7 +122,7 @@ export async function POST(req: Request) {
       },
     });
 
-    return NextResponse.json({ data: project }, { status: 201 });
+    return NextResponse.json(project, { status: 201 });
   } catch (error) {
     console.error("ERROR POST /api/projects:", error);
     return NextResponse.json(

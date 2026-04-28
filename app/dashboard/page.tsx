@@ -120,7 +120,7 @@ export default function DashboardPage() {
         return res.json();
       })
       .then((data) => {
-        setProjects(Array.isArray(data) ? data : data.data || []);
+        setProjects(Array.isArray(data) ? data : []);
         setError("");
       })
       .catch((err) => {
