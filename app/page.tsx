@@ -3,11 +3,16 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import {
+  getProjectRoleBadgeStyle,
+  getProjectRoleLabel,
+} from "@/app/lib/projectRoles";
 
 type Project = {
   id: string;
   name: string;
   code?: string | null;
+  role: string;
 };
 
 export default function Home() {
@@ -98,9 +103,27 @@ export default function Home() {
             <div style={{ fontSize: 12, color: "#666" }}>
               {p.code || "Sin codigo"}
             </div>
+            <div style={{ marginTop: 10 }}>
+              <span
+                style={{
+                  ...projectRoleBadgeBaseStyle,
+                  ...getProjectRoleBadgeStyle(p.role),
+                }}
+              >
+                {getProjectRoleLabel(p.role)}
+              </span>
+            </div>
           </Link>
         ))}
       </div>
     </main>
   );
 }
+
+const projectRoleBadgeBaseStyle: React.CSSProperties = {
+  borderRadius: 999,
+  display: "inline-flex",
+  fontSize: 12,
+  fontWeight: 800,
+  padding: "6px 10px",
+};
