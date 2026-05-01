@@ -177,26 +177,13 @@ export default function Navbar() {
             }}
           >
             {visibleNavigation.map((item) => (
-              <Link
+              <TopNavLink
                 key={item.href}
                 href={item.href}
-                aria-current={item.active ? "page" : undefined}
-                style={{
-                  background: item.active ? ACTION : "transparent",
-                  border: `1px solid ${item.active ? ACTION : "transparent"}`,
-                  borderRadius: 8,
-                  color: item.active ? "white" : BRAND,
-                  fontSize: 14,
-                  fontWeight: 700,
-                  padding: "10px 14px",
-                  textDecoration: "none",
-                  transition:
-                    "background-color 160ms ease, color 160ms ease, border-color 160ms ease",
-                  whiteSpace: "nowrap",
-                }}
+                active={item.active}
               >
                 {item.label}
-              </Link>
+              </TopNavLink>
             ))}
           </nav>
         ) : (
@@ -254,6 +241,45 @@ export default function Navbar() {
         </div>
       </div>
     </header>
+  );
+}
+
+function TopNavLink({
+  href,
+  active,
+  children,
+}: {
+  href: string;
+  active: boolean;
+  children: React.ReactNode;
+}) {
+  const [hovered, setHovered] = useState(false);
+
+  return (
+    <Link
+      href={href}
+      aria-current={active ? "page" : undefined}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        background: active ? ACTION : hovered ? `${ACTION}14` : "transparent",
+        border: `1px solid ${active ? ACTION : hovered ? `${ACTION}26` : "transparent"}`,
+        borderRadius: 8,
+        color: active ? "white" : BRAND,
+        fontSize: 14,
+        fontWeight: 700,
+        padding: "10px 14px",
+        textDecoration: "none",
+        transform: hovered && !active ? "translateY(-1px)" : "translateY(0)",
+        transition:
+          "background-color 160ms ease, color 160ms ease, border-color 160ms ease, transform 160ms ease, box-shadow 160ms ease",
+        boxShadow:
+          hovered && !active ? "0 6px 18px rgba(0, 37, 223, 0.10)" : "none",
+        whiteSpace: "nowrap",
+      }}
+    >
+      {children}
+    </Link>
   );
 }
 
