@@ -38,6 +38,7 @@ export default function AdminPanelClient({
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [savingUserId, setSavingUserId] = useState<string | null>(null);
+  const [deletingProjectId, setDeletingProjectId] = useState<string | null>(null);
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -154,6 +155,51 @@ export default function AdminPanelClient({
       );
     } finally {
       setSavingUserId(null);
+    }
+  };
+
+  const deleteProject = async (project: Project) => {
+    const confirmed = window.confirm(
+      `¿Seguro que quieres eliminar el proyecto "${project.name}"? Se eliminaran tambien sus requerimientos y esta accion no se puede deshacer.`
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setDeletingProjectId(project.id);
+    setError("");
+    setSuccess("");
+
+    try {
+      const res = await fetch(`/api/projects/${encodeURIComponent(project.id)}`, {
+        method: "DELETE",
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || "No se pudo eliminar el proyecto.");
+      }
+
+      setProjects((current) => current.filter((entry) => entry.id !== project.id));
+      setUsers((current) =>
+        current.map((user) =>
+          user.id === project.user?.id
+            ? { ...user, projectCount: Math.max(0, user.projectCount - 1) }
+            : user
+        )
+      );
+      setSuccess(`Proyecto ${project.name} eliminado correctamente.`);
+    } catch (deleteError) {
+      console.error(deleteError);
+      setError(
+        deleteError instanceof Error
+          ? deleteError.message
+          : "No se pudo eliminar el proyecto."
+      );
+    } finally {
+      setDeletingProjectId(null);
     }
   };
 
@@ -286,6 +332,7 @@ export default function AdminPanelClient({
                 <th style={thStyle}>Codigo</th>
                 <th style={thStyle}>Propietario</th>
                 <th style={thStyle}>Creado</th>
+                <th style={thStyle}>Acciones</th>
               </tr>
             </thead>
             <tbody>
@@ -295,11 +342,26 @@ export default function AdminPanelClient({
                   <td style={tdStyle}>{project.code || "Sin codigo"}</td>
                   <td style={tdStyle}>{project.user?.name || project.user?.email || "Sin usuario"}</td>
                   <td style={tdStyle}>{formatDate(project.createdAt)}</td>
+                  <td style={tdStyle}>
+                    <button
+                      type="button"
+                      onClick={() => deleteProject(project)}
+                      disabled={deletingProjectId === project.id}
+                      style={{
+                        ...dangerButtonStyle,
+                        opacity: deletingProjectId === project.id ? 0.6 : 1,
+                        cursor:
+                          deletingProjectId === project.id ? "not-allowed" : "pointer",
+                      }}
+                    >
+                      {deletingProjectId === project.id ? "Eliminando..." : "Eliminar proyecto"}
+                    </button>
+                  </td>
                 </tr>
               ))}
               {!loading && projects.length === 0 && (
                 <tr>
-                  <td style={emptyStyle} colSpan={4}>
+                  <td style={emptyStyle} colSpan={5}>
                     No hay proyectos para mostrar.
                   </td>
                 </tr>
