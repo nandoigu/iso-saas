@@ -17,8 +17,9 @@ const ACTION = "#0025df";
 const SURFACE = "#f4f6fc";
 
 const navigationItems = [
-  { href: "/dashboard", label: "Dashboard" },
+  { href: "/", label: "Inicio" },
   { href: "/projects", label: "Proyectos" },
+  { href: "/dashboard", label: "Dashboard" },
   { href: "/profile", label: "Perfil" },
 ];
 
