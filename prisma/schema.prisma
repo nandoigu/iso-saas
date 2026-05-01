@@ -54,6 +54,8 @@ model Project {
 model Requirement {
   id        String    @id @default(cuid())
   name      String
+  titulo    String    @default("")
+  descripcion String  @default("")
   norma     String?
   item      String?
   evidencia String?
@@ -65,6 +67,11 @@ model Requirement {
 
   projectId String
   project   Project @relation(fields: [projectId], references: [id])
+
+  templateId String?
+  template   RequirementTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
+
+  @@unique([projectId, templateId])
 }
 
 model RequirementTemplate {
@@ -72,12 +79,17 @@ model RequirementTemplate {
   norma         String
   item          String
   name          String
+  titulo        String    @default("")
+  descripcion   String    @default("")
+  role          String    @default("general")
   evidencia     String?
   defaultStatus String    @default("no_conforme")
   deadline      DateTime?
   createdAt     DateTime  @default(now())
 
-  @@unique([norma, item, name])
+  requirements  Requirement[]
+
+  @@unique([norma, item, titulo, descripcion, role])
 }
 
 model PasswordResetToken {

@@ -41,6 +41,11 @@ export default function ProjectClient({ projectId }: ProjectClientProps) {
   const [status, setStatus] = useState<RequirementStatus>("no_conforme");
   const [deadline, setDeadline] = useState("");
   const [savingNew, setSavingNew] = useState(false);
+  const [importingFile, setImportingFile] = useState<File | null>(null);
+  const [importingRequirements, setImportingRequirements] = useState(false);
+  const [importError, setImportError] = useState("");
+  const [importSuccess, setImportSuccess] = useState("");
+  const [importDetails, setImportDetails] = useState<string[]>([]);
 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editData, setEditData] = useState<EditData>(EMPTY_EDIT_DATA);
@@ -97,6 +102,68 @@ export default function ProjectClient({ projectId }: ProjectClientProps) {
       alert("Error inesperado creando requisito");
     } finally {
       setSavingNew(false);
+    }
+  };
+
+  const importProjectRequirements = async () => {
+    if (!projectId) {
+      alert("No se ha detectado el proyecto.");
+      return;
+    }
+
+    if (!importingFile) {
+      setImportError("Selecciona un archivo .xlsx para importar.");
+      setImportSuccess("");
+      setImportDetails([]);
+      return;
+    }
+
+    setImportingRequirements(true);
+    setImportError("");
+    setImportSuccess("");
+    setImportDetails([]);
+
+    try {
+      const formData = new FormData();
+      formData.append("file", importingFile);
+
+      const res = await fetch(
+        `/api/projects/${encodeURIComponent(projectId)}/import-requirements`,
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setImportDetails(Array.isArray(data.details) ? data.details : []);
+        setImportError(
+          data.error || "No se pudieron importar los requisitos del proyecto."
+        );
+        return;
+      }
+
+      setImportingFile(null);
+      setImportSuccess(
+        `Importacion completada: ${data.data.imported} nuevos, ${data.data.skippedDuplicates} duplicados omitidos, ${data.data.totalRows} filas validas.`
+      );
+
+      const input = document.getElementById(
+        "project-requirements-import-file"
+      ) as HTMLInputElement | null;
+
+      if (input) {
+        input.value = "";
+      }
+
+      await reloadRequirements();
+    } catch (error) {
+      console.error("ERROR FRONT IMPORT PROJECT REQUIREMENTS:", error);
+      setImportError("Error inesperado importando requisitos del proyecto.");
+    } finally {
+      setImportingRequirements(false);
     }
   };
 
@@ -396,6 +463,73 @@ export default function ProjectClient({ projectId }: ProjectClientProps) {
         >
           {savingNew ? "Guardando..." : "Anadir requerimiento"}
         </button>
+      </section>
+
+      <section
+        style={{
+          background: "white",
+          border: "1px solid #e5e7eb",
+          borderRadius: 12,
+          boxShadow: "0 2px 6px rgba(0,0,0,0.04)",
+          marginBottom: 24,
+          padding: 20,
+        }}
+      >
+        <h3 style={{ margin: "0 0 8px" }}>Importar requisitos del proyecto</h3>
+        <p style={{ color: "#6b7280", margin: "0 0 16px" }}>
+          Sube un Excel especifico para este proyecto. Se importaran solo los
+          requerimientos nuevos y no se tocara la plantilla global por rol.
+        </p>
+
+        <div
+          style={{
+            alignItems: "end",
+            display: "flex",
+            flexWrap: "wrap",
+            gap: 12,
+          }}
+        >
+          <label style={filterLabelStyle}>
+            Archivo .xlsx
+            <input
+              id="project-requirements-import-file"
+              type="file"
+              accept=".xlsx"
+              onChange={(event) =>
+                setImportingFile(event.target.files?.[0] || null)
+              }
+              style={controlStyle}
+            />
+          </label>
+
+          <button
+            type="button"
+            onClick={importProjectRequirements}
+            disabled={importingRequirements}
+            style={{
+              ...primaryButtonStyle,
+              opacity: importingRequirements ? 0.7 : 1,
+            }}
+          >
+            {importingRequirements ? "Importando..." : "Importar Excel"}
+          </button>
+        </div>
+
+        {importError ? (
+          <div style={errorMessageStyle}>{importError}</div>
+        ) : null}
+
+        {importDetails.length > 0 ? (
+          <ul style={detailsListStyle}>
+            {importDetails.map((detail) => (
+              <li key={detail}>{detail}</li>
+            ))}
+          </ul>
+        ) : null}
+
+        {importSuccess ? (
+          <div style={successMessageStyle}>{importSuccess}</div>
+        ) : null}
       </section>
 
       <section style={{ marginBottom: 30 }}>
@@ -1036,4 +1170,31 @@ const linkButtonStyle: React.CSSProperties = {
   minHeight: 40,
   padding: "9px 14px",
   textDecoration: "none",
+};
+
+const errorMessageStyle: React.CSSProperties = {
+  background: "#fef2f2",
+  border: "1px solid #fecaca",
+  borderRadius: 8,
+  color: "#991b1b",
+  marginTop: 14,
+  padding: 10,
+};
+
+const successMessageStyle: React.CSSProperties = {
+  background: "#ecfdf5",
+  border: "1px solid #bbf7d0",
+  borderRadius: 8,
+  color: "#166534",
+  marginTop: 14,
+  padding: 10,
+};
+
+const detailsListStyle: React.CSSProperties = {
+  background: "#fff7ed",
+  border: "1px solid #fed7aa",
+  borderRadius: 8,
+  color: "#9a3412",
+  marginTop: 14,
+  padding: "10px 10px 10px 28px",
 };
