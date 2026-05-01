@@ -40,6 +40,7 @@ model Project {
   id        String   @id @default(cuid())
   name      String
   code      String?
+  role      String   @default("adjudicatario")
   createdAt DateTime @default(now())
 
   userId    String

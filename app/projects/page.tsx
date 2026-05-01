@@ -3,11 +3,19 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useState } from "react";
+import {
+  DEFAULT_PROJECT_ROLE,
+  getProjectRoleBadgeStyle,
+  getProjectRoleLabel,
+  PROJECT_ROLE_VALUES,
+  type ProjectRole,
+} from "@/app/lib/projectRoles";
 
 type Project = {
   id: string;
   name: string;
   code?: string | null;
+  role: string;
 };
 
 type ImportResult = {
@@ -22,6 +30,7 @@ export default function ProjectsPage() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [name, setName] = useState("");
   const [code, setCode] = useState("");
+  const [role, setRole] = useState<ProjectRole>(DEFAULT_PROJECT_ROLE);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const [deletingProjectId, setDeletingProjectId] = useState<string | null>(null);
@@ -91,6 +100,7 @@ export default function ProjectsPage() {
         body: JSON.stringify({
           name: trimmedName,
           code: trimmedCode || null,
+          role,
         }),
       });
 
@@ -108,6 +118,7 @@ export default function ProjectsPage() {
       setProjects((current) => [data as Project, ...current]);
       setName("");
       setCode("");
+      setRole(DEFAULT_PROJECT_ROLE);
       setSuccess("Proyecto creado correctamente.");
     } catch (createError) {
       console.error("Error creando proyecto:", createError);
@@ -332,6 +343,22 @@ export default function ProjectsPage() {
             />
           </label>
 
+          <label style={labelStyle}>
+            Funcion del proyecto
+            <select
+              value={role}
+              onChange={(event) => setRole(event.target.value as ProjectRole)}
+              required
+              style={inputStyle}
+            >
+              {PROJECT_ROLE_VALUES.map((projectRole) => (
+                <option key={projectRole} value={projectRole}>
+                  {getProjectRoleLabel(projectRole)}
+                </option>
+              ))}
+            </select>
+          </label>
+
           <button
             type="submit"
             disabled={creating}
@@ -374,6 +401,16 @@ export default function ProjectsPage() {
                 <strong>{project.name}</strong>
                 <div style={{ color: "#6b7280", fontSize: 12, marginTop: 4 }}>
                   {project.code || "Sin codigo"}
+                </div>
+                <div style={{ marginTop: 8 }}>
+                  <span
+                    style={{
+                      ...projectRoleBadgeBaseStyle,
+                      ...getProjectRoleBadgeStyle(project.role),
+                    }}
+                  >
+                    {getProjectRoleLabel(project.role)}
+                  </span>
                 </div>
               </Link>
 
@@ -488,4 +525,12 @@ const dangerButtonStyle: React.CSSProperties = {
   minHeight: 40,
   padding: "9px 14px",
   whiteSpace: "nowrap",
+};
+
+const projectRoleBadgeBaseStyle: React.CSSProperties = {
+  borderRadius: 999,
+  display: "inline-flex",
+  fontSize: 12,
+  fontWeight: 800,
+  padding: "6px 10px",
 };

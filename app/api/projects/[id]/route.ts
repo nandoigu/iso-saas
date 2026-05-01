@@ -15,6 +15,66 @@ type RouteContext = {
   }>;
 };
 
+export async function GET(req: Request, context: RouteContext) {
+  try {
+    const user = await getAuthSession(req, { allowBlocked: true });
+
+    if (!user) {
+      return unauthorized();
+    }
+
+    if (isBlockedStatus(user.status)) {
+      return forbidden(BLOCKED_ACCOUNT_MESSAGE);
+    }
+
+    const { id } = await context.params;
+    const projectId = String(id || "").trim();
+
+    if (!projectId) {
+      return NextResponse.json(
+        { error: "Debes indicar un proyecto valido." },
+        { status: 400 }
+      );
+    }
+
+    const project = await prisma.project.findFirst({
+      where: {
+        id: projectId,
+        ...(isAdminRole(user.role) ? {} : { userId: user.id }),
+      },
+      select: {
+        id: true,
+        name: true,
+        code: true,
+        role: true,
+        createdAt: true,
+        user: {
+          select: {
+            id: true,
+            email: true,
+            name: true,
+          },
+        },
+      },
+    });
+
+    if (!project) {
+      return NextResponse.json(
+        { error: "Proyecto no encontrado." },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json(project);
+  } catch (error) {
+    console.error("ERROR GET /api/projects/[id]:", error);
+    return NextResponse.json(
+      { error: "No se pudo cargar el proyecto." },
+      { status: 500 }
+    );
+  }
+}
+
 export async function DELETE(req: Request, context: RouteContext) {
   try {
     const user = await getAuthSession(req, { allowBlocked: true });

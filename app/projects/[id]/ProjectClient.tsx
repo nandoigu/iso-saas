@@ -1,7 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import {
+  getProjectRoleBadgeStyle,
+  getProjectRoleLabel,
+} from "@/app/lib/projectRoles";
 import {
   compareRequirementsNaturally,
   EMPTY_EDIT_DATA,
@@ -25,9 +29,18 @@ type ProjectClientProps = {
   projectId: string;
 };
 
+type ProjectMeta = {
+  id: string;
+  name: string;
+  code?: string | null;
+  role: string;
+};
+
 export default function ProjectClient({ projectId }: ProjectClientProps) {
   const { requirements, loading, loadError, reloadRequirements } =
     useProjectRequirements(projectId);
+  const [projectMeta, setProjectMeta] = useState<ProjectMeta | null>(null);
+  const [metaError, setMetaError] = useState("");
 
   const [sortMode, setSortMode] = useState<SortMode>("natural");
   const [selectedNorma, setSelectedNorma] = useState("all");
@@ -50,6 +63,32 @@ export default function ProjectClient({ projectId }: ProjectClientProps) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editData, setEditData] = useState<EditData>(EMPTY_EDIT_DATA);
   const [savingEdit, setSavingEdit] = useState(false);
+
+  useEffect(() => {
+    const loadProjectMeta = async () => {
+      if (!projectId) return;
+
+      setMetaError("");
+
+      try {
+        const res = await fetch(`/api/projects/${encodeURIComponent(projectId)}`, {
+          cache: "no-store",
+        });
+        const data = await res.json();
+
+        if (!res.ok) {
+          throw new Error(data.error || "No se pudo cargar el proyecto.");
+        }
+
+        setProjectMeta(data);
+      } catch (error) {
+        console.error("Error cargando metadatos del proyecto:", error);
+        setMetaError("No se pudo cargar la funcion del proyecto.");
+      }
+    };
+
+    loadProjectMeta();
+  }, [projectId]);
 
   const createRequirement = async () => {
     if (!projectId) {
@@ -339,11 +378,37 @@ export default function ProjectClient({ projectId }: ProjectClientProps) {
         }}
       >
         <div>
-          <h2 style={{ margin: 0 }}>Gestion de requerimientos</h2>
+          <div
+            style={{
+              alignItems: "center",
+              display: "flex",
+              flexWrap: "wrap",
+              gap: 10,
+              marginBottom: 8,
+            }}
+          >
+            <span
+              style={{
+                ...projectRoleBadgeBaseStyle,
+                ...getProjectRoleBadgeStyle(projectMeta?.role),
+              }}
+            >
+              {getProjectRoleLabel(projectMeta?.role)}
+            </span>
+            {projectMeta?.code ? (
+              <span style={projectMetaStyle}>{projectMeta.code}</span>
+            ) : null}
+          </div>
+          <h2 style={{ margin: 0 }}>
+            {projectMeta?.name || "Gestion de requerimientos"}
+          </h2>
           <p style={{ color: "#6b7280", margin: "8px 0 0" }}>
             Alta, edicion y seguimiento de requerimientos, evidencias, estados y
             fechas limite del proyecto.
           </p>
+          {metaError ? (
+            <p style={{ color: "#b91c1c", margin: "8px 0 0" }}>{metaError}</p>
+          ) : null}
         </div>
 
         <div
@@ -1197,4 +1262,20 @@ const detailsListStyle: React.CSSProperties = {
   color: "#9a3412",
   marginTop: 14,
   padding: "10px 10px 10px 28px",
+};
+
+const projectRoleBadgeBaseStyle: React.CSSProperties = {
+  borderRadius: 999,
+  display: "inline-flex",
+  fontSize: 12,
+  fontWeight: 800,
+  padding: "6px 10px",
+};
+
+const projectMetaStyle: React.CSSProperties = {
+  color: "#64748b",
+  fontSize: 12,
+  fontWeight: 700,
+  letterSpacing: "0.04em",
+  textTransform: "uppercase",
 };
