@@ -219,11 +219,19 @@ export default function AdminPanelClient({
       {success && <p style={successStyle}>{success}</p>}
 
       <section style={sectionStyle}>
-        <div style={sectionHeaderStyle}>
-          <h2 style={{ margin: 0 }}>Usuarios</h2>
-          <button onClick={loadData} style={buttonStyle} disabled={loading}>
-            {loading ? "Actualizando..." : "Recargar"}
-          </button>
+        <div style={sectionIntroStyle}>
+          <span style={sectionEyebrowStyle}>Gestion de accesos</span>
+          <div style={sectionHeaderStyle}>
+            <div>
+              <h2 style={{ margin: 0 }}>Usuarios</h2>
+              <p style={sectionDescriptionStyle}>
+                Control de roles, estado de cuenta y administracion de usuarios registrados.
+              </p>
+            </div>
+            <button onClick={loadData} style={buttonStyle} disabled={loading}>
+              {loading ? "Actualizando..." : "Recargar"}
+            </button>
+          </div>
         </div>
 
         <div style={tableWrapperStyle}>
@@ -319,9 +327,17 @@ export default function AdminPanelClient({
       </section>
 
       <section style={sectionStyle}>
-        <div style={sectionHeaderStyle}>
-          <h2 style={{ margin: 0 }}>Todos los proyectos</h2>
-          <span style={{ color: "#64748b", fontSize: 14 }}>{projects.length} proyectos</span>
+        <div style={sectionIntroStyle}>
+          <span style={sectionEyebrowStyle}>Vision global</span>
+          <div style={sectionHeaderStyle}>
+            <div>
+              <h2 style={{ margin: 0 }}>Todos los proyectos</h2>
+              <p style={sectionDescriptionStyle}>
+                Vista consolidada de proyectos creados en la plataforma y su propietario actual.
+              </p>
+            </div>
+            <span style={{ color: "#64748b", fontSize: 14 }}>{projects.length} proyectos</span>
+          </div>
         </div>
 
         <div style={tableWrapperStyle}>
@@ -440,12 +456,33 @@ const sectionStyle: React.CSSProperties = {
   padding: 24,
 };
 
+const sectionIntroStyle: React.CSSProperties = {
+  borderBottom: "1px solid #e8eef7",
+  marginBottom: 18,
+  paddingBottom: 16,
+};
+
 const sectionHeaderStyle: React.CSSProperties = {
   alignItems: "center",
   display: "flex",
   justifyContent: "space-between",
   gap: 16,
-  marginBottom: 16,
+};
+
+const sectionEyebrowStyle: React.CSSProperties = {
+  color: "#2563eb",
+  display: "inline-flex",
+  fontSize: 12,
+  fontWeight: 800,
+  letterSpacing: "0.04em",
+  marginBottom: 10,
+  textTransform: "uppercase",
+};
+
+const sectionDescriptionStyle: React.CSSProperties = {
+  color: "#64748b",
+  fontSize: 14,
+  margin: "6px 0 0",
 };
 
 const pillStyle: React.CSSProperties = {
