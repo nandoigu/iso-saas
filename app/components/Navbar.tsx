@@ -170,10 +170,14 @@ export default function Navbar() {
             aria-label="Navegacion principal"
             style={{
               alignItems: "center",
+              background: "#f8fafc",
+              border: "1px solid #dbe3f1",
+              borderRadius: 12,
               display: "flex",
               gap: 8,
               justifyContent: "center",
               minWidth: 0,
+              padding: 6,
             }}
           >
             {visibleNavigation.map((item) => (
@@ -266,15 +270,19 @@ function TopNavLink({
         border: `1px solid ${active ? ACTION : hovered ? `${ACTION}26` : "transparent"}`,
         borderRadius: 8,
         color: active ? "white" : BRAND,
-        fontSize: 14,
-        fontWeight: 700,
-        padding: "10px 14px",
+        fontSize: 15,
+        fontWeight: 800,
+        padding: "11px 16px",
         textDecoration: "none",
         transform: hovered && !active ? "translateY(-1px)" : "translateY(0)",
         transition:
           "background-color 160ms ease, color 160ms ease, border-color 160ms ease, transform 160ms ease, box-shadow 160ms ease",
         boxShadow:
-          hovered && !active ? "0 6px 18px rgba(0, 37, 223, 0.10)" : "none",
+          active
+            ? "0 10px 24px rgba(0, 37, 223, 0.18)"
+            : hovered
+              ? "0 6px 18px rgba(0, 37, 223, 0.10)"
+              : "none",
         whiteSpace: "nowrap",
       }}
     >

@@ -9,6 +9,8 @@ export default function LoginPage() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [isPasswordToggleHovered, setIsPasswordToggleHovered] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [nextPath, setNextPath] = useState("/dashboard");
@@ -72,13 +74,31 @@ export default function LoginPage() {
 
           <label style={labelStyle}>
             Contrasena
-            <input
-              type="password"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              required
-              style={inputStyle}
-            />
+            <div style={passwordFieldStyle}>
+              <input
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                required
+                style={passwordInputStyle}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((current) => !current)}
+                onMouseEnter={() => setIsPasswordToggleHovered(true)}
+                onMouseLeave={() => setIsPasswordToggleHovered(false)}
+                style={{
+                  ...passwordToggleStyle,
+                  background: isPasswordToggleHovered ? "#eff6ff" : "transparent",
+                  color: isPasswordToggleHovered ? "#1d4ed8" : "#2563eb",
+                }}
+                aria-label={showPassword ? "Ocultar contrasena" : "Mostrar contrasena"}
+                aria-pressed={showPassword}
+                title={showPassword ? "Ocultar contrasena" : "Mostrar contrasena"}
+              >
+                {showPassword ? <EyeOffIcon /> : <EyeIcon />}
+              </button>
+            </div>
           </label>
 
           {error && <p style={errorStyle}>{error}</p>}
@@ -137,6 +157,42 @@ const inputStyle: React.CSSProperties = {
   padding: "8px 10px",
 };
 
+const passwordFieldStyle: React.CSSProperties = {
+  alignItems: "center",
+  border: "1px solid #d1d5db",
+  borderRadius: 8,
+  display: "flex",
+  minHeight: 42,
+  overflow: "hidden",
+};
+
+const passwordInputStyle: React.CSSProperties = {
+  ...inputStyle,
+  border: "none",
+  borderRadius: 0,
+  flex: 1,
+  minWidth: 0,
+  outline: "none",
+};
+
+const passwordToggleStyle: React.CSSProperties = {
+  alignItems: "center",
+  background: "transparent",
+  border: "none",
+  color: "#2563eb",
+  cursor: "pointer",
+  display: "inline-flex",
+  fontSize: 13,
+  fontWeight: 700,
+  justifyContent: "center",
+  minHeight: 42,
+  outlineColor: "#2563eb",
+  outlineOffset: -2,
+  padding: "0 12px",
+  transition: "background 140ms ease, color 140ms ease",
+  whiteSpace: "nowrap",
+};
+
 const buttonStyle: React.CSSProperties = {
   background: "#2563eb",
   border: "1px solid #2563eb",
@@ -155,3 +211,41 @@ const errorStyle: React.CSSProperties = {
   margin: 0,
   padding: 10,
 };
+
+function EyeIcon() {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      style={{ width: 18, height: 18 }}
+    >
+      <path d="M2 12s3.6-6 10-6 10 6 10 6-3.6 6-10 6-10-6-10-6Z" />
+      <circle cx="12" cy="12" r="3" />
+    </svg>
+  );
+}
+
+function EyeOffIcon() {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      style={{ width: 18, height: 18 }}
+    >
+      <path d="M3 3l18 18" />
+      <path d="M10.6 10.7A3 3 0 0 0 12 15a3 3 0 0 0 2.3-1.1" />
+      <path d="M9.4 5.3A10.7 10.7 0 0 1 12 5c6.4 0 10 7 10 7a17.6 17.6 0 0 1-3.1 3.8" />
+      <path d="M6.7 6.7C4.1 8.3 2 12 2 12a18.8 18.8 0 0 0 5.2 5.4" />
+    </svg>
+  );
+}
