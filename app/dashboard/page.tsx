@@ -20,6 +20,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { Notice, type NoticeTone } from "@/components/Notice";
 
 type RequirementStatus = "total" | "parcial" | "no_conforme";
 type DateFilter = "all" | "overdue" | "upcoming" | "not_overdue" | "no_date";
@@ -65,8 +66,6 @@ type NotificationPreferences = {
   notifyReports: boolean;
   reportFrequency: "daily" | "weekly";
 };
-
-type NoticeTone = "success" | "error" | "info";
 
 type FeedbackMessage = {
   tone: NoticeTone;
@@ -388,7 +387,7 @@ export default function DashboardPage() {
         </div>
       </header>
 
-      {error && <Notice tone="error" message={error} />}
+      {error && <Notice tone="error" message={error} style={{ marginBottom: 20 }} />}
       {loading && <EmptyState title="Cargando dashboard" description="Preparando metricas y graficos." />}
 
       {!loading && !error && (
@@ -716,9 +715,15 @@ function AlertsPanel({
               tone="info"
               message="Guardando preferencias de notificacion..."
               compact
+              style={{ marginTop: 12 }}
             />
           ) : feedback ? (
-            <Notice tone={feedback.tone} message={feedback.text} compact />
+            <Notice
+              tone={feedback.tone}
+              message={feedback.text}
+              compact
+              style={{ marginTop: 12 }}
+            />
           ) : null}
         </div>
       </div>
@@ -1017,31 +1022,6 @@ function ChartPanel({
       <h3 style={{ color: "#0f172a", fontSize: 16, margin: "0 0 18px" }}>{title}</h3>
       {children}
     </section>
-  );
-}
-
-function Notice({
-  tone,
-  message,
-  compact = false,
-}: {
-  tone: NoticeTone;
-  message: string;
-  compact?: boolean;
-}) {
-  return (
-    <div
-      style={{
-        ...getNoticeStyle(tone),
-        borderRadius: 12,
-        fontSize: compact ? 13 : 14,
-        fontWeight: 700,
-        margin: compact ? "12px 0 0" : "0 0 20px",
-        padding: compact ? 12 : 14,
-      }}
-    >
-      {message}
-    </div>
   );
 }
 
@@ -1564,27 +1544,3 @@ const checkboxLabelStyle: React.CSSProperties = {
   gap: 8,
   marginTop: 10,
 };
-
-function getNoticeStyle(tone: NoticeTone): React.CSSProperties {
-  if (tone === "success") {
-    return {
-      background: "#f0fdf4",
-      border: "1px solid #bbf7d0",
-      color: "#166534",
-    };
-  }
-
-  if (tone === "info") {
-    return {
-      background: "#eff6ff",
-      border: "1px solid #bfdbfe",
-      color: "#1d4ed8",
-    };
-  }
-
-  return {
-    background: "#fef2f2",
-    border: "1px solid #fecaca",
-    color: "#991b1b",
-  };
-}

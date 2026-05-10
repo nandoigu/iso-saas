@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { FormEvent, Suspense, useMemo, useState } from "react";
+import { Notice } from "@/components/Notice";
 
 export default function ResetPasswordPage() {
   return (
@@ -104,8 +105,8 @@ function ResetPasswordForm() {
             />
           </label>
 
-          {error && <p style={errorStyle}>{error}</p>}
-          {success && <p style={successStyle}>{success}</p>}
+          {error && <Notice tone="error" message={error} compact />}
+          {success && <Notice tone="success" message={success} compact />}
 
           <button type="submit" disabled={loading} style={buttonStyle}>
             {loading ? "Actualizando..." : "Guardar nueva contrasena"}
@@ -167,22 +168,4 @@ const buttonStyle: React.CSSProperties = {
   cursor: "pointer",
   fontWeight: 700,
   minHeight: 42,
-};
-
-const errorStyle: React.CSSProperties = {
-  background: "#fef2f2",
-  border: "1px solid #fecaca",
-  borderRadius: 8,
-  color: "#991b1b",
-  margin: 0,
-  padding: 10,
-};
-
-const successStyle: React.CSSProperties = {
-  background: "#f0fdf4",
-  border: "1px solid #bbf7d0",
-  borderRadius: 8,
-  color: "#166534",
-  margin: 0,
-  padding: 10,
 };

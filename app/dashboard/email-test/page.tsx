@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
+import { Notice } from "@/components/Notice";
 
 type AuthMeResponse = {
   data?: {
@@ -140,34 +141,10 @@ export default function EmailTestPage() {
         </form>
 
         {success && (
-          <div
-            style={{
-              background: "#f0fdf4",
-              border: "1px solid #bbf7d0",
-              borderRadius: 12,
-              color: "#166534",
-              marginTop: 16,
-              padding: 14,
-            }}
-          >
-            {success}
-          </div>
+          <Notice tone="success" message={success} style={{ marginTop: 16 }} />
         )}
 
-        {error && (
-          <div
-            style={{
-              background: "#fef2f2",
-              border: "1px solid #fecaca",
-              borderRadius: 12,
-              color: "#991b1b",
-              marginTop: 16,
-              padding: 14,
-            }}
-          >
-            {error}
-          </div>
-        )}
+        {error && <Notice tone="error" message={error} style={{ marginTop: 16 }} />}
 
         <div
           style={{

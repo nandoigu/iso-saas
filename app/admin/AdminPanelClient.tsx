@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { Notice } from "@/components/Notice";
 
 type AdminUser = {
   id: string;
@@ -24,8 +25,6 @@ type Project = {
     name: string | null;
   } | null;
 };
-
-type NoticeTone = "success" | "error" | "info";
 
 export default function AdminPanelClient({
   currentUserEmail,
@@ -436,52 +435,6 @@ function getStatusBadgeStyle(status: string): React.CSSProperties {
     fontSize: 12,
     fontWeight: 800,
     padding: "6px 10px",
-  };
-}
-
-function Notice({
-  tone,
-  message,
-}: {
-  tone: NoticeTone;
-  message: string;
-}) {
-  return <p style={getNoticeStyle(tone)}>{message}</p>;
-}
-
-function getNoticeStyle(tone: NoticeTone): React.CSSProperties {
-  if (tone === "success") {
-    return {
-      background: "#f0fdf4",
-      border: "1px solid #bbf7d0",
-      borderRadius: 10,
-      color: "#166534",
-      fontWeight: 700,
-      margin: 0,
-      padding: 12,
-    };
-  }
-
-  if (tone === "info") {
-    return {
-      background: "#eff6ff",
-      border: "1px solid #bfdbfe",
-      borderRadius: 10,
-      color: "#1d4ed8",
-      fontWeight: 700,
-      margin: 0,
-      padding: 12,
-    };
-  }
-
-  return {
-    background: "#fef2f2",
-    border: "1px solid #fecaca",
-    borderRadius: 10,
-    color: "#991b1b",
-    fontWeight: 700,
-    margin: 0,
-    padding: 12,
   };
 }
 

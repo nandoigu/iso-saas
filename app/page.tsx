@@ -6,6 +6,7 @@ import {
   getProjectRoleBadgeStyle,
   getProjectRoleLabel,
 } from "@/app/lib/projectRoles";
+import { Notice } from "@/components/Notice";
 
 type RequirementStatus = "total" | "parcial" | "no_conforme";
 
@@ -187,7 +188,13 @@ export default function Home() {
         </div>
       </section>
 
-      {error && <Alert message={error} />}
+      {error && (
+        <Notice
+          tone="error"
+          message={error}
+          style={{ margin: "0 auto 20px", maxWidth: 1360 }}
+        />
+      )}
 
       <section style={kpiGridStyle}>
         <KpiCard
@@ -537,14 +544,6 @@ function MiniMetric({
       >
         {value}
       </strong>
-    </div>
-  );
-}
-
-function Alert({ message }: { message: string }) {
-  return (
-    <div style={errorAlertStyle}>
-      {message}
     </div>
   );
 }
@@ -1012,14 +1011,4 @@ const emptyStateCompactStyle: React.CSSProperties = {
   ...emptyStateStyle,
   fontSize: 14,
   padding: 16,
-};
-
-const errorAlertStyle: React.CSSProperties = {
-  background: "#fef2f2",
-  border: "1px solid #fecaca",
-  borderRadius: 12,
-  color: "#991b1b",
-  margin: "0 auto 20px",
-  maxWidth: 1360,
-  padding: 14,
 };

@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
+import { Notice } from "@/components/Notice";
 
 type ProfileUser = {
   id: string;
@@ -212,15 +213,16 @@ export default function ProfilePage() {
       </section>
 
       {user?.status === "suspended" && (
-        <p style={warningStyle}>
-          Tu cuenta esta suspendida. Algunas funciones pueden estar limitadas.
-        </p>
+        <Notice
+          tone="warning"
+          message="Tu cuenta esta suspendida. Algunas funciones pueden estar limitadas."
+        />
       )}
 
-      {error && <p style={errorStyle}>{error}</p>}
-      {success && <p style={successStyle}>{success}</p>}
-      {passwordSuccess && <p style={successStyle}>{passwordSuccess}</p>}
-      {recoverySuccess && <p style={infoStyle}>{recoverySuccess}</p>}
+      {error && <Notice tone="error" message={error} />}
+      {success && <Notice tone="success" message={success} />}
+      {passwordSuccess && <Notice tone="success" message={passwordSuccess} />}
+      {recoverySuccess && <Notice tone="info" message={recoverySuccess} />}
 
       <div style={contentGridStyle}>
         <section style={cardStyle}>
@@ -432,40 +434,4 @@ const secondaryButtonStyle: React.CSSProperties = {
   fontWeight: 700,
   minHeight: 42,
   padding: "0 14px",
-};
-
-const warningStyle: React.CSSProperties = {
-  background: "#fff7ed",
-  border: "1px solid #fdba74",
-  borderRadius: 10,
-  color: "#c2410c",
-  margin: 0,
-  padding: 12,
-};
-
-const errorStyle: React.CSSProperties = {
-  background: "#fef2f2",
-  border: "1px solid #fecaca",
-  borderRadius: 10,
-  color: "#991b1b",
-  margin: 0,
-  padding: 12,
-};
-
-const successStyle: React.CSSProperties = {
-  background: "#f0fdf4",
-  border: "1px solid #bbf7d0",
-  borderRadius: 10,
-  color: "#166534",
-  margin: 0,
-  padding: 12,
-};
-
-const infoStyle: React.CSSProperties = {
-  background: "#eff6ff",
-  border: "1px solid #bfdbfe",
-  borderRadius: 10,
-  color: "#1d4ed8",
-  margin: 0,
-  padding: 12,
 };

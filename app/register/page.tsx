@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
+import { Notice } from "@/components/Notice";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -82,7 +83,7 @@ export default function RegisterPage() {
             />
           </label>
 
-          {error && <p style={errorStyle}>{error}</p>}
+          {error && <Notice tone="error" message={error} compact />}
 
           <button type="submit" disabled={loading} style={buttonStyle}>
             {loading ? "Creando..." : "Crear cuenta"}
@@ -140,13 +141,4 @@ const buttonStyle: React.CSSProperties = {
   cursor: "pointer",
   fontWeight: 700,
   minHeight: 42,
-};
-
-const errorStyle: React.CSSProperties = {
-  background: "#fef2f2",
-  border: "1px solid #fecaca",
-  borderRadius: 8,
-  color: "#991b1b",
-  margin: 0,
-  padding: 10,
 };

@@ -6,6 +6,7 @@ import {
   getProjectRoleBadgeStyle,
   getProjectRoleLabel,
 } from "@/app/lib/projectRoles";
+import { Notice } from "@/components/Notice";
 import {
   compareRequirementsNaturally,
   EMPTY_EDIT_DATA,
@@ -715,9 +716,11 @@ export default function ProjectClient({ projectId }: ProjectClientProps) {
 
       {(actionError || actionSuccess) && (
         <div style={{ display: "grid", gap: 10, marginBottom: 20 }}>
-          {actionError ? <div style={errorMessageStyle}>{actionError}</div> : null}
+          {actionError ? (
+            <Notice tone="error" message={actionError} compact />
+          ) : null}
           {actionSuccess ? (
-            <div style={successMessageStyle}>{actionSuccess}</div>
+            <Notice tone="success" message={actionSuccess} compact />
           ) : null}
         </div>
       )}
@@ -868,7 +871,12 @@ export default function ProjectClient({ projectId }: ProjectClientProps) {
           </div>
 
           {importError ? (
-            <div style={errorMessageStyle}>{importError}</div>
+            <Notice
+              tone="error"
+              message={importError}
+              compact
+              style={{ marginTop: 14 }}
+            />
           ) : null}
 
           {importDetails.length > 0 ? (
@@ -880,7 +888,12 @@ export default function ProjectClient({ projectId }: ProjectClientProps) {
           ) : null}
 
           {importSuccess ? (
-            <div style={successMessageStyle}>{importSuccess}</div>
+            <Notice
+              tone="success"
+              message={importSuccess}
+              compact
+              style={{ marginTop: 14 }}
+            />
           ) : null}
         </section>
       </section>
@@ -1730,24 +1743,6 @@ const linkButtonStyle: React.CSSProperties = {
   minHeight: 40,
   padding: "9px 14px",
   textDecoration: "none",
-};
-
-const errorMessageStyle: React.CSSProperties = {
-  background: "#fef2f2",
-  border: "1px solid #fecaca",
-  borderRadius: 8,
-  color: "#991b1b",
-  marginTop: 14,
-  padding: 10,
-};
-
-const successMessageStyle: React.CSSProperties = {
-  background: "#ecfdf5",
-  border: "1px solid #bbf7d0",
-  borderRadius: 8,
-  color: "#166534",
-  marginTop: 14,
-  padding: 10,
 };
 
 const detailsListStyle: React.CSSProperties = {

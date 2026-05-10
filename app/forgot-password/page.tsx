@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { FormEvent, useState } from "react";
+import { Notice } from "@/components/Notice";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
@@ -65,9 +66,9 @@ export default function ForgotPasswordPage() {
             />
           </label>
 
-          {error && <p style={errorStyle}>{error}</p>}
-          {success && <p style={successStyle}>{success}</p>}
-          {deliveryHint && <p style={hintStyle}>{deliveryHint}</p>}
+          {error && <Notice tone="error" message={error} compact />}
+          {success && <Notice tone="success" message={success} compact />}
+          {deliveryHint && <Notice tone="info" message={deliveryHint} compact />}
 
           <button type="submit" disabled={loading} style={buttonStyle}>
             {loading ? "Enviando..." : "Enviar enlace"}
@@ -129,31 +130,4 @@ const buttonStyle: React.CSSProperties = {
   cursor: "pointer",
   fontWeight: 700,
   minHeight: 42,
-};
-
-const errorStyle: React.CSSProperties = {
-  background: "#fef2f2",
-  border: "1px solid #fecaca",
-  borderRadius: 8,
-  color: "#991b1b",
-  margin: 0,
-  padding: 10,
-};
-
-const successStyle: React.CSSProperties = {
-  background: "#f0fdf4",
-  border: "1px solid #bbf7d0",
-  borderRadius: 8,
-  color: "#166534",
-  margin: 0,
-  padding: 10,
-};
-
-const hintStyle: React.CSSProperties = {
-  background: "#eff6ff",
-  border: "1px solid #bfdbfe",
-  borderRadius: 8,
-  color: "#1d4ed8",
-  margin: 0,
-  padding: 10,
 };
