@@ -129,7 +129,11 @@ export function matchesDateFilter(
   }
 
   if (dateFilter === "upcoming") {
-    return deadlineDate >= today && deadlineDate <= upcomingLimit;
+    return (
+      deadlineDate >= today &&
+      deadlineDate <= upcomingLimit &&
+      normalizeStatus(requirement.status) !== "total"
+    );
   }
 
   return false;

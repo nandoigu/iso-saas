@@ -1,4 +1,4 @@
-import * as XLSX from "xlsx";
+import ExcelJS from "exceljs";
 
 export type RequirementStatus = "total" | "parcial" | "no_conforme";
 export type RequirementWorkbookFormat = "project-detailed" | "role-template";
@@ -37,6 +37,9 @@ const DETAILED_FORMAT_HEADERS = [
 
 const ROLE_TEMPLATE_HEADERS = ["norma", "item", "titulo", "descripcion"] as const;
 const VALID_STATUSES: RequirementStatus[] = ["total", "parcial", "no_conforme"];
+const MAX_WORKBOOK_ROWS = 2000;
+const MAX_WORKBOOK_COLUMNS = 50;
+const MAX_CELL_TEXT_LENGTH = 10000;
 
 const HEADER_ALIASES = {
   norma: ["norma"],
@@ -64,36 +67,35 @@ const HEADER_ALIASES = {
   fase: ["fase"],
 } as const;
 
-export function parseRequirementWorkbook(
+export async function parseRequirementWorkbook(
   buffer: ArrayBuffer,
   options: ParseWorkbookOptions = {}
-): ImportParseResult {
-  const workbook = XLSX.read(buffer, {
-    type: "array",
-    cellDates: true,
-  });
+): Promise<ImportParseResult> {
+  const workbook = new ExcelJS.Workbook();
+  await workbook.xlsx.load(buffer);
 
-  const firstSheetName = workbook.SheetNames[0];
+  const firstSheet = workbook.worksheets[0];
 
-  if (!firstSheetName) {
+  if (!firstSheet) {
     return emptyResult(
       options.acceptedFormats?.[0] ?? "project-detailed",
       "El archivo no contiene hojas."
     );
   }
 
-  const sheet = workbook.Sheets[firstSheetName];
-  const matrix = XLSX.utils.sheet_to_json<unknown[]>(sheet, {
-    header: 1,
-    defval: null,
-    raw: true,
-  });
+  const matrix = worksheetToMatrix(firstSheet);
 
   if (matrix.length === 0) {
     return emptyResult(
       options.acceptedFormats?.[0] ?? "project-detailed",
       "El archivo esta vacio."
     );
+  }
+
+  const sizeError = validateWorkbookMatrix(matrix);
+
+  if (sizeError) {
+    return emptyResult(options.acceptedFormats?.[0] ?? "project-detailed", sizeError);
   }
 
   const headers = matrix[0].map((value) => String(value ?? "").trim());
@@ -119,18 +121,18 @@ export function parseRequirementWorkbook(
   );
 }
 
-export function parseRequirementTemplateWorkbook(
+export async function parseRequirementTemplateWorkbook(
   buffer: ArrayBuffer
-): ImportParseResult {
+): Promise<ImportParseResult> {
   return parseRequirementWorkbook(buffer, {
     acceptedFormats: ["project-detailed"],
   });
 }
 
-export function parseRoleTemplateRequirementWorkbook(
+export async function parseRoleTemplateRequirementWorkbook(
   buffer: ArrayBuffer,
   fallbackStatus: RequirementStatus = "no_conforme"
-): ImportParseResult {
+): Promise<ImportParseResult> {
   return parseRequirementWorkbook(buffer, {
     acceptedFormats: ["role-template"],
     roleTemplateFallbackStatus: fallbackStatus,
@@ -431,6 +433,28 @@ function isEmptyRow(row: unknown[]) {
   return row.every((value) => String(value ?? "").trim() === "");
 }
 
+function validateWorkbookMatrix(matrix: unknown[][]) {
+  if (matrix.length > MAX_WORKBOOK_ROWS) {
+    return `El archivo supera el limite de ${MAX_WORKBOOK_ROWS} filas importables.`;
+  }
+
+  for (let rowIndex = 0; rowIndex < matrix.length; rowIndex += 1) {
+    const row = matrix[rowIndex];
+
+    if (row.length > MAX_WORKBOOK_COLUMNS) {
+      return `La fila ${rowIndex + 1} supera el limite de ${MAX_WORKBOOK_COLUMNS} columnas.`;
+    }
+
+    for (const cell of row) {
+      if (String(cell ?? "").length > MAX_CELL_TEXT_LENGTH) {
+        return `La fila ${rowIndex + 1} contiene una celda demasiado larga.`;
+      }
+    }
+  }
+
+  return null;
+}
+
 function getRequiredString(value: unknown) {
   return String(value ?? "").trim();
 }
@@ -470,16 +494,13 @@ function parseDeadline(
   }
 
   if (typeof value === "number") {
-    const parsed = XLSX.SSF.parse_date_code(value);
+    const parsed = parseExcelDateSerial(value);
 
     if (!parsed) {
       return { valid: false, date: null };
     }
 
-    return {
-      valid: true,
-      date: new Date(Date.UTC(parsed.y, parsed.m - 1, parsed.d)),
-    };
+    return { valid: true, date: parsed };
   }
 
   const text = String(value).trim();
@@ -542,4 +563,91 @@ function emptyResult(format: RequirementWorkbookFormat, error: string): ImportPa
     errors: [error],
     skippedDuplicates: 0,
   };
+}
+
+function worksheetToMatrix(worksheet: ExcelJS.Worksheet) {
+  const matrix: unknown[][] = [];
+  const rowCount = Math.min(worksheet.rowCount, MAX_WORKBOOK_ROWS + 1);
+  const columnCount = Math.min(worksheet.columnCount, MAX_WORKBOOK_COLUMNS + 1);
+
+  for (let rowNumber = 1; rowNumber <= rowCount; rowNumber += 1) {
+    const row = worksheet.getRow(rowNumber);
+    const values: unknown[] = [];
+
+    for (let columnNumber = 1; columnNumber <= columnCount; columnNumber += 1) {
+      values.push(normalizeCellValue(row.getCell(columnNumber).value));
+    }
+
+    while (values.length > 0 && values[values.length - 1] == null) {
+      values.pop();
+    }
+
+    matrix.push(values);
+  }
+
+  return matrix;
+}
+
+function normalizeCellValue(value: ExcelJS.CellValue): unknown {
+  if (value == null) return null;
+  if (value instanceof Date) return value;
+  if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
+    return value;
+  }
+
+  if (isFormulaValue(value)) {
+    return normalizeCellValue(value.result ?? null);
+  }
+
+  if (isRichTextValue(value)) {
+    return value.richText.map((part) => part.text).join("");
+  }
+
+  if (isHyperlinkValue(value)) {
+    return value.text;
+  }
+
+  if (hasTextValue(value)) {
+    return value.text;
+  }
+
+  return String(value);
+}
+
+function isFormulaValue(
+  value: ExcelJS.CellValue
+): value is ExcelJS.CellFormulaValue {
+  return typeof value === "object" && value !== null && "formula" in value;
+}
+
+function isRichTextValue(
+  value: ExcelJS.CellValue
+): value is ExcelJS.CellRichTextValue {
+  return typeof value === "object" && value !== null && "richText" in value;
+}
+
+function isHyperlinkValue(
+  value: ExcelJS.CellValue
+): value is ExcelJS.CellHyperlinkValue {
+  return typeof value === "object" && value !== null && "hyperlink" in value;
+}
+
+function hasTextValue(
+  value: ExcelJS.CellValue
+): value is ExcelJS.CellValue & { text: string } {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    "text" in value &&
+    typeof value.text === "string"
+  );
+}
+
+function parseExcelDateSerial(serial: number) {
+  if (!Number.isFinite(serial) || serial <= 0) return null;
+
+  const milliseconds = Math.round((serial - 25569) * 86400 * 1000);
+  const date = new Date(milliseconds);
+
+  return Number.isNaN(date.getTime()) ? null : date;
 }

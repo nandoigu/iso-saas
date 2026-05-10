@@ -7,6 +7,7 @@ import {
   isBlockedStatus,
   unauthorized,
 } from "@/app/lib/auth";
+import { readSafeXlsxUpload } from "@/app/lib/excelUpload";
 import { parseRequirementWorkbook } from "@/app/lib/requirementImport";
 import { prisma } from "@/app/lib/prisma";
 import {
@@ -61,15 +62,13 @@ export async function POST(
       );
     }
 
-    if (!file.name.toLowerCase().endsWith(".xlsx")) {
-      return NextResponse.json(
-        { error: "Formato no valido. Solo se aceptan archivos .xlsx." },
-        { status: 400 }
-      );
+    const upload = await readSafeXlsxUpload(file);
+
+    if (!upload.ok) {
+      return NextResponse.json({ error: upload.error }, { status: 400 });
     }
 
-    const buffer = await file.arrayBuffer();
-    const parsed = parseRequirementWorkbook(buffer, {
+    const parsed = await parseRequirementWorkbook(upload.buffer, {
       acceptedFormats: ["project-detailed", "role-template"],
       roleTemplateFallbackStatus: "parcial",
     });

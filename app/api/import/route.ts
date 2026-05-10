@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { forbidden, getAuthSession, isAdminRole, unauthorized } from "@/app/lib/auth";
+import { readSafeXlsxUpload } from "@/app/lib/excelUpload";
 import { parseRequirementTemplateWorkbook } from "@/app/lib/requirementImport";
 import { prisma } from "@/app/lib/prisma";
 
@@ -27,15 +28,13 @@ export async function POST(req: Request) {
       );
     }
 
-    if (!file.name.toLowerCase().endsWith(".xlsx")) {
-      return NextResponse.json(
-        { error: "Formato no valido. Solo se aceptan archivos .xlsx." },
-        { status: 400 }
-      );
+    const upload = await readSafeXlsxUpload(file);
+
+    if (!upload.ok) {
+      return NextResponse.json({ error: upload.error }, { status: 400 });
     }
 
-    const buffer = await file.arrayBuffer();
-    const parsed = parseRequirementTemplateWorkbook(buffer);
+    const parsed = await parseRequirementTemplateWorkbook(upload.buffer);
     const replaceExisting = formData.get("replace") === "true";
 
     if (parsed.errors.length > 0) {

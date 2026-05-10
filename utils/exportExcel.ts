@@ -1,4 +1,4 @@
-import * as XLSX from "xlsx";
+import ExcelJS from "exceljs";
 import type { Requirement } from "@/app/projects/[id]/project-requirements";
 import {
   formatDate,
@@ -8,22 +8,62 @@ import {
   normalizeStatus,
 } from "@/app/projects/[id]/project-requirements";
 
-export function exportMatrixToExcel(requirements: Requirement[]) {
-  const worksheet = XLSX.utils.json_to_sheet(
-    requirements.map((requirement) => ({
-      Norma: getDisplayValue(requirement.norma, "Sin norma"),
-      Item: getDisplayValue(requirement.item, "Sin item"),
-      Requerimiento: getDisplayValue(requirement.name, "Sin descripcion"),
-      Estado: getStatusLabel(requirement.status),
-      Evidencia: getDisplayValue(requirement.evidencia, "Sin evidencia"),
-      "Fecha limite": formatDate(requirement.deadline),
-      Analitica: getDeadlineLabel(requirement),
-    }))
-  );
+export async function exportMatrixToExcel(requirements: Requirement[]) {
+  const workbook = new ExcelJS.Workbook();
+  const worksheet = workbook.addWorksheet("Matriz");
 
-  const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, worksheet, "Matriz");
-  XLSX.writeFile(workbook, getExportFilename("xlsx"));
+  worksheet.columns = [
+    { header: "Norma", key: "norma", width: 18 },
+    { header: "Item", key: "item", width: 14 },
+    { header: "Requerimiento", key: "requirement", width: 46 },
+    { header: "Estado", key: "status", width: 16 },
+    { header: "Evidencia", key: "evidence", width: 42 },
+    { header: "Fecha limite", key: "deadline", width: 16 },
+    { header: "Analitica", key: "analytics", width: 16 },
+  ];
+
+  worksheet.getRow(1).font = { bold: true };
+  worksheet.getRow(1).fill = {
+    type: "pattern",
+    pattern: "solid",
+    fgColor: { argb: "FF002A4E" },
+  };
+  worksheet.getRow(1).font = { bold: true, color: { argb: "FFFFFFFF" } };
+
+  requirements.forEach((requirement) => {
+    worksheet.addRow({
+      norma: getDisplayValue(requirement.norma, "Sin norma"),
+      item: getDisplayValue(requirement.item, "Sin item"),
+      requirement: getDisplayValue(requirement.name, "Sin descripcion"),
+      status: getStatusLabel(requirement.status),
+      evidence: getDisplayValue(requirement.evidencia, "Sin evidencia"),
+      deadline: formatDate(requirement.deadline),
+      analytics: getDeadlineLabel(requirement),
+    });
+  });
+
+  worksheet.eachRow((row) => {
+    row.eachCell((cell) => {
+      cell.alignment = { vertical: "top", wrapText: true };
+      cell.border = {
+        top: { style: "thin", color: { argb: "FFE5E7EB" } },
+        left: { style: "thin", color: { argb: "FFE5E7EB" } },
+        bottom: { style: "thin", color: { argb: "FFE5E7EB" } },
+        right: { style: "thin", color: { argb: "FFE5E7EB" } },
+      };
+    });
+  });
+
+  const buffer = await workbook.xlsx.writeBuffer();
+  const blob = new Blob([buffer], {
+    type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = getExportFilename("xlsx");
+  link.click();
+  URL.revokeObjectURL(url);
 }
 
 function getStatusLabel(status?: string | null) {

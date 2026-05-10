@@ -200,7 +200,7 @@ export default function ComplianceMatrix({
   const handleExportExcel = async () => {
     setExporting("excel");
     try {
-      exportMatrixToExcel(filteredRequirements);
+      await exportMatrixToExcel(filteredRequirements);
     } finally {
       setExporting(null);
     }

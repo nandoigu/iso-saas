@@ -7,6 +7,7 @@ import {
   isBlockedStatus,
   unauthorized,
 } from "@/app/lib/auth";
+import { readSafeXlsxUpload } from "@/app/lib/excelUpload";
 import { importTemplates } from "@/services/template.service";
 
 export const runtime = "nodejs";
@@ -37,14 +38,13 @@ export async function POST(req: Request) {
       );
     }
 
-    if (!file.name.toLowerCase().endsWith(".xlsx")) {
-      return NextResponse.json(
-        { error: "Solo se aceptan archivos .xlsx." },
-        { status: 400 }
-      );
+    const upload = await readSafeXlsxUpload(file);
+
+    if (!upload.ok) {
+      return NextResponse.json({ error: upload.error }, { status: 400 });
     }
 
-    const buffer = Buffer.from(await file.arrayBuffer());
+    const buffer = Buffer.from(upload.buffer);
     const result = await importTemplates(buffer, file.name);
 
     return NextResponse.json({

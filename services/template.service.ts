@@ -18,11 +18,8 @@ export async function importTemplates(
   fileName: string
 ): Promise<ImportTemplatesResult> {
   const role = detectRoleFromFileName(fileName);
-  const parsed = parseRoleTemplateRequirementWorkbook(
-    fileBuffer.buffer.slice(
-      fileBuffer.byteOffset,
-      fileBuffer.byteOffset + fileBuffer.byteLength
-    ),
+  const parsed = await parseRoleTemplateRequirementWorkbook(
+    toArrayBuffer(fileBuffer),
     "no_conforme"
   );
 
@@ -79,6 +76,12 @@ function detectRoleFromFileName(fileName: string): TemplateRole {
   throw new Error(
     "No se pudo detectar el rol a partir del nombre del archivo."
   );
+}
+
+function toArrayBuffer(buffer: Buffer) {
+  const arrayBuffer = new ArrayBuffer(buffer.byteLength);
+  new Uint8Array(arrayBuffer).set(buffer);
+  return arrayBuffer;
 }
 
 function normalizeText(value: string) {
