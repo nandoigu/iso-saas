@@ -542,8 +542,10 @@ export default function ProjectClient({ projectId }: ProjectClientProps) {
       >
         <h3 style={{ margin: "0 0 8px" }}>Importar requisitos del proyecto</h3>
         <p style={{ color: "#6b7280", margin: "0 0 16px" }}>
-          Sube un Excel especifico para este proyecto. Se importaran solo los
-          requerimientos nuevos y no se tocara la plantilla global por rol.
+          Sube un Excel especifico para este proyecto. Puedes usar tanto el
+          formato detallado del proyecto como los Excel de plantillas por rol.
+          Solo se importaran los requerimientos nuevos y no se tocara la
+          plantilla global por rol.
         </p>
 
         <div

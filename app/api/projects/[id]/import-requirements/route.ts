@@ -7,7 +7,7 @@ import {
   isBlockedStatus,
   unauthorized,
 } from "@/app/lib/auth";
-import { parseRequirementTemplateWorkbook } from "@/app/lib/requirementImport";
+import { parseRequirementWorkbook } from "@/app/lib/requirementImport";
 import { prisma } from "@/app/lib/prisma";
 import { importRequirementsForProject } from "@/services/project-requirement-import.service";
 
@@ -63,7 +63,10 @@ export async function POST(
     }
 
     const buffer = await file.arrayBuffer();
-    const parsed = parseRequirementTemplateWorkbook(buffer);
+    const parsed = parseRequirementWorkbook(buffer, {
+      acceptedFormats: ["project-detailed", "role-template"],
+      roleTemplateFallbackStatus: "parcial",
+    });
 
     if (parsed.errors.length > 0) {
       return NextResponse.json(
@@ -80,6 +83,7 @@ export async function POST(
     return NextResponse.json({
       data: {
         ...result,
+        format: parsed.format,
         skippedDuplicates:
           result.skippedDuplicates + parsed.skippedDuplicates,
       },

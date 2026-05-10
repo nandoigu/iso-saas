@@ -27,17 +27,29 @@ export async function importRequirementsForProject(
       norma: true,
       item: true,
       name: true,
+      titulo: true,
+      descripcion: true,
     },
   });
 
   const seen = new Set(
     existingRequirements.map((requirement) =>
-      getRequirementKey(requirement.norma, requirement.item, requirement.name)
+      getRequirementKey(
+        requirement.norma,
+        requirement.item,
+        requirement.titulo || requirement.name,
+        requirement.descripcion || requirement.name
+      )
     )
   );
 
   const dataToCreate = rows.filter((row) => {
-    const key = getRequirementKey(row.norma, row.item, row.name);
+    const key = getRequirementKey(
+      row.norma,
+      row.item,
+      row.titulo || row.name,
+      row.descripcion || row.name
+    );
 
     if (seen.has(key)) {
       return false;
@@ -61,8 +73,8 @@ export async function importRequirementsForProject(
       norma: row.norma,
       item: row.item,
       name: row.name,
-      titulo: row.name,
-      descripcion: row.name,
+      titulo: row.titulo || row.name,
+      descripcion: row.descripcion || row.name,
       evidencia: row.evidencia,
       status: row.defaultStatus,
       completed: row.defaultStatus === "total",
@@ -81,9 +93,10 @@ export async function importRequirementsForProject(
 function getRequirementKey(
   norma: string | null | undefined,
   item: string | null | undefined,
-  name: string | null | undefined
+  titulo: string | null | undefined,
+  descripcion: string | null | undefined
 ) {
-  return [norma ?? "", item ?? "", name ?? ""]
+  return [norma ?? "", item ?? "", titulo ?? "", descripcion ?? ""]
     .map((value) => value.trim().toLowerCase())
     .join("|");
 }
