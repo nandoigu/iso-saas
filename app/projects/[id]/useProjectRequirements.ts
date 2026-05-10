@@ -24,7 +24,7 @@ export function useProjectRequirements(projectId: string) {
         throw new Error(data.error || "Error cargando requirements");
       }
 
-      setRequirements(Array.isArray(data.data) ? data.data : []);
+      setRequirements(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error("Error cargando requirements:", error);
       setRequirements([]);

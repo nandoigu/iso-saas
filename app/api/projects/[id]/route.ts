@@ -9,6 +9,9 @@ import {
 } from "@/app/lib/auth";
 import { prisma } from "@/app/lib/prisma";
 
+const MAX_PROJECT_NAME_LENGTH = 160;
+const MAX_PROJECT_CODE_LENGTH = 40;
+
 type RouteContext = {
   params: Promise<{
     id: string;
@@ -176,6 +179,24 @@ export async function PUT(req: Request, context: RouteContext) {
       );
     }
 
+    if (name.length > MAX_PROJECT_NAME_LENGTH) {
+      return NextResponse.json(
+        {
+          error: `El nombre del proyecto no puede superar los ${MAX_PROJECT_NAME_LENGTH} caracteres.`,
+        },
+        { status: 400 }
+      );
+    }
+
+    if (code && code.length > MAX_PROJECT_CODE_LENGTH) {
+      return NextResponse.json(
+        {
+          error: `El codigo del proyecto no puede superar los ${MAX_PROJECT_CODE_LENGTH} caracteres.`,
+        },
+        { status: 400 }
+      );
+    }
+
     const project = await prisma.project.findUnique({
       where: { id: projectId },
       select: {
@@ -193,6 +214,28 @@ export async function PUT(req: Request, context: RouteContext) {
 
     if (!isAdminRole(user.role) && project.userId !== user.id) {
       return forbidden("No tienes permisos para actualizar este proyecto.");
+    }
+
+    if (code) {
+      const duplicatedCode = await prisma.project.findFirst({
+        where: {
+          userId: project.userId,
+          code,
+          NOT: {
+            id: projectId,
+          },
+        },
+        select: {
+          id: true,
+        },
+      });
+
+      if (duplicatedCode) {
+        return NextResponse.json(
+          { error: "Ya existe otro proyecto de este propietario con ese codigo." },
+          { status: 409 }
+        );
+      }
     }
 
     const updatedProject = await prisma.project.update({

@@ -12,6 +12,8 @@ import { prisma } from "@/app/lib/prisma";
 import { generateRequirementsForProject } from "@/services/requirement.service";
 
 const USER_PROJECT_LIMIT = 5;
+const MAX_PROJECT_NAME_LENGTH = 160;
+const MAX_PROJECT_CODE_LENGTH = 40;
 
 export async function GET(req: Request) {
   try {
@@ -78,6 +80,24 @@ export async function POST(req: Request) {
       );
     }
 
+    if (name.length > MAX_PROJECT_NAME_LENGTH) {
+      return NextResponse.json(
+        {
+          error: `El nombre del proyecto no puede superar los ${MAX_PROJECT_NAME_LENGTH} caracteres.`,
+        },
+        { status: 400 }
+      );
+    }
+
+    if (code.length > MAX_PROJECT_CODE_LENGTH) {
+      return NextResponse.json(
+        {
+          error: `El codigo del proyecto no puede superar los ${MAX_PROJECT_CODE_LENGTH} caracteres.`,
+        },
+        { status: 400 }
+      );
+    }
+
     if (!isProjectRole(role)) {
       return NextResponse.json(
         {
@@ -97,6 +117,23 @@ export async function POST(req: Request) {
         return NextResponse.json(
           { error: `Has alcanzado el limite de proyectos (${USER_PROJECT_LIMIT})` },
           { status: 403 }
+        );
+      }
+    }
+
+    if (code) {
+      const existingProject = await prisma.project.findFirst({
+        where: {
+          userId: user.id,
+          code,
+        },
+        select: { id: true },
+      });
+
+      if (existingProject) {
+        return NextResponse.json(
+          { error: "Ya existe otro proyecto tuyo con ese codigo." },
+          { status: 409 }
         );
       }
     }

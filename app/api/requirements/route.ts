@@ -59,7 +59,7 @@ export async function GET(req: Request) {
       },
     });
 
-    return NextResponse.json({ data: requirements });
+    return NextResponse.json(requirements);
   } catch (error) {
     console.error("ERROR GET /api/requirements:", error);
     return NextResponse.json(
@@ -82,9 +82,10 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
-    const projectId = String(body.projectId || "");
-    const name = typeof body.name === "string" ? body.name.trim() : "";
-    const status = normalizeStatus(body.status);
+    const projectId = cleanRequiredString(body.projectId);
+    const name = cleanRequiredString(body.name);
+    const parsedStatus = parseRequirementStatus(body.status);
+    const parsedDeadline = parseOptionalDeadline(body.deadline);
 
     if (!projectId) {
       return NextResponse.json(
@@ -98,6 +99,14 @@ export async function POST(req: Request) {
         { error: "El requerimiento es obligatorio" },
         { status: 400 }
       );
+    }
+
+    if (!parsedStatus.ok) {
+      return NextResponse.json({ error: parsedStatus.error }, { status: 400 });
+    }
+
+    if (!parsedDeadline.ok) {
+      return NextResponse.json({ error: parsedDeadline.error }, { status: 400 });
     }
 
     const project = await prisma.project.findFirst({
@@ -122,13 +131,13 @@ export async function POST(req: Request) {
         item: cleanOptional(body.item),
         name,
         evidencia: cleanOptional(body.evidencia),
-        status,
-        completed: status === "total",
-        deadline: body.deadline ? new Date(body.deadline) : null,
+        status: parsedStatus.value,
+        completed: parsedStatus.value === "total",
+        deadline: parsedDeadline.value,
       },
     });
 
-    return NextResponse.json({ data: newRequirement }, { status: 201 });
+    return NextResponse.json(newRequirement, { status: 201 });
   } catch (error) {
     console.error("ERROR POST /api/requirements:", error);
     return NextResponse.json(
@@ -151,9 +160,10 @@ export async function PUT(req: Request) {
     }
 
     const body = await req.json();
-    const requirementId = String(body.id || "");
-    const name = typeof body.name === "string" ? body.name.trim() : "";
-    const status = normalizeStatus(body.status);
+    const requirementId = cleanRequiredString(body.id);
+    const name = cleanRequiredString(body.name);
+    const parsedStatus = parseRequirementStatus(body.status);
+    const parsedDeadline = parseOptionalDeadline(body.deadline);
 
     if (!requirementId) {
       return NextResponse.json(
@@ -167,6 +177,14 @@ export async function PUT(req: Request) {
         { error: "El requerimiento es obligatorio" },
         { status: 400 }
       );
+    }
+
+    if (!parsedStatus.ok) {
+      return NextResponse.json({ error: parsedStatus.error }, { status: 400 });
+    }
+
+    if (!parsedDeadline.ok) {
+      return NextResponse.json({ error: parsedDeadline.error }, { status: 400 });
     }
 
     const requirement = await prisma.requirement.findFirst({
@@ -197,13 +215,13 @@ export async function PUT(req: Request) {
         item: cleanOptional(body.item),
         name,
         evidencia: cleanOptional(body.evidencia),
-        status,
-        completed: status === "total",
-        deadline: body.deadline ? new Date(body.deadline) : null,
+        status: parsedStatus.value,
+        completed: parsedStatus.value === "total",
+        deadline: parsedDeadline.value,
       },
     });
 
-    return NextResponse.json({ data: updated });
+    return NextResponse.json(updated);
   } catch (error) {
     console.error("ERROR PUT /api/requirements:", error);
     return NextResponse.json(
@@ -274,8 +292,56 @@ function cleanOptional(value: unknown) {
   return typeof value === "string" && value.trim() ? value.trim() : null;
 }
 
-function normalizeStatus(value: unknown): RequirementStatus {
-  return VALID_STATUSES.includes(value as RequirementStatus)
-    ? (value as RequirementStatus)
-    : "no_conforme";
+function cleanRequiredString(value: unknown) {
+  return typeof value === "string" ? value.trim() : "";
+}
+
+function parseRequirementStatus(
+  value: unknown
+):
+  | { ok: true; value: RequirementStatus }
+  | { ok: false; error: string } {
+  if (typeof value !== "string" || !value.trim()) {
+    return { ok: true, value: "no_conforme" };
+  }
+
+  const normalizedValue = value.trim();
+
+  if (VALID_STATUSES.includes(normalizedValue as RequirementStatus)) {
+    return {
+      ok: true,
+      value: normalizedValue as RequirementStatus,
+    };
+  }
+
+  return {
+    ok: false,
+    error: "El estado debe ser total, parcial o no_conforme.",
+  };
+}
+
+function parseOptionalDeadline(
+  value: unknown
+): { ok: true; value: Date | null } | { ok: false; error: string } {
+  if (value == null || value === "") {
+    return { ok: true, value: null };
+  }
+
+  if (typeof value !== "string") {
+    return { ok: false, error: "La fecha limite no es valida." };
+  }
+
+  const trimmedValue = value.trim();
+
+  if (!trimmedValue) {
+    return { ok: true, value: null };
+  }
+
+  const parsedDate = new Date(trimmedValue);
+
+  if (Number.isNaN(parsedDate.getTime())) {
+    return { ok: false, error: "La fecha limite no es valida." };
+  }
+
+  return { ok: true, value: parsedDate };
 }
