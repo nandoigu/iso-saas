@@ -25,6 +25,8 @@ type Project = {
   } | null;
 };
 
+type NoticeTone = "success" | "error" | "info";
+
 export default function AdminPanelClient({
   currentUserEmail,
   currentUserId,
@@ -99,12 +101,13 @@ export default function AdminPanelClient({
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.error || "No se pudo actualizar el rol.");
+        throw new Error(data.error || "No se pudo actualizar el usuario.");
       }
 
       setUsers((current) =>
         current.map((entry) => (entry.id === userId ? data.data : entry))
       );
+      setSuccess(`Usuario ${data.data.email} actualizado correctamente.`);
     } catch (updateError) {
       console.error(updateError);
       setError(
@@ -160,7 +163,7 @@ export default function AdminPanelClient({
 
   const deleteProject = async (project: Project) => {
     const confirmed = window.confirm(
-      `¿Seguro que quieres eliminar el proyecto "${project.name}"? Se eliminaran tambien sus requerimientos y esta accion no se puede deshacer.`
+      `Seguro que quieres eliminar el proyecto "${project.name}"? Se eliminaran tambien sus requerimientos y esta accion no se puede deshacer.`
     );
 
     if (!confirmed) {
@@ -215,8 +218,8 @@ export default function AdminPanelClient({
         <div style={pillStyle}>{currentUserEmail}</div>
       </section>
 
-      {error && <p style={errorStyle}>{error}</p>}
-      {success && <p style={successStyle}>{success}</p>}
+      {error && <Notice tone="error" message={error} />}
+      {success && <Notice tone="success" message={success} />}
 
       <section style={sectionStyle}>
         <div style={sectionIntroStyle}>
@@ -436,6 +439,52 @@ function getStatusBadgeStyle(status: string): React.CSSProperties {
   };
 }
 
+function Notice({
+  tone,
+  message,
+}: {
+  tone: NoticeTone;
+  message: string;
+}) {
+  return <p style={getNoticeStyle(tone)}>{message}</p>;
+}
+
+function getNoticeStyle(tone: NoticeTone): React.CSSProperties {
+  if (tone === "success") {
+    return {
+      background: "#f0fdf4",
+      border: "1px solid #bbf7d0",
+      borderRadius: 10,
+      color: "#166534",
+      fontWeight: 700,
+      margin: 0,
+      padding: 12,
+    };
+  }
+
+  if (tone === "info") {
+    return {
+      background: "#eff6ff",
+      border: "1px solid #bfdbfe",
+      borderRadius: 10,
+      color: "#1d4ed8",
+      fontWeight: 700,
+      margin: 0,
+      padding: 12,
+    };
+  }
+
+  return {
+    background: "#fef2f2",
+    border: "1px solid #fecaca",
+    borderRadius: 10,
+    color: "#991b1b",
+    fontWeight: 700,
+    margin: 0,
+    padding: 12,
+  };
+}
+
 const heroCardStyle: React.CSSProperties = {
   alignItems: "center",
   background: "white",
@@ -543,24 +592,6 @@ const selectStyle: React.CSSProperties = {
   borderRadius: 8,
   minHeight: 38,
   padding: "0 10px",
-};
-
-const errorStyle: React.CSSProperties = {
-  background: "#fef2f2",
-  border: "1px solid #fecaca",
-  borderRadius: 10,
-  color: "#991b1b",
-  margin: 0,
-  padding: 12,
-};
-
-const successStyle: React.CSSProperties = {
-  background: "#f0fdf4",
-  border: "1px solid #bbf7d0",
-  borderRadius: 10,
-  color: "#166534",
-  margin: 0,
-  padding: 12,
 };
 
 const helperTextStyle: React.CSSProperties = {

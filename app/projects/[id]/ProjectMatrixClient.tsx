@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import ComplianceMatrix from "@/components/ComplianceMatrix";
 import { useProjectRequirements } from "@/app/projects/[id]/useProjectRequirements";
 
@@ -11,14 +12,15 @@ type ProjectMatrixClientProps = {
 export default function ProjectMatrixClient({
   projectId,
 }: ProjectMatrixClientProps) {
+  const isMobile = useMatrixPageBreakpoint() === "mobile";
   const { requirements, loading, loadError } = useProjectRequirements(projectId);
 
   return (
-    <main style={{ padding: 40 }}>
+    <main style={{ padding: isMobile ? "20px 12px 32px" : 40 }}>
       <header
         style={{
           alignItems: "flex-start",
-          display: "flex",
+          display: isMobile ? "grid" : "flex",
           flexWrap: "wrap",
           gap: 16,
           justifyContent: "space-between",
@@ -33,7 +35,14 @@ export default function ProjectMatrixClient({
           </p>
         </div>
 
-        <Link href={`/projects/${projectId}`} style={secondaryLinkStyle}>
+        <Link
+          href={`/projects/${projectId}`}
+          style={{
+            ...secondaryLinkStyle,
+            justifyContent: isMobile ? "center" : undefined,
+            width: isMobile ? "100%" : undefined,
+          }}
+        >
           Volver al proyecto
         </Link>
       </header>
@@ -52,6 +61,25 @@ export default function ProjectMatrixClient({
       {!loading && !loadError && <ComplianceMatrix requirements={requirements} />}
     </main>
   );
+}
+
+function useMatrixPageBreakpoint() {
+  const [breakpoint, setBreakpoint] = useState<"mobile" | "desktop">("desktop");
+
+  useEffect(() => {
+    const updateBreakpoint = () => {
+      setBreakpoint(window.innerWidth < 760 ? "mobile" : "desktop");
+    };
+
+    updateBreakpoint();
+    window.addEventListener("resize", updateBreakpoint);
+
+    return () => {
+      window.removeEventListener("resize", updateBreakpoint);
+    };
+  }, []);
+
+  return breakpoint;
 }
 
 function EmptyState({

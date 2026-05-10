@@ -1,6 +1,6 @@
-"use client";
+﻿"use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type {
   DateFilter,
@@ -34,6 +34,7 @@ export default function ComplianceMatrix({
   const router = useRouter();
   const searchParams = useSearchParams();
   const [exporting, setExporting] = useState<"excel" | "pdf" | null>(null);
+  const isCompact = useMatrixBreakpoint() === "compact";
 
   const selectedNorma = searchParams.get("norma") || "all";
   const selectedStatuses = useMemo(() => {
@@ -216,20 +217,21 @@ export default function ComplianceMatrix({
   };
 
   return (
-    <section style={{ display: "grid", gap: 18 }}>
+    <section style={{ display: "grid", gap: isCompact ? 14 : 18, minWidth: 0 }}>
       <section
         style={{
           background: "white",
           border: "1px solid #e5e7eb",
           borderRadius: 12,
           boxShadow: "0 2px 6px rgba(0,0,0,0.04)",
-          padding: 18,
+          minWidth: 0,
+          padding: isCompact ? 14 : 18,
         }}
       >
         <div
           style={{
-            alignItems: "center",
-            display: "flex",
+            alignItems: isCompact ? "stretch" : "center",
+            display: isCompact ? "grid" : "flex",
             flexWrap: "wrap",
             gap: 14,
             justifyContent: "space-between",
@@ -247,7 +249,13 @@ export default function ComplianceMatrix({
             </p>
           </div>
 
-          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+          <div
+            style={{
+              display: isCompact ? "grid" : "flex",
+              gap: 10,
+              flexWrap: "wrap",
+            }}
+          >
             <button
               type="button"
               onClick={handleExportExcel}
@@ -301,7 +309,9 @@ export default function ComplianceMatrix({
           style={{
             display: "grid",
             gap: 14,
-            gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+            gridTemplateColumns: isCompact
+              ? "minmax(0, 1fr)"
+              : "repeat(auto-fit, minmax(220px, 1fr))",
           }}
         >
           <label style={filterLabelStyle}>
@@ -400,7 +410,9 @@ export default function ComplianceMatrix({
         style={{
           display: "grid",
           gap: 14,
-          gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))",
+          gridTemplateColumns: isCompact
+            ? "repeat(2, minmax(0, 1fr))"
+            : "repeat(auto-fit, minmax(170px, 1fr))",
         }}
       >
         <SummaryCard label="Requerimientos" value={summary.total} />
@@ -431,18 +443,19 @@ export default function ComplianceMatrix({
                 borderRadius: 12,
                 boxShadow: "0 2px 6px rgba(0,0,0,0.04)",
                 overflow: "hidden",
+                minWidth: 0,
               }}
             >
               <div
                 style={{
-                  alignItems: "center",
+                  alignItems: isCompact ? "flex-start" : "center",
                   background: "#f8fafc",
                   borderBottom: "1px solid #e5e7eb",
-                  display: "flex",
+                  display: isCompact ? "grid" : "flex",
                   flexWrap: "wrap",
                   gap: 12,
                   justifyContent: "space-between",
-                  padding: "14px 18px",
+                  padding: isCompact ? "12px 14px" : "14px 18px",
                 }}
               >
                 <h3 style={{ fontSize: 18, margin: 0 }}>{normaKey}</h3>
@@ -451,7 +464,13 @@ export default function ComplianceMatrix({
                 </span>
               </div>
 
-              <div style={{ display: "grid", gap: 12, padding: 18 }}>
+              <div
+                style={{
+                  display: "grid",
+                  gap: 12,
+                  padding: isCompact ? 12 : 18,
+                }}
+              >
                 {Object.entries(items)
                   .sort(([left], [right]) => naturalTextCompare(left, right))
                   .map(([itemKey, itemRequirements]) => {
@@ -469,12 +488,14 @@ export default function ComplianceMatrix({
                       >
                         <div
                           style={{
-                            alignItems: "center",
+                            alignItems: isCompact ? "start" : "center",
                             background: "#fcfcfd",
                             borderBottom: "1px solid #eef2f7",
                             display: "grid",
                             gap: 12,
-                            gridTemplateColumns: "minmax(0, 1fr) auto auto",
+                            gridTemplateColumns: isCompact
+                              ? "minmax(0, 1fr)"
+                              : "minmax(0, 1fr) auto auto",
                             padding: "12px 14px",
                           }}
                         >
@@ -507,11 +528,16 @@ export default function ComplianceMatrix({
                           <StatusBadge status={matrixStatus} />
                         </div>
 
-                        <div style={{ overflowX: "auto" }}>
+                        <div
+                          style={{
+                            overflowX: "auto",
+                            WebkitOverflowScrolling: "touch",
+                          }}
+                        >
                           <table
                             style={{
                               borderCollapse: "collapse",
-                              minWidth: 920,
+                              minWidth: isCompact ? 760 : 920,
                               width: "100%",
                             }}
                           >
@@ -775,6 +801,25 @@ function EmptyState({
   );
 }
 
+function useMatrixBreakpoint() {
+  const [breakpoint, setBreakpoint] = useState<"compact" | "regular">("regular");
+
+  useEffect(() => {
+    const updateBreakpoint = () => {
+      setBreakpoint(window.innerWidth < 760 ? "compact" : "regular");
+    };
+
+    updateBreakpoint();
+    window.addEventListener("resize", updateBreakpoint);
+
+    return () => {
+      window.removeEventListener("resize", updateBreakpoint);
+    };
+  }, []);
+
+  return breakpoint;
+}
+
 const controlStyle: React.CSSProperties = {
   border: "1px solid #d1d5db",
   borderRadius: 8,
@@ -816,3 +861,4 @@ const tableCellStyle: React.CSSProperties = {
   padding: "12px 14px",
   verticalAlign: "top",
 };
+

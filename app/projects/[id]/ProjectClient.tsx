@@ -39,6 +39,7 @@ type ProjectMeta = {
 type ImportMode = "append" | "replace";
 
 export default function ProjectClient({ projectId }: ProjectClientProps) {
+  const isMobile = useProjectDetailBreakpoint() === "mobile";
   const { requirements, loading, loadError, reloadRequirements } =
     useProjectRequirements(projectId);
   const [projectMeta, setProjectMeta] = useState<ProjectMeta | null>(null);
@@ -528,11 +529,11 @@ export default function ProjectClient({ projectId }: ProjectClientProps) {
   };
 
   return (
-    <main style={pageStyle}>
+    <main style={{ ...pageStyle, ...(isMobile ? mobilePageStyle : {}) }}>
       <header
         style={{
           alignItems: "flex-start",
-          display: "flex",
+          display: isMobile ? "grid" : "flex",
           flexWrap: "wrap",
           gap: 20,
           justifyContent: "space-between",
@@ -577,7 +578,9 @@ export default function ProjectClient({ projectId }: ProjectClientProps) {
                 style={{
                   display: "grid",
                   gap: 12,
-                  gridTemplateColumns: "minmax(0, 1.2fr) minmax(220px, 0.8fr)",
+                  gridTemplateColumns: isMobile
+                    ? "minmax(0, 1fr)"
+                    : "minmax(0, 1.2fr) minmax(220px, 0.8fr)",
                 }}
               >
                 <label style={inlineFieldStyle}>
@@ -611,7 +614,13 @@ export default function ProjectClient({ projectId }: ProjectClientProps) {
                   La funcion del proyecto se mantiene fija para no desalinear
                   los requerimientos generados automaticamente.
                 </span>
-                <div style={{ display: "flex", gap: 10 }}>
+                <div
+                  style={{
+                    display: isMobile ? "grid" : "flex",
+                    gap: 10,
+                    width: isMobile ? "100%" : undefined,
+                  }}
+                >
                   <button
                     type="button"
                     onClick={cancelProjectMetaEditing}
@@ -670,6 +679,7 @@ export default function ProjectClient({ projectId }: ProjectClientProps) {
             display: "flex",
             flexWrap: "wrap",
             gap: 12,
+            width: isMobile ? "100%" : undefined,
           }}
         >
           <label style={{ color: "#4b5563", fontSize: 13 }}>Ordenar por</label>
@@ -716,7 +726,9 @@ export default function ProjectClient({ projectId }: ProjectClientProps) {
         style={{
           display: "grid",
           gap: 18,
-          gridTemplateColumns: "repeat(auto-fit, minmax(340px, 1fr))",
+          gridTemplateColumns: isMobile
+            ? "minmax(0, 1fr)"
+            : "repeat(auto-fit, minmax(340px, 1fr))",
           marginBottom: 24,
         }}
       >
@@ -731,7 +743,9 @@ export default function ProjectClient({ projectId }: ProjectClientProps) {
             style={{
               display: "grid",
               gap: 12,
-              gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+              gridTemplateColumns: isMobile
+                ? "minmax(0, 1fr)"
+                : "repeat(auto-fit, minmax(180px, 1fr))",
             }}
           >
             <input
@@ -886,6 +900,7 @@ export default function ProjectClient({ projectId }: ProjectClientProps) {
           onDateFilterChange={setDateFilter}
           onSearchTermChange={setSearchTerm}
           onReset={resetFilters}
+          compactLayout={isMobile}
         />
 
         <div
@@ -941,6 +956,7 @@ export default function ProjectClient({ projectId }: ProjectClientProps) {
                 onSaveEditing={saveEditing}
                 onEditChange={setEditData}
                 onDeleteRequirement={deleteRequirement}
+                compactLayout={isMobile}
               />
             ))}
           </div>
@@ -961,6 +977,7 @@ function RequirementCard({
   onSaveEditing,
   onEditChange,
   onDeleteRequirement,
+  compactLayout,
 }: {
   requirement: Requirement;
   editing: boolean;
@@ -972,6 +989,7 @@ function RequirementCard({
   onSaveEditing: () => void;
   onEditChange: (data: EditData) => void;
   onDeleteRequirement: (requirement: Requirement) => void;
+  compactLayout: boolean;
 }) {
   const currentStatus = normalizeStatus(requirement.status);
   const overdue = isRequirementOverdue(requirement);
@@ -996,13 +1014,14 @@ function RequirementCard({
           onCancelEditing={onCancelEditing}
           onSaveEditing={onSaveEditing}
           onEditChange={onEditChange}
+          compactLayout={compactLayout}
         />
       ) : (
         <>
           <div
             style={{
               alignItems: "flex-start",
-              display: "flex",
+              display: compactLayout ? "grid" : "flex",
               flexWrap: "wrap",
               gap: 12,
               justifyContent: "space-between",
@@ -1035,7 +1054,7 @@ function RequirementCard({
                   fontSize: 16,
                   lineHeight: 1.35,
                   margin: "6px 0 0",
-                  maxWidth: "92%",
+                  maxWidth: compactLayout ? "100%" : "92%",
                 }}
               >
                 {getDisplayValue(requirement.name, "Sin descripcion")}
@@ -1045,7 +1064,10 @@ function RequirementCard({
             <button
               onClick={() => onStartEditing(requirement)}
               disabled={deletingRequirement}
-              style={compactActionButtonStyle}
+              style={{
+                ...compactActionButtonStyle,
+                width: compactLayout ? "100%" : undefined,
+              }}
             >
               Editar
             </button>
@@ -1056,6 +1078,7 @@ function RequirementCard({
                 ...compactDangerButtonStyle,
                 opacity: deletingRequirement ? 0.6 : 1,
                 cursor: deletingRequirement ? "not-allowed" : "pointer",
+                width: compactLayout ? "100%" : undefined,
               }}
             >
               {deletingRequirement ? "Eliminando..." : "Eliminar"}
@@ -1066,7 +1089,9 @@ function RequirementCard({
             style={{
               display: "grid",
               gap: 10,
-              gridTemplateColumns: "minmax(0, 1.4fr) repeat(2, minmax(120px, 0.8fr))",
+              gridTemplateColumns: compactLayout
+                ? "minmax(0, 1fr)"
+                : "minmax(0, 1.4fr) repeat(2, minmax(120px, 0.8fr))",
               marginTop: 12,
             }}
           >
@@ -1100,12 +1125,14 @@ function EditRequirementForm({
   onCancelEditing,
   onSaveEditing,
   onEditChange,
+  compactLayout,
 }: {
   editData: EditData;
   savingEdit: boolean;
   onCancelEditing: () => void;
   onSaveEditing: () => void;
   onEditChange: (data: EditData) => void;
+  compactLayout: boolean;
 }) {
   const editStatusMeta = STATUS_META[editData.status];
 
@@ -1170,7 +1197,9 @@ function EditRequirementForm({
         style={{
           display: "grid",
           gap: 12,
-          gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))",
+          gridTemplateColumns: compactLayout
+            ? "minmax(0, 1fr)"
+            : "repeat(auto-fit, minmax(160px, 1fr))",
         }}
       >
         <label style={inlineFieldStyle}>
@@ -1232,7 +1261,9 @@ function EditRequirementForm({
         style={{
           display: "grid",
           gap: 12,
-          gridTemplateColumns: "minmax(0, 1.2fr) minmax(0, 0.8fr)",
+          gridTemplateColumns: compactLayout
+            ? "minmax(0, 1fr)"
+            : "minmax(0, 1.2fr) minmax(0, 0.8fr)",
           marginTop: 14,
         }}
       >
@@ -1310,6 +1341,7 @@ function FilterPanel({
   onDateFilterChange,
   onSearchTermChange,
   onReset,
+  compactLayout,
 }: {
   normaOptions: string[];
   selectedNorma: string;
@@ -1324,6 +1356,7 @@ function FilterPanel({
   onDateFilterChange: (value: DateFilter) => void;
   onSearchTermChange: (value: string) => void;
   onReset: () => void;
+  compactLayout: boolean;
 }) {
   return (
     <section
@@ -1375,7 +1408,9 @@ function FilterPanel({
           alignItems: "start",
           display: "grid",
           gap: 14,
-          gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+          gridTemplateColumns: compactLayout
+            ? "minmax(0, 1fr)"
+            : "repeat(auto-fit, minmax(220px, 1fr))",
         }}
       >
         <label style={filterLabelStyle}>
@@ -1629,6 +1664,25 @@ function EmptyState({
   );
 }
 
+function useProjectDetailBreakpoint() {
+  const [breakpoint, setBreakpoint] = useState<"mobile" | "desktop">("desktop");
+
+  useEffect(() => {
+    const updateBreakpoint = () => {
+      setBreakpoint(window.innerWidth < 760 ? "mobile" : "desktop");
+    };
+
+    updateBreakpoint();
+    window.addEventListener("resize", updateBreakpoint);
+
+    return () => {
+      window.removeEventListener("resize", updateBreakpoint);
+    };
+  }, []);
+
+  return breakpoint;
+}
+
 const controlStyle: React.CSSProperties = {
   border: "1px solid #d1d5db",
   borderRadius: 8,
@@ -1733,6 +1787,10 @@ const pageStyle: React.CSSProperties = {
   background: "#f4f6fc",
   minHeight: "calc(100vh - 65px)",
   padding: "28px clamp(20px, 3vw, 36px) 40px",
+};
+
+const mobilePageStyle: React.CSSProperties = {
+  padding: "20px 12px 32px",
 };
 
 const panelStyle: React.CSSProperties = {

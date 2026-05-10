@@ -36,6 +36,10 @@ type ImportResult = {
 
 export default function ProjectsPage() {
   const router = useRouter();
+  const breakpoint = useProjectsBreakpoint();
+  const isMobile = breakpoint === "mobile";
+  const isTablet = breakpoint === "tablet";
+  const isCompact = isMobile || isTablet;
 
   const [projects, setProjects] = useState<Project[]>([]);
   const [name, setName] = useState("");
@@ -262,25 +266,39 @@ export default function ProjectsPage() {
   };
 
   return (
-    <main style={pageStyle}>
-      <section style={heroStyle}>
+    <main style={{ ...pageStyle, ...(isMobile ? mobilePageStyle : {}) }}>
+      <section
+        style={{
+          ...heroStyle,
+          ...(isMobile ? mobileHeroStyle : {}),
+        }}
+      >
         <div style={{ display: "grid", gap: 10 }}>
           <span style={eyebrowStyle}>Workspace de proyectos</span>
-          <h1 style={heroTitleStyle}>Gestion de proyectos</h1>
+          <h1 style={{ ...heroTitleStyle, ...(isMobile ? mobileHeroTitleStyle : {}) }}>
+            Gestion de proyectos
+          </h1>
           <p style={heroDescriptionStyle}>
             Crea proyectos, define su funcion ISO 19650 y administra las
             plantillas base que se cargan automaticamente.
           </p>
         </div>
 
-        <div style={heroActionsStyle}>
+        <div style={{ ...heroActionsStyle, ...(isMobile ? mobileHeroActionsStyle : {}) }}>
           <Link href="/dashboard" style={secondaryActionStyle}>
             Ir al dashboard
           </Link>
         </div>
       </section>
 
-      <section style={kpiGridStyle}>
+      <section
+        style={{
+          ...kpiGridStyle,
+          gridTemplateColumns: isMobile
+            ? "repeat(2, minmax(0, 1fr))"
+            : kpiGridStyle.gridTemplateColumns,
+        }}
+      >
         <KpiCard
           label="Proyectos"
           value={loading ? "..." : metrics.totalProjects}
@@ -310,7 +328,14 @@ export default function ProjectsPage() {
         </div>
       )}
 
-      <section style={topPanelsGridStyle}>
+      <section
+        style={{
+          ...topPanelsGridStyle,
+          gridTemplateColumns: isMobile
+            ? "minmax(0, 1fr)"
+            : topPanelsGridStyle.gridTemplateColumns,
+        }}
+      >
         <div style={{ display: "grid", gap: 18, minWidth: 0 }}>
           <section style={panelStyle}>
             <div style={panelHeaderStyle}>
@@ -323,7 +348,15 @@ export default function ProjectsPage() {
               </div>
             </div>
 
-            <form onSubmit={createProject} style={formGridStyle}>
+            <form
+              onSubmit={createProject}
+              style={{
+                ...formGridStyle,
+                gridTemplateColumns: isMobile
+                  ? "minmax(0, 1fr)"
+                  : formGridStyle.gridTemplateColumns,
+              }}
+            >
               <label style={fieldStyle}>
                 <span>Nombre</span>
                 <input
@@ -388,7 +421,15 @@ export default function ProjectsPage() {
               </div>
             </div>
 
-            <form onSubmit={importRequirements} style={formGridStyle}>
+            <form
+              onSubmit={importRequirements}
+              style={{
+                ...formGridStyle,
+                gridTemplateColumns: isMobile
+                  ? "minmax(0, 1fr)"
+                  : formGridStyle.gridTemplateColumns,
+              }}
+            >
               <label style={{ ...fieldStyle, gridColumn: "1 / -1" }}>
                 <span>Archivo .xlsx</span>
                 <input
@@ -462,7 +503,14 @@ export default function ProjectsPage() {
               Aun no hay proyectos creados en este espacio de trabajo.
             </div>
           ) : (
-            <div style={projectListGridStyle}>
+            <div
+              style={{
+                ...projectListGridStyle,
+                gridTemplateColumns: isCompact
+                  ? "minmax(0, 1fr)"
+                  : projectListGridStyle.gridTemplateColumns,
+              }}
+            >
               {projects.map((project) => {
                 const requirements = project.requirements || [];
                 const overdue = requirements.filter(isRequirementOverdue).length;
@@ -477,7 +525,12 @@ export default function ProjectsPage() {
 
                 return (
                   <article key={project.id} style={projectCardStyle}>
-                    <div style={projectCardHeaderStyle}>
+                    <div
+                      style={{
+                        ...projectCardHeaderStyle,
+                        ...(isMobile ? mobileProjectCardHeaderStyle : {}),
+                      }}
+                    >
                       <div style={{ minWidth: 0 }}>
                         <div style={projectNameRowStyle}>
                           <Link
@@ -503,13 +556,25 @@ export default function ProjectsPage() {
                         </p>
                       </div>
 
-                      <div style={progressSummaryStyle}>
+                      <div
+                        style={{
+                          ...progressSummaryStyle,
+                          ...(isMobile ? mobileProgressSummaryStyle : {}),
+                        }}
+                      >
                         <span style={progressValueStyle}>{compliance}%</span>
                         <span style={progressLabelStyle}>cumplimiento</span>
                       </div>
                     </div>
 
-                    <div style={metricRowStyle}>
+                    <div
+                      style={{
+                        ...metricRowStyle,
+                        gridTemplateColumns: isMobile
+                          ? "minmax(0, 1fr)"
+                          : metricRowStyle.gridTemplateColumns,
+                      }}
+                    >
                       <MiniMetric
                         label="Requerimientos"
                         value={String(requirements.length)}
@@ -536,7 +601,12 @@ export default function ProjectsPage() {
                       />
                     </div>
 
-                    <div style={projectActionsStyle}>
+                    <div
+                      style={{
+                        ...projectActionsStyle,
+                        ...(isMobile ? mobileProjectActionsStyle : {}),
+                      }}
+                    >
                       <Link
                         href={`/projects/${encodeURIComponent(project.id)}`}
                         style={secondaryInlineActionStyle}
@@ -657,6 +727,39 @@ function FeedbackBox({
   );
 }
 
+function useProjectsBreakpoint() {
+  const [breakpoint, setBreakpoint] = useState<"mobile" | "tablet" | "desktop">(
+    "desktop"
+  );
+
+  useEffect(() => {
+    const updateBreakpoint = () => {
+      const width = window.innerWidth;
+
+      if (width < 720) {
+        setBreakpoint("mobile");
+        return;
+      }
+
+      if (width < 1120) {
+        setBreakpoint("tablet");
+        return;
+      }
+
+      setBreakpoint("desktop");
+    };
+
+    updateBreakpoint();
+    window.addEventListener("resize", updateBreakpoint);
+
+    return () => {
+      window.removeEventListener("resize", updateBreakpoint);
+    };
+  }, []);
+
+  return breakpoint;
+}
+
 function getRequirementScore(status?: RequirementStatus | string | null) {
   if (status === "total") return 1;
   if (status === "parcial") return 0.5;
@@ -724,6 +827,10 @@ const pageStyle: React.CSSProperties = {
   padding: "28px clamp(20px, 3vw, 36px) 40px",
 };
 
+const mobilePageStyle: React.CSSProperties = {
+  padding: "20px 12px 32px",
+};
+
 const heroStyle: React.CSSProperties = {
   alignItems: "flex-start",
   display: "flex",
@@ -732,6 +839,10 @@ const heroStyle: React.CSSProperties = {
   justifyContent: "space-between",
   margin: "0 auto 24px",
   maxWidth: 1360,
+};
+
+const mobileHeroStyle: React.CSSProperties = {
+  display: "grid",
 };
 
 const eyebrowStyle: React.CSSProperties = {
@@ -749,6 +860,10 @@ const heroTitleStyle: React.CSSProperties = {
   margin: 0,
 };
 
+const mobileHeroTitleStyle: React.CSSProperties = {
+  fontSize: 28,
+};
+
 const heroDescriptionStyle: React.CSSProperties = {
   color: "#5b6b82",
   fontSize: 16,
@@ -761,6 +876,10 @@ const heroActionsStyle: React.CSSProperties = {
   display: "flex",
   flexWrap: "wrap",
   gap: 12,
+};
+
+const mobileHeroActionsStyle: React.CSSProperties = {
+  width: "100%",
 };
 
 const secondaryActionStyle: React.CSSProperties = {
@@ -935,6 +1054,10 @@ const projectCardHeaderStyle: React.CSSProperties = {
   justifyContent: "space-between",
 };
 
+const mobileProjectCardHeaderStyle: React.CSSProperties = {
+  display: "grid",
+};
+
 const projectNameRowStyle: React.CSSProperties = {
   alignItems: "center",
   display: "flex",
@@ -969,6 +1092,11 @@ const progressSummaryStyle: React.CSSProperties = {
   display: "grid",
   justifyItems: "end",
   minWidth: 90,
+};
+
+const mobileProgressSummaryStyle: React.CSSProperties = {
+  justifyItems: "start",
+  minWidth: 0,
 };
 
 const progressValueStyle: React.CSSProperties = {
@@ -1025,6 +1153,10 @@ const projectActionsStyle: React.CSSProperties = {
   display: "flex",
   flexWrap: "wrap",
   gap: 10,
+};
+
+const mobileProjectActionsStyle: React.CSSProperties = {
+  display: "grid",
 };
 
 const secondaryInlineActionStyle: React.CSSProperties = {

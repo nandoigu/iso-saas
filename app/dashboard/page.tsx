@@ -66,6 +66,13 @@ type NotificationPreferences = {
   reportFrequency: "daily" | "weekly";
 };
 
+type NoticeTone = "success" | "error" | "info";
+
+type FeedbackMessage = {
+  tone: NoticeTone;
+  text: string;
+};
+
 type DashboardFilters = {
   norma: string;
   status: "all" | RequirementStatus;
@@ -104,7 +111,7 @@ export default function DashboardPage() {
   const [generatingPdf, setGeneratingPdf] = useState(false);
   const [sendingReport, setSendingReport] = useState(false);
   const [savingPreferences, setSavingPreferences] = useState(false);
-  const [emailFeedback, setEmailFeedback] = useState("");
+  const [emailFeedback, setEmailFeedback] = useState<FeedbackMessage | null>(null);
   const [notificationPreferences, setNotificationPreferences] =
     useState<NotificationPreferences>(DEFAULT_NOTIFICATION_PREFERENCES);
   const [error, setError] = useState("");
@@ -269,7 +276,7 @@ export default function DashboardPage() {
   ) => {
     setNotificationPreferences(nextPreferences);
     setSavingPreferences(true);
-    setEmailFeedback("");
+    setEmailFeedback(null);
 
     try {
       const res = await fetch("/api/notifications/preferences", {
@@ -289,12 +296,19 @@ export default function DashboardPage() {
         reportFrequency:
           data.data.reportFrequency === "daily" ? "daily" : "weekly",
       });
-      setEmailFeedback("Preferencias guardadas");
+      setEmailFeedback({
+        tone: "success",
+        text: "Preferencias de notificacion guardadas correctamente.",
+      });
     } catch (err) {
       setNotificationPreferences(notificationPreferences);
-      setEmailFeedback(
-        err instanceof Error ? err.message : "Error guardando preferencias"
-      );
+      setEmailFeedback({
+        tone: "error",
+        text:
+          err instanceof Error
+            ? err.message
+            : "No se pudieron guardar las preferencias de notificacion.",
+      });
     } finally {
       setSavingPreferences(false);
     }
@@ -304,7 +318,7 @@ export default function DashboardPage() {
     if (sendingReport) return;
 
     setSendingReport(true);
-    setEmailFeedback("");
+    setEmailFeedback(null);
 
     try {
       const res = await fetch("/api/cron/alerts", { method: "POST" });
@@ -314,9 +328,15 @@ export default function DashboardPage() {
         throw new Error(data.error || "No se pudo enviar el informe");
       }
 
-      setEmailFeedback(data.message || "Informe enviado correctamente");
+      setEmailFeedback({
+        tone: "success",
+        text: data.message || "Informe enviado correctamente.",
+      });
     } catch (err) {
-      setEmailFeedback(err instanceof Error ? err.message : "Error enviando informe");
+      setEmailFeedback({
+        tone: "error",
+        text: err instanceof Error ? err.message : "No se pudo enviar el informe.",
+      });
     } finally {
       setSendingReport(false);
     }
@@ -368,7 +388,7 @@ export default function DashboardPage() {
         </div>
       </header>
 
-      {error && <Alert message={error} />}
+      {error && <Notice tone="error" message={error} />}
       {loading && <EmptyState title="Cargando dashboard" description="Preparando metricas y graficos." />}
 
       {!loading && !error && (
@@ -540,7 +560,7 @@ function AlertsPanel({
   preferences: NotificationPreferences;
   savingPreferences: boolean;
   sendingReport: boolean;
-  feedback: string;
+  feedback: FeedbackMessage | null;
   onPreferencesChange: (preferences: NotificationPreferences) => void;
   onSendReport: () => void;
 }) {
@@ -691,11 +711,15 @@ function AlertsPanel({
             {sendingReport ? "Enviando informe..." : "Enviar informe ahora"}
           </button>
 
-          {(savingPreferences || feedback) && (
-            <p style={{ color: "#64748b", fontSize: 13, margin: "10px 0 0" }}>
-              {savingPreferences ? "Guardando preferencias..." : feedback}
-            </p>
-          )}
+          {savingPreferences ? (
+            <Notice
+              tone="info"
+              message="Guardando preferencias de notificacion..."
+              compact
+            />
+          ) : feedback ? (
+            <Notice tone={feedback.tone} message={feedback.text} compact />
+          ) : null}
         </div>
       </div>
     </section>
@@ -996,16 +1020,24 @@ function ChartPanel({
   );
 }
 
-function Alert({ message }: { message: string }) {
+function Notice({
+  tone,
+  message,
+  compact = false,
+}: {
+  tone: NoticeTone;
+  message: string;
+  compact?: boolean;
+}) {
   return (
     <div
       style={{
-        background: "#fef2f2",
-        border: "1px solid #fecaca",
+        ...getNoticeStyle(tone),
         borderRadius: 12,
-        color: "#991b1b",
-        marginBottom: 20,
-        padding: 14,
+        fontSize: compact ? 13 : 14,
+        fontWeight: 700,
+        margin: compact ? "12px 0 0" : "0 0 20px",
+        padding: compact ? 12 : 14,
       }}
     >
       {message}
@@ -1532,3 +1564,27 @@ const checkboxLabelStyle: React.CSSProperties = {
   gap: 8,
   marginTop: 10,
 };
+
+function getNoticeStyle(tone: NoticeTone): React.CSSProperties {
+  if (tone === "success") {
+    return {
+      background: "#f0fdf4",
+      border: "1px solid #bbf7d0",
+      color: "#166534",
+    };
+  }
+
+  if (tone === "info") {
+    return {
+      background: "#eff6ff",
+      border: "1px solid #bfdbfe",
+      color: "#1d4ed8",
+    };
+  }
+
+  return {
+    background: "#fef2f2",
+    border: "1px solid #fecaca",
+    color: "#991b1b",
+  };
+}
