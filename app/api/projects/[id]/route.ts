@@ -141,3 +141,88 @@ export async function DELETE(req: Request, context: RouteContext) {
     );
   }
 }
+
+export async function PUT(req: Request, context: RouteContext) {
+  try {
+    const user = await getAuthSession(req, { allowBlocked: true });
+
+    if (!user) {
+      return unauthorized();
+    }
+
+    if (isBlockedStatus(user.status)) {
+      return forbidden(BLOCKED_ACCOUNT_MESSAGE);
+    }
+
+    const { id } = await context.params;
+    const projectId = String(id || "").trim();
+
+    if (!projectId) {
+      return NextResponse.json(
+        { error: "Debes indicar un proyecto valido." },
+        { status: 400 }
+      );
+    }
+
+    const body = await req.json();
+    const name = typeof body.name === "string" ? body.name.trim() : "";
+    const code =
+      typeof body.code === "string" && body.code.trim() ? body.code.trim() : null;
+
+    if (!name) {
+      return NextResponse.json(
+        { error: "El nombre del proyecto es obligatorio." },
+        { status: 400 }
+      );
+    }
+
+    const project = await prisma.project.findUnique({
+      where: { id: projectId },
+      select: {
+        id: true,
+        userId: true,
+      },
+    });
+
+    if (!project) {
+      return NextResponse.json(
+        { error: "Proyecto no encontrado." },
+        { status: 404 }
+      );
+    }
+
+    if (!isAdminRole(user.role) && project.userId !== user.id) {
+      return forbidden("No tienes permisos para actualizar este proyecto.");
+    }
+
+    const updatedProject = await prisma.project.update({
+      where: { id: projectId },
+      data: {
+        name,
+        code,
+      },
+      select: {
+        id: true,
+        name: true,
+        code: true,
+        role: true,
+        createdAt: true,
+        user: {
+          select: {
+            id: true,
+            email: true,
+            name: true,
+          },
+        },
+      },
+    });
+
+    return NextResponse.json(updatedProject);
+  } catch (error) {
+    console.error("ERROR PUT /api/projects/[id]:", error);
+    return NextResponse.json(
+      { error: "No se pudo actualizar el proyecto." },
+      { status: 500 }
+    );
+  }
+}

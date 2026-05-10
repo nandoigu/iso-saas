@@ -213,6 +213,63 @@ export async function PUT(req: Request) {
   }
 }
 
+export async function DELETE(req: Request) {
+  try {
+    const user = await getAuthSession(req, { allowBlocked: true });
+
+    if (!user) {
+      return unauthorized();
+    }
+
+    if (isBlockedStatus(user.status)) {
+      return forbidden(BLOCKED_ACCOUNT_MESSAGE);
+    }
+
+    const { searchParams } = new URL(req.url);
+    const requirementId = searchParams.get("id")?.trim() || "";
+
+    if (!requirementId) {
+      return NextResponse.json(
+        { error: "id requerido" },
+        { status: 400 }
+      );
+    }
+
+    const requirement = await prisma.requirement.findFirst({
+      where: {
+        id: requirementId,
+        ...(isAdminRole(user.role)
+          ? {}
+          : {
+              project: {
+                userId: user.id,
+              },
+            }),
+      },
+      select: { id: true },
+    });
+
+    if (!requirement) {
+      return NextResponse.json(
+        { error: "Requerimiento no encontrado" },
+        { status: 404 }
+      );
+    }
+
+    await prisma.requirement.delete({
+      where: { id: requirement.id },
+    });
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("ERROR DELETE /api/requirements:", error);
+    return NextResponse.json(
+      { error: "Error eliminando requirement" },
+      { status: 500 }
+    );
+  }
+}
+
 function cleanOptional(value: unknown) {
   return typeof value === "string" && value.trim() ? value.trim() : null;
 }

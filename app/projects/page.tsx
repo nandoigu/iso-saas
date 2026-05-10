@@ -922,7 +922,10 @@ const projectCardStyle: React.CSSProperties = {
 const projectListGridStyle: React.CSSProperties = {
   display: "grid",
   gap: 14,
-  gridTemplateColumns: "repeat(auto-fit, minmax(420px, 1fr))",
+  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+  margin: "0 auto",
+  maxWidth: 1040,
+  width: "100%",
 };
 
 const projectCardHeaderStyle: React.CSSProperties = {

@@ -41,11 +41,16 @@ export default function ProjectClient({ projectId }: ProjectClientProps) {
     useProjectRequirements(projectId);
   const [projectMeta, setProjectMeta] = useState<ProjectMeta | null>(null);
   const [metaError, setMetaError] = useState("");
+  const [editingProjectMeta, setEditingProjectMeta] = useState(false);
+  const [projectNameDraft, setProjectNameDraft] = useState("");
+  const [projectCodeDraft, setProjectCodeDraft] = useState("");
+  const [savingProjectMeta, setSavingProjectMeta] = useState(false);
 
   const [sortMode, setSortMode] = useState<SortMode>("natural");
   const [selectedNorma, setSelectedNorma] = useState("all");
   const [selectedStatuses, setSelectedStatuses] = useState<RequirementStatus[]>([]);
   const [dateFilter, setDateFilter] = useState<DateFilter>("all");
+  const [searchTerm, setSearchTerm] = useState("");
 
   const [norma, setNorma] = useState("");
   const [item, setItem] = useState("");
@@ -59,10 +64,13 @@ export default function ProjectClient({ projectId }: ProjectClientProps) {
   const [importError, setImportError] = useState("");
   const [importSuccess, setImportSuccess] = useState("");
   const [importDetails, setImportDetails] = useState<string[]>([]);
+  const [actionError, setActionError] = useState("");
+  const [actionSuccess, setActionSuccess] = useState("");
 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editData, setEditData] = useState<EditData>(EMPTY_EDIT_DATA);
   const [savingEdit, setSavingEdit] = useState(false);
+  const [deletingRequirementId, setDeletingRequirementId] = useState<string | null>(null);
 
   useEffect(() => {
     const loadProjectMeta = async () => {
@@ -81,6 +89,8 @@ export default function ProjectClient({ projectId }: ProjectClientProps) {
         }
 
         setProjectMeta(data);
+        setProjectNameDraft(data.name || "");
+        setProjectCodeDraft(data.code || "");
       } catch (error) {
         console.error("Error cargando metadatos del proyecto:", error);
         setMetaError("No se pudo cargar la funcion del proyecto.");
@@ -92,16 +102,20 @@ export default function ProjectClient({ projectId }: ProjectClientProps) {
 
   const createRequirement = async () => {
     if (!projectId) {
-      alert("No se ha detectado el proyecto.");
+      setActionError("No se ha detectado el proyecto.");
+      setActionSuccess("");
       return;
     }
 
     if (!name.trim()) {
-      alert("El requerimiento es obligatorio.");
+      setActionError("El requerimiento es obligatorio.");
+      setActionSuccess("");
       return;
     }
 
     setSavingNew(true);
+    setActionError("");
+    setActionSuccess("");
 
     try {
       const res = await fetch("/api/requirements", {
@@ -124,7 +138,7 @@ export default function ProjectClient({ projectId }: ProjectClientProps) {
 
       if (!res.ok) {
         console.error("ERROR BACKEND CREATE:", data);
-        alert(data.error || "Error creando requisito");
+        setActionError(data.error || "Error creando requisito");
         return;
       }
 
@@ -136,9 +150,10 @@ export default function ProjectClient({ projectId }: ProjectClientProps) {
       setDeadline("");
 
       await reloadRequirements();
+      setActionSuccess("Requerimiento creado correctamente.");
     } catch (error) {
       console.error("ERROR FRONT CREATE:", error);
-      alert("Error inesperado creando requisito");
+      setActionError("Error inesperado creando requisito");
     } finally {
       setSavingNew(false);
     }
@@ -146,7 +161,8 @@ export default function ProjectClient({ projectId }: ProjectClientProps) {
 
   const importProjectRequirements = async () => {
     if (!projectId) {
-      alert("No se ha detectado el proyecto.");
+      setImportError("No se ha detectado el proyecto.");
+      setImportSuccess("");
       return;
     }
 
@@ -224,18 +240,89 @@ export default function ProjectClient({ projectId }: ProjectClientProps) {
     setEditData(EMPTY_EDIT_DATA);
   };
 
+  const startProjectMetaEditing = () => {
+    setProjectNameDraft(projectMeta?.name || "");
+    setProjectCodeDraft(projectMeta?.code || "");
+    setEditingProjectMeta(true);
+    setActionError("");
+    setActionSuccess("");
+  };
+
+  const cancelProjectMetaEditing = () => {
+    setProjectNameDraft(projectMeta?.name || "");
+    setProjectCodeDraft(projectMeta?.code || "");
+    setEditingProjectMeta(false);
+  };
+
+  const saveProjectMeta = async () => {
+    if (!projectId) {
+      setActionError("No se ha detectado el proyecto.");
+      setActionSuccess("");
+      return;
+    }
+
+    if (!projectNameDraft.trim()) {
+      setActionError("El nombre del proyecto es obligatorio.");
+      setActionSuccess("");
+      return;
+    }
+
+    setSavingProjectMeta(true);
+    setActionError("");
+    setActionSuccess("");
+
+    try {
+      const res = await fetch(`/api/projects/${encodeURIComponent(projectId)}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: projectNameDraft.trim(),
+          code: projectCodeDraft.trim() || null,
+        }),
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        setActionError(data.error || "No se pudo actualizar el proyecto.");
+        return;
+      }
+
+      setProjectMeta({
+        id: data.id,
+        name: data.name,
+        code: data.code,
+        role: data.role,
+      });
+      setProjectNameDraft(data.name || "");
+      setProjectCodeDraft(data.code || "");
+      setEditingProjectMeta(false);
+      setActionSuccess("Metadatos del proyecto actualizados correctamente.");
+    } catch (error) {
+      console.error("ERROR FRONT SAVE PROJECT META:", error);
+      setActionError("Error inesperado actualizando el proyecto.");
+    } finally {
+      setSavingProjectMeta(false);
+    }
+  };
+
   const saveEditing = async () => {
     if (!editData.id) {
-      alert("No se ha seleccionado un requisito para editar.");
+      setActionError("No se ha seleccionado un requisito para editar.");
+      setActionSuccess("");
       return;
     }
 
     if (!editData.name.trim()) {
-      alert("El requerimiento es obligatorio.");
+      setActionError("El requerimiento es obligatorio.");
+      setActionSuccess("");
       return;
     }
 
     setSavingEdit(true);
+    setActionError("");
+    setActionSuccess("");
 
     try {
       const res = await fetch("/api/requirements", {
@@ -256,17 +343,62 @@ export default function ProjectClient({ projectId }: ProjectClientProps) {
 
       if (!res.ok) {
         console.error("ERROR BACKEND EDIT:", data);
-        alert(data.error || "Error actualizando");
+        setActionError(data.error || "Error actualizando");
         return;
       }
 
       cancelEditing();
       await reloadRequirements();
+      setActionSuccess("Requerimiento actualizado correctamente.");
     } catch (error) {
       console.error("ERROR FRONT EDIT:", error);
-      alert("Error inesperado actualizando");
+      setActionError("Error inesperado actualizando");
     } finally {
       setSavingEdit(false);
+    }
+  };
+
+  const deleteRequirement = async (requirement: Requirement) => {
+    const confirmed = window.confirm(
+      `¿Seguro que quieres eliminar el requerimiento "${getDisplayValue(
+        requirement.name,
+        "Sin descripcion"
+      )}"?`
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setDeletingRequirementId(requirement.id);
+    setActionError("");
+    setActionSuccess("");
+
+    try {
+      const res = await fetch(
+        `/api/requirements?id=${encodeURIComponent(requirement.id)}`,
+        {
+          method: "DELETE",
+        }
+      );
+      const data = await res.json();
+
+      if (!res.ok) {
+        setActionError(data.error || "No se pudo eliminar el requerimiento.");
+        return;
+      }
+
+      if (editingId === requirement.id) {
+        cancelEditing();
+      }
+
+      await reloadRequirements();
+      setActionSuccess("Requerimiento eliminado correctamente.");
+    } catch (error) {
+      console.error("ERROR FRONT DELETE REQUIREMENT:", error);
+      setActionError("Error inesperado eliminando requisito.");
+    } finally {
+      setDeletingRequirementId(null);
     }
   };
 
@@ -319,6 +451,22 @@ export default function ProjectClient({ projectId }: ProjectClientProps) {
         return false;
       }
 
+      if (searchTerm.trim()) {
+        const normalizedSearch = searchTerm.trim().toLowerCase();
+        const haystack = [
+          requirement.norma,
+          requirement.item,
+          requirement.name,
+          requirement.evidencia,
+        ]
+          .map((value) => String(value ?? "").toLowerCase())
+          .join(" ");
+
+        if (!haystack.includes(normalizedSearch)) {
+          return false;
+        }
+      }
+
       return true;
     });
 
@@ -343,12 +491,13 @@ export default function ProjectClient({ projectId }: ProjectClientProps) {
 
       return 0;
     });
-  }, [requirements, selectedNorma, selectedStatuses, dateFilter, sortMode]);
+  }, [requirements, selectedNorma, selectedStatuses, dateFilter, sortMode, searchTerm]);
 
   const activeFilterCount =
     (selectedNorma !== "all" ? 1 : 0) +
     selectedStatuses.length +
-    (dateFilter !== "all" ? 1 : 0);
+    (dateFilter !== "all" ? 1 : 0) +
+    (searchTerm.trim() ? 1 : 0);
 
   const toggleStatusFilter = (nextStatus: RequirementStatus) => {
     setSelectedStatuses((current) =>
@@ -363,10 +512,11 @@ export default function ProjectClient({ projectId }: ProjectClientProps) {
     setSelectedStatuses([]);
     setDateFilter("all");
     setSortMode("natural");
+    setSearchTerm("");
   };
 
   return (
-    <main style={{ padding: 40 }}>
+    <main style={pageStyle}>
       <header
         style={{
           alignItems: "flex-start",
@@ -377,7 +527,8 @@ export default function ProjectClient({ projectId }: ProjectClientProps) {
           marginBottom: 28,
         }}
       >
-        <div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={eyebrowStyle}>Workspace de requerimientos</div>
           <div
             style={{
               alignItems: "center",
@@ -399,13 +550,103 @@ export default function ProjectClient({ projectId }: ProjectClientProps) {
               <span style={projectMetaStyle}>{projectMeta.code}</span>
             ) : null}
           </div>
-          <h2 style={{ margin: 0 }}>
-            {projectMeta?.name || "Gestion de requerimientos"}
-          </h2>
-          <p style={{ color: "#6b7280", margin: "8px 0 0" }}>
-            Alta, edicion y seguimiento de requerimientos, evidencias, estados y
-            fechas limite del proyecto.
-          </p>
+          {editingProjectMeta ? (
+            <div
+              style={{
+                background: "#ffffff",
+                border: "1px solid #dbe5f1",
+                borderRadius: 12,
+                marginTop: 8,
+                maxWidth: 760,
+                padding: 16,
+              }}
+            >
+              <div
+                style={{
+                  display: "grid",
+                  gap: 12,
+                  gridTemplateColumns: "minmax(0, 1.2fr) minmax(220px, 0.8fr)",
+                }}
+              >
+                <label style={inlineFieldStyle}>
+                  Nombre del proyecto
+                  <input
+                    value={projectNameDraft}
+                    onChange={(event) => setProjectNameDraft(event.target.value)}
+                    style={controlStyle}
+                  />
+                </label>
+                <label style={inlineFieldStyle}>
+                  Codigo
+                  <input
+                    value={projectCodeDraft}
+                    onChange={(event) => setProjectCodeDraft(event.target.value)}
+                    style={controlStyle}
+                  />
+                </label>
+              </div>
+              <div
+                style={{
+                  alignItems: "center",
+                  display: "flex",
+                  flexWrap: "wrap",
+                  gap: 10,
+                  justifyContent: "space-between",
+                  marginTop: 12,
+                }}
+              >
+                <span style={{ color: "#64748b", fontSize: 13 }}>
+                  La funcion del proyecto se mantiene fija para no desalinear
+                  los requerimientos generados automaticamente.
+                </span>
+                <div style={{ display: "flex", gap: 10 }}>
+                  <button
+                    type="button"
+                    onClick={cancelProjectMetaEditing}
+                    disabled={savingProjectMeta}
+                    style={secondaryButtonStyle}
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={saveProjectMeta}
+                    disabled={savingProjectMeta}
+                    style={primaryButtonStyle}
+                  >
+                    {savingProjectMeta ? "Guardando..." : "Guardar proyecto"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <>
+              <div
+                style={{
+                  alignItems: "center",
+                  display: "flex",
+                  flexWrap: "wrap",
+                  gap: 12,
+                  justifyContent: "space-between",
+                }}
+              >
+                <h2 style={{ margin: 0 }}>
+                  {projectMeta?.name || "Gestion de requerimientos"}
+                </h2>
+                <button
+                  type="button"
+                  onClick={startProjectMetaEditing}
+                  style={secondaryButtonStyle}
+                >
+                  Editar proyecto
+                </button>
+              </div>
+              <p style={{ color: "#6b7280", margin: "8px 0 0" }}>
+                Alta, edicion y seguimiento de requerimientos, evidencias, estados y
+                fechas limite del proyecto.
+              </p>
+            </>
+          )}
           {metaError ? (
             <p style={{ color: "#b91c1c", margin: "8px 0 0" }}>{metaError}</p>
           ) : null}
@@ -450,153 +691,157 @@ export default function ProjectClient({ projectId }: ProjectClientProps) {
         <MetricCard label="Vencidos" value={summary.overdue} tone="risk" />
       </section>
 
-      <section
-        style={{
-          background: "white",
-          border: "1px solid #e5e7eb",
-          borderRadius: 12,
-          boxShadow: "0 2px 6px rgba(0,0,0,0.04)",
-          marginBottom: 24,
-          padding: 20,
-        }}
-      >
-        <h3 style={{ margin: "0 0 16px" }}>Nuevo requerimiento</h3>
-
-        <div
-          style={{
-            display: "grid",
-            gap: 12,
-            gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-          }}
-        >
-          <input
-            placeholder="Norma"
-            value={norma}
-            onChange={(event) => setNorma(event.target.value)}
-            style={controlStyle}
-          />
-
-          <input
-            placeholder="Item"
-            value={item}
-            onChange={(event) => setItem(event.target.value)}
-            style={controlStyle}
-          />
-
-          <input
-            placeholder="Descripcion del requerimiento"
-            value={name}
-            onChange={(event) => setName(event.target.value)}
-            style={controlStyle}
-          />
-
-          <input
-            placeholder="Evidencia"
-            value={evidencia}
-            onChange={(event) => setEvidencia(event.target.value)}
-            style={controlStyle}
-          />
-
-          <select
-            value={status}
-            onChange={(event) =>
-              setStatus(event.target.value as RequirementStatus)
-            }
-            style={controlStyle}
-          >
-            <option value="total">Total</option>
-            <option value="parcial">Parcial</option>
-            <option value="no_conforme">No conforme</option>
-          </select>
-
-          <input
-            type="date"
-            value={deadline}
-            onChange={(event) => setDeadline(event.target.value)}
-            style={controlStyle}
-          />
+      {(actionError || actionSuccess) && (
+        <div style={{ display: "grid", gap: 10, marginBottom: 20 }}>
+          {actionError ? <div style={errorMessageStyle}>{actionError}</div> : null}
+          {actionSuccess ? (
+            <div style={successMessageStyle}>{actionSuccess}</div>
+          ) : null}
         </div>
-
-        <button
-          onClick={createRequirement}
-          disabled={savingNew}
-          style={{
-            ...primaryButtonStyle,
-            marginTop: 14,
-            opacity: savingNew ? 0.7 : 1,
-          }}
-        >
-          {savingNew ? "Guardando..." : "Anadir requerimiento"}
-        </button>
-      </section>
+      )}
 
       <section
         style={{
-          background: "white",
-          border: "1px solid #e5e7eb",
-          borderRadius: 12,
-          boxShadow: "0 2px 6px rgba(0,0,0,0.04)",
+          display: "grid",
+          gap: 18,
+          gridTemplateColumns: "repeat(auto-fit, minmax(340px, 1fr))",
           marginBottom: 24,
-          padding: 20,
         }}
       >
-        <h3 style={{ margin: "0 0 8px" }}>Importar requisitos del proyecto</h3>
-        <p style={{ color: "#6b7280", margin: "0 0 16px" }}>
-          Sube un Excel especifico para este proyecto. Puedes usar tanto el
-          formato detallado del proyecto como los Excel de plantillas por rol.
-          Solo se importaran los requerimientos nuevos y no se tocara la
-          plantilla global por rol.
-        </p>
+        <section style={panelStyle}>
+          <h3 style={{ margin: "0 0 8px" }}>Nuevo requerimiento</h3>
+          <p style={{ color: "#6b7280", margin: "0 0 16px" }}>
+            Registra nuevos requisitos del proyecto con su estado, evidencia y
+            fecha limite desde un unico bloque operativo.
+          </p>
 
-        <div
-          style={{
-            alignItems: "end",
-            display: "flex",
-            flexWrap: "wrap",
-            gap: 12,
-          }}
-        >
-          <label style={filterLabelStyle}>
-            Archivo .xlsx
-            <input
-              id="project-requirements-import-file"
-              type="file"
-              accept=".xlsx"
-              onChange={(event) =>
-                setImportingFile(event.target.files?.[0] || null)
-              }
-              style={controlStyle}
-            />
-          </label>
-
-          <button
-            type="button"
-            onClick={importProjectRequirements}
-            disabled={importingRequirements}
+          <div
             style={{
-              ...primaryButtonStyle,
-              opacity: importingRequirements ? 0.7 : 1,
+              display: "grid",
+              gap: 12,
+              gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
             }}
           >
-            {importingRequirements ? "Importando..." : "Importar Excel"}
+            <input
+              placeholder="Norma"
+              value={norma}
+              onChange={(event) => setNorma(event.target.value)}
+              style={controlStyle}
+            />
+
+            <input
+              placeholder="Item"
+              value={item}
+              onChange={(event) => setItem(event.target.value)}
+              style={controlStyle}
+            />
+
+            <input
+              placeholder="Descripcion del requerimiento"
+              value={name}
+              onChange={(event) => setName(event.target.value)}
+              style={controlStyle}
+            />
+
+            <input
+              placeholder="Evidencia"
+              value={evidencia}
+              onChange={(event) => setEvidencia(event.target.value)}
+              style={controlStyle}
+            />
+
+            <select
+              value={status}
+              onChange={(event) =>
+                setStatus(event.target.value as RequirementStatus)
+              }
+              style={controlStyle}
+            >
+              <option value="total">Total</option>
+              <option value="parcial">Parcial</option>
+              <option value="no_conforme">No conforme</option>
+            </select>
+
+            <input
+              type="date"
+              value={deadline}
+              onChange={(event) => setDeadline(event.target.value)}
+              style={controlStyle}
+            />
+          </div>
+
+          <button
+            onClick={createRequirement}
+            disabled={savingNew}
+            style={{
+              ...primaryButtonStyle,
+              marginTop: 14,
+              opacity: savingNew ? 0.7 : 1,
+            }}
+          >
+            {savingNew ? "Guardando..." : "Anadir requerimiento"}
           </button>
-        </div>
+        </section>
 
-        {importError ? (
-          <div style={errorMessageStyle}>{importError}</div>
-        ) : null}
+        <section style={panelStyle}>
+          <h3 style={{ margin: "0 0 8px" }}>Importar requisitos del proyecto</h3>
+          <p style={{ color: "#6b7280", margin: "0 0 16px" }}>
+            Sube un Excel especifico para este proyecto. Puedes usar tanto el
+            formato detallado del proyecto como los Excel de plantillas por rol.
+            Solo se importaran los requerimientos nuevos y no se tocara la
+            plantilla global por rol.
+          </p>
 
-        {importDetails.length > 0 ? (
-          <ul style={detailsListStyle}>
-            {importDetails.map((detail) => (
-              <li key={detail}>{detail}</li>
-            ))}
-          </ul>
-        ) : null}
+          <div
+            style={{
+              alignItems: "end",
+              display: "flex",
+              flexWrap: "wrap",
+              gap: 12,
+            }}
+          >
+            <label style={filterLabelStyle}>
+              Archivo .xlsx
+              <input
+                id="project-requirements-import-file"
+                type="file"
+                accept=".xlsx"
+                onChange={(event) =>
+                  setImportingFile(event.target.files?.[0] || null)
+                }
+                style={controlStyle}
+              />
+            </label>
 
-        {importSuccess ? (
-          <div style={successMessageStyle}>{importSuccess}</div>
-        ) : null}
+            <button
+              type="button"
+              onClick={importProjectRequirements}
+              disabled={importingRequirements}
+              style={{
+                ...primaryButtonStyle,
+                opacity: importingRequirements ? 0.7 : 1,
+              }}
+            >
+              {importingRequirements ? "Importando..." : "Importar Excel"}
+            </button>
+          </div>
+
+          {importError ? (
+            <div style={errorMessageStyle}>{importError}</div>
+          ) : null}
+
+          {importDetails.length > 0 ? (
+            <ul style={detailsListStyle}>
+              {importDetails.map((detail) => (
+                <li key={detail}>{detail}</li>
+              ))}
+            </ul>
+          ) : null}
+
+          {importSuccess ? (
+            <div style={successMessageStyle}>{importSuccess}</div>
+          ) : null}
+        </section>
       </section>
 
       <section style={{ marginBottom: 30 }}>
@@ -608,9 +853,11 @@ export default function ProjectClient({ projectId }: ProjectClientProps) {
           activeFilterCount={activeFilterCount}
           totalCount={requirements.length}
           filteredCount={filteredRequirements.length}
+          searchTerm={searchTerm}
           onNormaChange={setSelectedNorma}
           onStatusToggle={toggleStatusFilter}
           onDateFilterChange={setDateFilter}
+          onSearchTermChange={setSearchTerm}
           onReset={resetFilters}
         />
 
@@ -661,10 +908,12 @@ export default function ProjectClient({ projectId }: ProjectClientProps) {
                 editing={editingId === requirement.id}
                 editData={editData}
                 savingEdit={savingEdit}
+                deletingRequirement={deletingRequirementId === requirement.id}
                 onStartEditing={startEditing}
                 onCancelEditing={cancelEditing}
                 onSaveEditing={saveEditing}
                 onEditChange={setEditData}
+                onDeleteRequirement={deleteRequirement}
               />
             ))}
           </div>
@@ -679,19 +928,23 @@ function RequirementCard({
   editing,
   editData,
   savingEdit,
+  deletingRequirement,
   onStartEditing,
   onCancelEditing,
   onSaveEditing,
   onEditChange,
+  onDeleteRequirement,
 }: {
   requirement: Requirement;
   editing: boolean;
   editData: EditData;
   savingEdit: boolean;
+  deletingRequirement: boolean;
   onStartEditing: (requirement: Requirement) => void;
   onCancelEditing: () => void;
   onSaveEditing: () => void;
   onEditChange: (data: EditData) => void;
+  onDeleteRequirement: (requirement: Requirement) => void;
 }) {
   const currentStatus = normalizeStatus(requirement.status);
   const overdue = isRequirementOverdue(requirement);
@@ -724,61 +977,89 @@ function RequirementCard({
               alignItems: "flex-start",
               display: "flex",
               flexWrap: "wrap",
-              gap: 14,
+              gap: 12,
               justifyContent: "space-between",
             }}
           >
-            <div>
+            <div style={{ minWidth: 0, flex: 1 }}>
               <div
                 style={{
+                  alignItems: "center",
                   color: "#6b7280",
+                  display: "flex",
+                  flexWrap: "wrap",
                   fontSize: 12,
                   fontWeight: 700,
+                  gap: 8,
                   letterSpacing: "0.04em",
                   textTransform: "uppercase",
                 }}
               >
-                {getDisplayValue(requirement.norma, "Sin norma")} /{" "}
-                {getDisplayValue(requirement.item, "Sin item")}
+                <span>
+                  {getDisplayValue(requirement.norma, "Sin norma")} /{" "}
+                  {getDisplayValue(requirement.item, "Sin item")}
+                </span>
+                {overdue ? <OverdueBadge compact /> : null}
+                <StatusBadge status={currentStatus} compact />
               </div>
 
-              <h4 style={{ fontSize: 17, margin: "8px 0 0" }}>
+              <h4
+                style={{
+                  fontSize: 16,
+                  lineHeight: 1.35,
+                  margin: "6px 0 0",
+                  maxWidth: "92%",
+                }}
+              >
                 {getDisplayValue(requirement.name, "Sin descripcion")}
               </h4>
             </div>
 
-            <div style={{ alignItems: "center", display: "flex", gap: 8 }}>
-              {overdue && <OverdueBadge />}
-              <StatusBadge status={currentStatus} />
-            </div>
+            <button
+              onClick={() => onStartEditing(requirement)}
+              disabled={deletingRequirement}
+              style={compactActionButtonStyle}
+            >
+              Editar
+            </button>
+            <button
+              onClick={() => onDeleteRequirement(requirement)}
+              disabled={deletingRequirement}
+              style={{
+                ...compactDangerButtonStyle,
+                opacity: deletingRequirement ? 0.6 : 1,
+                cursor: deletingRequirement ? "not-allowed" : "pointer",
+              }}
+            >
+              {deletingRequirement ? "Eliminando..." : "Eliminar"}
+            </button>
           </div>
 
           <div
             style={{
               display: "grid",
-              gap: 12,
-              gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-              marginTop: 16,
+              gap: 10,
+              gridTemplateColumns: "minmax(0, 1.4fr) repeat(2, minmax(120px, 0.8fr))",
+              marginTop: 12,
             }}
           >
             <InfoBlock
               label="Evidencia"
               value={getDisplayValue(requirement.evidencia, "Sin evidencia")}
+              compact
             />
             <InfoBlock
               label="Fecha limite"
               value={formatDate(requirement.deadline)}
               tone={overdue ? "risk" : "default"}
+              compact
             />
-          </div>
-
-          <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 16 }}>
-            <button
-              onClick={() => onStartEditing(requirement)}
-              style={secondaryButtonStyle}
-            >
-              Editar
-            </button>
+            <InfoBlock
+              label="Estado"
+              value={STATUS_META[currentStatus].label}
+              tone={overdue ? "risk" : "default"}
+              compact
+            />
           </div>
         </>
       )}
@@ -799,84 +1080,176 @@ function EditRequirementForm({
   onSaveEditing: () => void;
   onEditChange: (data: EditData) => void;
 }) {
+  const editStatusMeta = STATUS_META[editData.status];
+
   return (
     <>
       <div
         style={{
-          display: "grid",
+          alignItems: "center",
+          background: "#f8fafc",
+          border: "1px solid #e2e8f0",
+          borderRadius: 10,
+          display: "flex",
+          flexWrap: "wrap",
           gap: 12,
-          gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+          justifyContent: "space-between",
+          marginBottom: 16,
+          padding: "12px 14px",
         }}
       >
-        <input
-          value={editData.norma}
-          onChange={(event) =>
-            onEditChange({ ...editData, norma: event.target.value })
-          }
-          placeholder="Norma"
-          style={controlStyle}
-        />
+        <div>
+          <div style={{ color: "#64748b", fontSize: 12, fontWeight: 700 }}>
+            Modo edicion
+          </div>
+          <div style={{ color: "#0f172a", fontSize: 14, fontWeight: 700, marginTop: 4 }}>
+            Ajusta el requerimiento directamente en contexto y guarda los cambios.
+          </div>
+        </div>
 
-        <input
-          value={editData.item}
-          onChange={(event) =>
-            onEditChange({ ...editData, item: event.target.value })
-          }
-          placeholder="Item"
-          style={controlStyle}
-        />
+        <div style={{ alignItems: "center", display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <span
+            style={{
+              background: editStatusMeta.background,
+              border: `1px solid ${editStatusMeta.border}`,
+              borderRadius: 999,
+              color: editStatusMeta.color,
+              display: "inline-flex",
+              fontSize: 12,
+              fontWeight: 800,
+              padding: "5px 10px",
+            }}
+          >
+            {editStatusMeta.label}
+          </span>
+          <button
+            onClick={onCancelEditing}
+            disabled={savingEdit}
+            style={secondaryButtonStyle}
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={onSaveEditing}
+            disabled={savingEdit}
+            style={primaryButtonStyle}
+          >
+            {savingEdit ? "Guardando..." : "Guardar cambios"}
+          </button>
+        </div>
+      </div>
 
-        <input
-          value={editData.name}
-          onChange={(event) =>
-            onEditChange({ ...editData, name: event.target.value })
-          }
-          placeholder="Descripcion"
-          style={controlStyle}
-        />
+      <div
+        style={{
+          display: "grid",
+          gap: 12,
+          gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))",
+        }}
+      >
+        <label style={inlineFieldStyle}>
+          Norma
+          <input
+            value={editData.norma}
+            onChange={(event) =>
+              onEditChange({ ...editData, norma: event.target.value })
+            }
+            placeholder="Norma"
+            style={controlStyle}
+          />
+        </label>
 
-        <input
-          value={editData.evidencia}
-          onChange={(event) =>
-            onEditChange({ ...editData, evidencia: event.target.value })
-          }
-          placeholder="Evidencia"
-          style={controlStyle}
-        />
+        <label style={inlineFieldStyle}>
+          Item
+          <input
+            value={editData.item}
+            onChange={(event) =>
+              onEditChange({ ...editData, item: event.target.value })
+            }
+            placeholder="Item"
+            style={controlStyle}
+          />
+        </label>
 
-        <select
-          value={editData.status}
-          onChange={(event) =>
-            onEditChange({
-              ...editData,
-              status: event.target.value as RequirementStatus,
-            })
-          }
-          style={controlStyle}
-        >
-          <option value="total">Total</option>
-          <option value="parcial">Parcial</option>
-          <option value="no_conforme">No conforme</option>
-        </select>
+        <label style={inlineFieldStyle}>
+          Estado
+          <select
+            value={editData.status}
+            onChange={(event) =>
+              onEditChange({
+                ...editData,
+                status: event.target.value as RequirementStatus,
+              })
+            }
+            style={controlStyle}
+          >
+            <option value="total">Total</option>
+            <option value="parcial">Parcial</option>
+            <option value="no_conforme">No conforme</option>
+          </select>
+        </label>
 
-        <input
-          type="date"
-          value={editData.deadline}
-          onChange={(event) =>
-            onEditChange({ ...editData, deadline: event.target.value })
-          }
-          style={controlStyle}
-        />
+        <label style={inlineFieldStyle}>
+          Fecha limite
+          <input
+            type="date"
+            value={editData.deadline}
+            onChange={(event) =>
+              onEditChange({ ...editData, deadline: event.target.value })
+            }
+            style={controlStyle}
+          />
+        </label>
+      </div>
+
+      <div
+        style={{
+          display: "grid",
+          gap: 12,
+          gridTemplateColumns: "minmax(0, 1.2fr) minmax(0, 0.8fr)",
+          marginTop: 14,
+        }}
+      >
+        <label style={inlineFieldStyle}>
+          Requerimiento
+          <textarea
+            value={editData.name}
+            onChange={(event) =>
+              onEditChange({ ...editData, name: event.target.value })
+            }
+            placeholder="Descripcion"
+            rows={4}
+            style={textAreaStyle}
+          />
+        </label>
+
+        <label style={inlineFieldStyle}>
+          Evidencia
+          <textarea
+            value={editData.evidencia}
+            onChange={(event) =>
+              onEditChange({ ...editData, evidencia: event.target.value })
+            }
+            placeholder="Evidencia"
+            rows={4}
+            style={textAreaStyle}
+          />
+        </label>
       </div>
 
       <div
         style={{
           display: "flex",
+          flexWrap: "wrap",
           gap: 10,
           justifyContent: "flex-end",
           marginTop: 14,
+          paddingTop: 14,
+          borderTop: "1px solid #e5e7eb",
         }}
       >
+        <span style={{ color: "#64748b", fontSize: 13, marginRight: "auto" }}>
+          Los cambios se aplican solo a este requerimiento dentro del proyecto.
+        </span>
         <button
           onClick={onCancelEditing}
           disabled={savingEdit}
@@ -904,9 +1277,11 @@ function FilterPanel({
   activeFilterCount,
   totalCount,
   filteredCount,
+  searchTerm,
   onNormaChange,
   onStatusToggle,
   onDateFilterChange,
+  onSearchTermChange,
   onReset,
 }: {
   normaOptions: string[];
@@ -916,9 +1291,11 @@ function FilterPanel({
   activeFilterCount: number;
   totalCount: number;
   filteredCount: number;
+  searchTerm: string;
   onNormaChange: (value: string) => void;
   onStatusToggle: (status: RequirementStatus) => void;
   onDateFilterChange: (value: DateFilter) => void;
+  onSearchTermChange: (value: string) => void;
   onReset: () => void;
 }) {
   return (
@@ -974,6 +1351,16 @@ function FilterPanel({
           gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
         }}
       >
+        <label style={filterLabelStyle}>
+          Buscar
+          <input
+            value={searchTerm}
+            onChange={(event) => onSearchTermChange(event.target.value)}
+            placeholder="Norma, item, descripcion o evidencia"
+            style={controlStyle}
+          />
+        </label>
+
         <label style={filterLabelStyle}>
           Norma
           <select
@@ -1083,26 +1470,35 @@ function InfoBlock({
   label,
   value,
   tone = "default",
+  compact = false,
 }: {
   label: string;
   value: string;
   tone?: "default" | "risk";
+  compact?: boolean;
 }) {
   return (
     <div
       style={{
         background: "#f9fafb",
         borderRadius: 10,
-        padding: 12,
+        minWidth: 0,
+        padding: compact ? "10px 12px" : 12,
       }}
     >
-      <div style={{ color: "#6b7280", fontSize: 12, marginBottom: 4 }}>
+      <div
+        style={{
+          color: "#6b7280",
+          fontSize: 11,
+          marginBottom: compact ? 3 : 4,
+        }}
+      >
         {label}
       </div>
       <div
         style={{
           color: tone === "risk" ? "#b91c1c" : "#111827",
-          fontSize: 14,
+          fontSize: compact ? 13 : 14,
           fontWeight: 600,
           lineHeight: 1.4,
           wordBreak: "break-word",
@@ -1117,9 +1513,11 @@ function InfoBlock({
 function StatusBadge({
   status,
   label,
+  compact = false,
 }: {
   status: RequirementStatus;
   label?: string;
+  compact?: boolean;
 }) {
   const meta = STATUS_META[status];
 
@@ -1131,9 +1529,9 @@ function StatusBadge({
         borderRadius: 999,
         color: meta.color,
         display: "inline-flex",
-        fontSize: 12,
+        fontSize: compact ? 11 : 12,
         fontWeight: 700,
-        padding: "5px 10px",
+        padding: compact ? "4px 8px" : "5px 10px",
         whiteSpace: "nowrap",
       }}
     >
@@ -1142,7 +1540,7 @@ function StatusBadge({
   );
 }
 
-function OverdueBadge() {
+function OverdueBadge({ compact = false }: { compact?: boolean }) {
   return (
     <span
       style={{
@@ -1151,9 +1549,9 @@ function OverdueBadge() {
         borderRadius: 999,
         color: "#991b1b",
         display: "inline-flex",
-        fontSize: 12,
+        fontSize: compact ? 11 : 12,
         fontWeight: 700,
-        padding: "5px 10px",
+        padding: compact ? "4px 8px" : "5px 10px",
         whiteSpace: "nowrap",
       }}
     >
@@ -1280,4 +1678,68 @@ const projectMetaStyle: React.CSSProperties = {
   fontWeight: 700,
   letterSpacing: "0.04em",
   textTransform: "uppercase",
+};
+
+const inlineFieldStyle: React.CSSProperties = {
+  color: "#334155",
+  display: "grid",
+  fontSize: 12,
+  fontWeight: 700,
+  gap: 8,
+};
+
+const pageStyle: React.CSSProperties = {
+  background: "#f4f6fc",
+  minHeight: "calc(100vh - 65px)",
+  padding: "28px clamp(20px, 3vw, 36px) 40px",
+};
+
+const panelStyle: React.CSSProperties = {
+  background: "white",
+  border: "1px solid #e5e7eb",
+  borderRadius: 12,
+  boxShadow: "0 2px 6px rgba(0,0,0,0.04)",
+  padding: 20,
+};
+
+const eyebrowStyle: React.CSSProperties = {
+  color: "#0025df",
+  fontSize: 12,
+  fontWeight: 800,
+  letterSpacing: "0.04em",
+  marginBottom: 10,
+  textTransform: "uppercase",
+};
+
+const textAreaStyle: React.CSSProperties = {
+  ...controlStyle,
+  minHeight: 110,
+  padding: "10px 12px",
+  resize: "vertical",
+};
+
+const compactActionButtonStyle: React.CSSProperties = {
+  background: "#ffffff",
+  border: "1px solid #d1d5db",
+  borderRadius: 8,
+  color: "#111827",
+  cursor: "pointer",
+  fontSize: 13,
+  fontWeight: 700,
+  minHeight: 36,
+  padding: "7px 12px",
+  whiteSpace: "nowrap",
+};
+
+const compactDangerButtonStyle: React.CSSProperties = {
+  background: "#ffffff",
+  border: "1px solid #fecaca",
+  borderRadius: 8,
+  color: "#b91c1c",
+  cursor: "pointer",
+  fontSize: 13,
+  fontWeight: 700,
+  minHeight: 36,
+  padding: "7px 12px",
+  whiteSpace: "nowrap",
 };
