@@ -6,7 +6,7 @@ import {
   normalizeEmail,
 } from "@/app/lib/auth";
 import { prisma } from "@/app/lib/prisma";
-import { sendPasswordResetEmail } from "@/lib/email";
+import { EmailDeliveryError, sendPasswordResetEmail } from "@/lib/email";
 
 const GENERIC_SUCCESS_MESSAGE =
   "Si existe una cuenta con ese email, te enviaremos un enlace para restablecer la contrasena.";
@@ -48,11 +48,28 @@ export async function POST(req: Request) {
         },
       });
 
-      await sendPasswordResetEmail({
-        to: user.email,
-        userName: user.name,
-        resetUrl,
-      });
+      try {
+        await sendPasswordResetEmail({
+          to: user.email,
+          userName: user.name,
+          resetUrl,
+        });
+      } catch (error) {
+        await prisma.passwordResetToken.deleteMany({
+          where: {
+            userId: user.id,
+            token,
+          },
+        });
+
+        if (error instanceof EmailDeliveryError) {
+          console.error(
+            `PASSWORD_RESET_EMAIL_UNDELIVERABLE user=${user.id} kind=${error.kind}: ${error.message}`
+          );
+        }
+
+        throw error;
+      }
     }
 
     return NextResponse.json({

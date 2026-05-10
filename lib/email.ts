@@ -61,6 +61,22 @@ type SendPasswordResetEmailInput = {
   resetUrl: string;
 };
 
+export type EmailFailureKind =
+  | "configuration"
+  | "provider_restriction"
+  | "provider"
+  | "unknown";
+
+export class EmailDeliveryError extends Error {
+  kind: EmailFailureKind;
+
+  constructor(message: string, kind: EmailFailureKind = "unknown") {
+    super(message);
+    this.name = "EmailDeliveryError";
+    this.kind = kind;
+  }
+}
+
 export async function sendEmail({
   to,
   subject,
@@ -83,7 +99,7 @@ export async function sendEmail({
   });
 
   if (result.error) {
-    throw new Error(result.error.message || "RESEND_SEND_FAILED");
+    throw classifyEmailError(result.error.message || "RESEND_SEND_FAILED");
   }
 
   return {
@@ -528,3 +544,38 @@ function escapeHtml(value: string) {
 const thStyle =
   "padding:10px;border:1px solid #e2e8f0;text-align:left;vertical-align:top;";
 const tdStyle = "padding:10px;border:1px solid #e2e8f0;vertical-align:top;";
+
+function classifyEmailError(message: string) {
+  const normalized = message.toLowerCase();
+
+  if (
+    normalized.includes("resend_api_key_missing") ||
+    normalized.includes("email_from_missing")
+  ) {
+    return new EmailDeliveryError(
+      "Falta configurar el servicio de email en el entorno.",
+      "configuration"
+    );
+  }
+
+  if (
+    normalized.includes("testing emails are only available") ||
+    normalized.includes("verify a domain") ||
+    normalized.includes("test emails") ||
+    normalized.includes("recipient") && normalized.includes("not verified")
+  ) {
+    return new EmailDeliveryError(
+      "El proveedor de email esta en modo de pruebas y no permite enviar a ese destinatario. Verifica el dominio remitente en Resend para habilitar envios reales.",
+      "provider_restriction"
+    );
+  }
+
+  if (normalized.includes("resend")) {
+    return new EmailDeliveryError(
+      "El proveedor de email rechazo el envio.",
+      "provider"
+    );
+  }
+
+  return new EmailDeliveryError(message, "unknown");
+}

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAuthSession, unauthorized } from "@/app/lib/auth";
 import { prisma } from "@/app/lib/prisma";
-import { sendAlertDigestEmail } from "@/lib/email";
+import { EmailDeliveryError, sendAlertDigestEmail } from "@/lib/email";
 
 export const runtime = "nodejs";
 
@@ -52,6 +52,7 @@ export async function GET(req: Request) {
     const startOfToday = getStartOfToday();
     const endOfUpcomingWindow = getUpcomingLimit(startOfToday, UPCOMING_DAYS);
     let emailsSent = 0;
+    let emailFailures = 0;
 
     for (const user of users) {
       try {
@@ -118,6 +119,7 @@ export async function GET(req: Request) {
         emailsSent += 1;
       } catch (error) {
         console.error(`ERROR /api/cron/alerts user ${user.id}:`, error);
+        emailFailures += 1;
       }
     }
 
@@ -125,6 +127,7 @@ export async function GET(req: Request) {
       success: true,
       usersProcessed: users.length,
       emailsSent,
+      emailFailures,
     });
   } catch (error) {
     console.error("ERROR GET /api/cron/alerts:", error);
@@ -133,6 +136,7 @@ export async function GET(req: Request) {
         success: false,
         usersProcessed: 0,
         emailsSent: 0,
+        emailFailures: 0,
       },
       { status: 500 }
     );
@@ -217,6 +221,15 @@ export async function POST(req: Request) {
       }
     }
 
+    if (overdueRequirements.length === 0 && upcomingRequirements.length === 0) {
+      return NextResponse.json({
+        success: true,
+        usersProcessed: 1,
+        emailsSent: 0,
+        message: "No hay alertas pendientes para enviar.",
+      });
+    }
+
     await sendAlertDigestEmail({
       to: fullUser.email,
       userName: fullUser.name,
@@ -228,16 +241,30 @@ export async function POST(req: Request) {
       success: true,
       usersProcessed: 1,
       emailsSent: 1,
+      message: "Informe enviado correctamente.",
     });
   } catch (error) {
     console.error("ERROR POST /api/cron/alerts:", error);
+
+    const message =
+      error instanceof EmailDeliveryError
+        ? error.message
+        : "No se pudo enviar el informe.";
+
     return NextResponse.json(
       {
         success: false,
         usersProcessed: 1,
         emailsSent: 0,
+        error: message,
       },
-      { status: 500 }
+      {
+        status:
+          error instanceof EmailDeliveryError &&
+          error.kind === "provider_restriction"
+            ? 503
+            : 500,
+      }
     );
   }
 }

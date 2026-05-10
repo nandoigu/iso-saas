@@ -314,7 +314,7 @@ export default function DashboardPage() {
         throw new Error(data.error || "No se pudo enviar el informe");
       }
 
-      setEmailFeedback("Informe enviado correctamente");
+      setEmailFeedback(data.message || "Informe enviado correctamente");
     } catch (err) {
       setEmailFeedback(err instanceof Error ? err.message : "Error enviando informe");
     } finally {
