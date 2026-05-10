@@ -34,12 +34,13 @@ type AuthOptions = {
 };
 
 const getSecret = () => {
-  return (
-    process.env.AUTH_SECRET ||
-    process.env.NEXTAUTH_SECRET ||
-    process.env.DATABASE_URL ||
-    "dev-secret-change-me"
-  );
+  const secret = process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET;
+
+  if (!secret && process.env.NODE_ENV === "production") {
+    throw new Error("AUTH_SECRET_MISSING");
+  }
+
+  return secret || "dev-secret-change-me";
 };
 
 export function isValidEmail(email: string) {

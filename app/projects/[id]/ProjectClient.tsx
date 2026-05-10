@@ -14,6 +14,7 @@ import {
   getDeadlineTime,
   getDisplayValue,
   isRequirementOverdue,
+  isRequirementUpcoming,
   matchesDateFilter,
   naturalTextCompare,
   normalizeStatus,
@@ -427,10 +428,25 @@ export default function ProjectClient({ projectId }: ProjectClientProps) {
     }, 0);
 
     const overdue = requirements.filter(isRequirementOverdue).length;
+    const upcoming = requirements.filter((requirement) =>
+      isRequirementUpcoming(requirement)
+    ).length;
+    const statusCounts = requirements.reduce(
+      (counts, requirement) => {
+        counts[normalizeStatus(requirement.status)] += 1;
+        return counts;
+      },
+      { total: 0, parcial: 0, no_conforme: 0 } as Record<
+        RequirementStatus,
+        number
+      >
+    );
 
     return {
       total,
       overdue,
+      upcoming,
+      statusCounts,
       percent: total > 0 ? Math.round((score / total) * 100) : 0,
     };
   }, [requirements]);
@@ -683,18 +699,9 @@ export default function ProjectClient({ projectId }: ProjectClientProps) {
             width: isMobile ? "100%" : undefined,
           }}
         >
-          <label style={{ color: "#4b5563", fontSize: 13 }}>Ordenar por</label>
-          <select
-            value={sortMode}
-            onChange={(event) => setSortMode(event.target.value as SortMode)}
-            style={controlStyle}
-          >
-            <option value="natural">Norma e item</option>
-            <option value="deadline">Fecha limite</option>
-            <option value="status">Estado</option>
-            <option value="created">Orden original</option>
-          </select>
-
+          <Link href="/projects" style={linkButtonStyle}>
+            Volver a proyectos
+          </Link>
           <Link href={`/projects/${projectId}/matrix`} style={linkButtonStyle}>
             Ver matriz de cumplimiento
           </Link>
@@ -711,7 +718,38 @@ export default function ProjectClient({ projectId }: ProjectClientProps) {
       >
         <MetricCard label="Requerimientos" value={summary.total} />
         <MetricCard label="Cumplimiento" value={`${summary.percent}%`} />
+        <MetricCard label="Proximos 7 dias" value={summary.upcoming} tone="warning" />
         <MetricCard label="Vencidos" value={summary.overdue} tone="risk" />
+      </section>
+
+      <section style={quickNavStyle}>
+        <div style={{ minWidth: 0 }}>
+          <strong style={{ display: "block" }}>Flujo de trabajo</strong>
+          <span style={{ color: "#64748b", fontSize: 13 }}>
+            Alta, importacion, revision filtrada y matriz quedan conectadas desde aqui.
+          </span>
+        </div>
+        <div
+          style={{
+            display: "flex",
+            flexWrap: "wrap",
+            gap: 10,
+            justifyContent: isMobile ? "stretch" : "flex-end",
+          }}
+        >
+          <a href="#nuevo-requerimiento" style={quickNavLinkStyle}>
+            Nuevo
+          </a>
+          <a href="#importar-requerimientos" style={quickNavLinkStyle}>
+            Importar
+          </a>
+          <a href="#filtros-requerimientos" style={quickNavLinkStyle}>
+            Filtrar
+          </a>
+          <a href="#listado-requerimientos" style={quickNavLinkStyle}>
+            Revisar
+          </a>
+        </div>
       </section>
 
       {(actionError || actionSuccess) && (
@@ -735,12 +773,12 @@ export default function ProjectClient({ projectId }: ProjectClientProps) {
           marginBottom: 24,
         }}
       >
-        <section style={panelStyle}>
-          <h3 style={{ margin: "0 0 8px" }}>Nuevo requerimiento</h3>
-          <p style={{ color: "#6b7280", margin: "0 0 16px" }}>
-            Registra nuevos requisitos del proyecto con su estado, evidencia y
-            fecha limite desde un unico bloque operativo.
-          </p>
+        <section id="nuevo-requerimiento" style={panelStyle}>
+          <SectionHeader
+            eyebrow="Alta manual"
+            title="Nuevo requerimiento"
+            description="Registra nuevos requisitos del proyecto con su estado, evidencia y fecha limite desde un unico bloque operativo."
+          />
 
           <div
             style={{
@@ -751,52 +789,83 @@ export default function ProjectClient({ projectId }: ProjectClientProps) {
                 : "repeat(auto-fit, minmax(180px, 1fr))",
             }}
           >
-            <input
-              placeholder="Norma"
-              value={norma}
-              onChange={(event) => setNorma(event.target.value)}
-              style={controlStyle}
-            />
+            <label style={inlineFieldStyle}>
+              Norma
+              <input
+                placeholder="ISO 19650-2"
+                value={norma}
+                onChange={(event) => setNorma(event.target.value)}
+                style={controlStyle}
+              />
+            </label>
 
-            <input
-              placeholder="Item"
-              value={item}
-              onChange={(event) => setItem(event.target.value)}
-              style={controlStyle}
-            />
+            <label style={inlineFieldStyle}>
+              Item
+              <input
+                placeholder="5.1.2"
+                value={item}
+                onChange={(event) => setItem(event.target.value)}
+                style={controlStyle}
+              />
+            </label>
 
-            <input
-              placeholder="Descripcion del requerimiento"
-              value={name}
-              onChange={(event) => setName(event.target.value)}
-              style={controlStyle}
-            />
+            <label style={inlineFieldStyle}>
+              Estado
+              <select
+                value={status}
+                onChange={(event) =>
+                  setStatus(event.target.value as RequirementStatus)
+                }
+                style={controlStyle}
+              >
+                <option value="total">Total</option>
+                <option value="parcial">Parcial</option>
+                <option value="no_conforme">No conforme</option>
+              </select>
+            </label>
 
-            <input
-              placeholder="Evidencia"
-              value={evidencia}
-              onChange={(event) => setEvidencia(event.target.value)}
-              style={controlStyle}
-            />
+            <label style={inlineFieldStyle}>
+              Fecha limite
+              <input
+                type="date"
+                value={deadline}
+                onChange={(event) => setDeadline(event.target.value)}
+                style={controlStyle}
+              />
+            </label>
+          </div>
 
-            <select
-              value={status}
-              onChange={(event) =>
-                setStatus(event.target.value as RequirementStatus)
-              }
-              style={controlStyle}
-            >
-              <option value="total">Total</option>
-              <option value="parcial">Parcial</option>
-              <option value="no_conforme">No conforme</option>
-            </select>
+          <div
+            style={{
+              display: "grid",
+              gap: 12,
+              gridTemplateColumns: isMobile
+                ? "minmax(0, 1fr)"
+                : "minmax(0, 1.2fr) minmax(0, 0.8fr)",
+              marginTop: 12,
+            }}
+          >
+            <label style={inlineFieldStyle}>
+              Requerimiento
+              <textarea
+                placeholder="Descripcion del requerimiento"
+                value={name}
+                onChange={(event) => setName(event.target.value)}
+                rows={4}
+                style={textAreaStyle}
+              />
+            </label>
 
-            <input
-              type="date"
-              value={deadline}
-              onChange={(event) => setDeadline(event.target.value)}
-              style={controlStyle}
-            />
+            <label style={inlineFieldStyle}>
+              Evidencia
+              <textarea
+                placeholder="Documento, enlace, responsable o nota de evidencia"
+                value={evidencia}
+                onChange={(event) => setEvidencia(event.target.value)}
+                rows={4}
+                style={textAreaStyle}
+              />
+            </label>
           </div>
 
           <button
@@ -812,22 +881,21 @@ export default function ProjectClient({ projectId }: ProjectClientProps) {
           </button>
         </section>
 
-        <section style={panelStyle}>
-          <h3 style={{ margin: "0 0 8px" }}>Importar requisitos del proyecto</h3>
-          <p style={{ color: "#6b7280", margin: "0 0 16px" }}>
-            Sube un Excel especifico para este proyecto. Puedes usar tanto el
-            formato detallado del proyecto como los Excel de plantillas por rol.
-            Elige si quieres anadir solo los nuevos o reemplazar por completo
-            los requerimientos actuales del proyecto. La plantilla global por
-            rol nunca se modifica desde aqui.
-          </p>
+        <section id="importar-requerimientos" style={panelStyle}>
+          <SectionHeader
+            eyebrow="Carga masiva"
+            title="Importar requisitos del proyecto"
+            description="Sube un Excel especifico para este proyecto. Puedes anadir solo nuevos requerimientos o reemplazar por completo el listado actual."
+          />
 
           <div
             style={{
               alignItems: "end",
-              display: "flex",
-              flexWrap: "wrap",
+              display: "grid",
               gap: 12,
+              gridTemplateColumns: isMobile
+                ? "minmax(0, 1fr)"
+                : "repeat(2, minmax(0, 1fr))",
             }}
           >
             <label style={filterLabelStyle}>
@@ -863,7 +931,11 @@ export default function ProjectClient({ projectId }: ProjectClientProps) {
               disabled={importingRequirements}
               style={{
                 ...primaryButtonStyle,
+                gridColumn: isMobile ? undefined : "1 / -1",
+                justifySelf: isMobile ? "stretch" : "end",
+                minWidth: isMobile ? undefined : 180,
                 opacity: importingRequirements ? 0.7 : 1,
+                width: isMobile ? "100%" : undefined,
               }}
             >
               {importingRequirements ? "Importando..." : "Importar Excel"}
@@ -914,9 +986,12 @@ export default function ProjectClient({ projectId }: ProjectClientProps) {
           onSearchTermChange={setSearchTerm}
           onReset={resetFilters}
           compactLayout={isMobile}
+          sortMode={sortMode}
+          onSortModeChange={setSortMode}
         />
 
         <div
+          id="listado-requerimientos"
           style={{
             alignItems: "center",
             display: "flex",
@@ -926,10 +1001,29 @@ export default function ProjectClient({ projectId }: ProjectClientProps) {
             marginBottom: 14,
           }}
         >
-          <h3 style={{ margin: 0 }}>Requerimientos</h3>
-          <span style={{ color: "#6b7280", fontSize: 13 }}>
-            {filteredRequirements.length} de {summary.total} registros
-          </span>
+          <div>
+            <h3 style={{ margin: 0 }}>Requerimientos</h3>
+            <span style={{ color: "#6b7280", fontSize: 13 }}>
+              {filteredRequirements.length} de {summary.total} registros
+            </span>
+          </div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+            <StatusBadge
+              status="total"
+              label={`Total ${summary.statusCounts.total}`}
+              compact
+            />
+            <StatusBadge
+              status="parcial"
+              label={`Parcial ${summary.statusCounts.parcial}`}
+              compact
+            />
+            <StatusBadge
+              status="no_conforme"
+              label={`No conforme ${summary.statusCounts.no_conforme}`}
+              compact
+            />
+          </div>
         </div>
 
         {loading && (
@@ -1006,6 +1100,7 @@ function RequirementCard({
 }) {
   const currentStatus = normalizeStatus(requirement.status);
   const overdue = isRequirementOverdue(requirement);
+  const upcoming = isRequirementUpcoming(requirement);
 
   return (
     <article
@@ -1017,7 +1112,7 @@ function RequirementCard({
         }`,
         borderRadius: 12,
         boxShadow: "0 2px 6px rgba(0,0,0,0.04)",
-        padding: 18,
+        padding: compactLayout ? 14 : 18,
       }}
     >
       {editing ? (
@@ -1074,28 +1169,36 @@ function RequirementCard({
               </h4>
             </div>
 
-            <button
-              onClick={() => onStartEditing(requirement)}
-              disabled={deletingRequirement}
+            <div
               style={{
-                ...compactActionButtonStyle,
+                display: compactLayout ? "grid" : "flex",
+                gap: 8,
                 width: compactLayout ? "100%" : undefined,
               }}
             >
-              Editar
-            </button>
-            <button
-              onClick={() => onDeleteRequirement(requirement)}
-              disabled={deletingRequirement}
-              style={{
-                ...compactDangerButtonStyle,
-                opacity: deletingRequirement ? 0.6 : 1,
-                cursor: deletingRequirement ? "not-allowed" : "pointer",
-                width: compactLayout ? "100%" : undefined,
-              }}
-            >
-              {deletingRequirement ? "Eliminando..." : "Eliminar"}
-            </button>
+              <button
+                onClick={() => onStartEditing(requirement)}
+                disabled={deletingRequirement}
+                style={{
+                  ...compactActionButtonStyle,
+                  width: compactLayout ? "100%" : undefined,
+                }}
+              >
+                Editar
+              </button>
+              <button
+                onClick={() => onDeleteRequirement(requirement)}
+                disabled={deletingRequirement}
+                style={{
+                  ...compactDangerButtonStyle,
+                  opacity: deletingRequirement ? 0.6 : 1,
+                  cursor: deletingRequirement ? "not-allowed" : "pointer",
+                  width: compactLayout ? "100%" : undefined,
+                }}
+              >
+                {deletingRequirement ? "Eliminando..." : "Eliminar"}
+              </button>
+            </div>
           </div>
 
           <div
@@ -1104,7 +1207,7 @@ function RequirementCard({
               gap: 10,
               gridTemplateColumns: compactLayout
                 ? "minmax(0, 1fr)"
-                : "minmax(0, 1.4fr) repeat(2, minmax(120px, 0.8fr))",
+                : "minmax(0, 1.4fr) repeat(3, minmax(120px, 0.8fr))",
               marginTop: 12,
             }}
           >
@@ -1116,7 +1219,13 @@ function RequirementCard({
             <InfoBlock
               label="Fecha limite"
               value={formatDate(requirement.deadline)}
-              tone={overdue ? "risk" : "default"}
+              tone={overdue ? "risk" : upcoming ? "warning" : "default"}
+              compact
+            />
+            <InfoBlock
+              label="Seguimiento"
+              value={overdue ? "Vencido" : upcoming ? "Proximo" : "En plazo"}
+              tone={overdue ? "risk" : upcoming ? "warning" : "default"}
               compact
             />
             <InfoBlock
@@ -1189,20 +1298,6 @@ function EditRequirementForm({
           >
             {editStatusMeta.label}
           </span>
-          <button
-            onClick={onCancelEditing}
-            disabled={savingEdit}
-            style={secondaryButtonStyle}
-          >
-            Cancelar
-          </button>
-          <button
-            onClick={onSaveEditing}
-            disabled={savingEdit}
-            style={primaryButtonStyle}
-          >
-            {savingEdit ? "Guardando..." : "Guardar cambios"}
-          </button>
         </div>
       </div>
 
@@ -1355,6 +1450,8 @@ function FilterPanel({
   onSearchTermChange,
   onReset,
   compactLayout,
+  sortMode,
+  onSortModeChange,
 }: {
   normaOptions: string[];
   selectedNorma: string;
@@ -1370,9 +1467,12 @@ function FilterPanel({
   onSearchTermChange: (value: string) => void;
   onReset: () => void;
   compactLayout: boolean;
+  sortMode: SortMode;
+  onSortModeChange: (value: SortMode) => void;
 }) {
   return (
     <section
+      id="filtros-requerimientos"
       style={{
         background: "white",
         border: "1px solid #e5e7eb",
@@ -1393,7 +1493,7 @@ function FilterPanel({
         }}
       >
         <div>
-          <h3 style={{ margin: 0 }}>Filtros</h3>
+          <h3 style={{ margin: 0 }}>Filtros y ordenacion</h3>
           <p style={{ color: "#6b7280", fontSize: 13, margin: "6px 0 0" }}>
             {filteredCount} de {totalCount} requerimientos visibles
             {activeFilterCount > 0
@@ -1503,6 +1603,22 @@ function FilterPanel({
             <option value="no_date">Sin fecha</option>
           </select>
         </label>
+
+        <label style={filterLabelStyle}>
+          Ordenar por
+          <select
+            value={sortMode}
+            onChange={(event) =>
+              onSortModeChange(event.target.value as SortMode)
+            }
+            style={controlStyle}
+          >
+            <option value="natural">Norma e item</option>
+            <option value="deadline">Fecha limite</option>
+            <option value="status">Estado</option>
+            <option value="created">Orden original</option>
+          </select>
+        </label>
       </div>
     </section>
   );
@@ -1522,6 +1638,26 @@ function buildProjectImportSuccessMessage(data: {
   return `Importacion completada: ${data.imported} nuevos, ${data.skippedDuplicates} duplicados omitidos, ${data.totalRows} filas validas.`;
 }
 
+function SectionHeader({
+  eyebrow,
+  title,
+  description,
+}: {
+  eyebrow: string;
+  title: string;
+  description: string;
+}) {
+  return (
+    <div style={{ marginBottom: 16 }}>
+      <div style={sectionEyebrowStyle}>{eyebrow}</div>
+      <h3 style={{ margin: "0 0 8px" }}>{title}</h3>
+      <p style={{ color: "#6b7280", lineHeight: 1.55, margin: 0 }}>
+        {description}
+      </p>
+    </div>
+  );
+}
+
 function MetricCard({
   label,
   value,
@@ -1529,7 +1665,7 @@ function MetricCard({
 }: {
   label: string;
   value: string | number;
-  tone?: "default" | "risk";
+  tone?: "default" | "risk" | "warning";
 }) {
   return (
     <div
@@ -1543,7 +1679,12 @@ function MetricCard({
       <div style={{ color: "#6b7280", fontSize: 12 }}>{label}</div>
       <div
         style={{
-          color: tone === "risk" ? "#dc2626" : "#111827",
+          color:
+            tone === "risk"
+              ? "#dc2626"
+              : tone === "warning"
+                ? "#b45309"
+                : "#111827",
           fontSize: 26,
           fontWeight: 700,
           marginTop: 6,
@@ -1563,7 +1704,7 @@ function InfoBlock({
 }: {
   label: string;
   value: string;
-  tone?: "default" | "risk";
+  tone?: "default" | "risk" | "warning";
   compact?: boolean;
 }) {
   return (
@@ -1586,7 +1727,12 @@ function InfoBlock({
       </div>
       <div
         style={{
-          color: tone === "risk" ? "#b91c1c" : "#111827",
+          color:
+            tone === "risk"
+              ? "#b91c1c"
+              : tone === "warning"
+                ? "#b45309"
+                : "#111827",
           fontSize: compact ? 13 : 14,
           fontWeight: 600,
           lineHeight: 1.4,
@@ -1699,8 +1845,11 @@ function useProjectDetailBreakpoint() {
 const controlStyle: React.CSSProperties = {
   border: "1px solid #d1d5db",
   borderRadius: 8,
+  boxSizing: "border-box",
   minHeight: 40,
+  minWidth: 0,
   padding: "8px 10px",
+  width: "100%",
 };
 
 const filterLabelStyle: React.CSSProperties = {
@@ -1796,12 +1945,49 @@ const panelStyle: React.CSSProperties = {
   padding: 20,
 };
 
+const quickNavStyle: React.CSSProperties = {
+  alignItems: "center",
+  background: "#ffffff",
+  border: "1px solid #dbe5f1",
+  borderRadius: 12,
+  boxShadow: "0 2px 6px rgba(0,0,0,0.04)",
+  display: "flex",
+  flexWrap: "wrap",
+  gap: 14,
+  justifyContent: "space-between",
+  marginBottom: 20,
+  padding: 14,
+};
+
+const quickNavLinkStyle: React.CSSProperties = {
+  background: "#f8fafc",
+  border: "1px solid #dbe5f1",
+  borderRadius: 8,
+  color: "#1d4ed8",
+  display: "inline-flex",
+  fontSize: 13,
+  fontWeight: 800,
+  justifyContent: "center",
+  minHeight: 36,
+  padding: "8px 12px",
+  textDecoration: "none",
+};
+
 const eyebrowStyle: React.CSSProperties = {
   color: "#0025df",
   fontSize: 12,
   fontWeight: 800,
   letterSpacing: "0.04em",
   marginBottom: 10,
+  textTransform: "uppercase",
+};
+
+const sectionEyebrowStyle: React.CSSProperties = {
+  color: "#2563eb",
+  fontSize: 11,
+  fontWeight: 900,
+  letterSpacing: "0.06em",
+  marginBottom: 8,
   textTransform: "uppercase",
 };
 

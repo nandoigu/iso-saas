@@ -78,14 +78,16 @@ La aplicacion ya tiene una base SaaS funcional bastante avanzada.
 
 ## Ultimos commits relevantes
 
+- `0417402` Unify app notice messages
+- `967e8a2` Improve responsive compliance views and notices
+- `f6f8607` Replace vulnerable xlsx dependency
+- `d6956ba` Add project handoff document
 - `d86be68` Clarify project import append and replace modes
 - `c53ebd5` Harden project and requirement validations
 - `08b07e8` Polish project operations and editing flows
 - `d2f014d` Clarify password reset email test-mode behavior
 - `d875a46` Harden email delivery feedback and cleanup
 - `12dea58` Normalize role and project requirement imports
-- `60cdd6f` Refresh core app UX surfaces
-- `2f04378` Require project role and auto-generate requirements
 
 ## Auditoria funcional: estado
 
@@ -104,6 +106,26 @@ La aplicacion ya tiene una base SaaS funcional bastante avanzada.
 - consistencia entre dashboard y matriz despues de editar o reimportar
 - logout y login posterior
 - validaciones principales de proyecto y requerimiento
+- dashboard funcional por API:
+  - metricas
+  - filtros base
+  - preferencias de notificacion
+  - envio manual con error claro cuando Resend esta limitado
+- matriz de cumplimiento:
+  - consistencia de datos frente al dashboard
+  - comportamiento responsive inicial
+- panel admin:
+  - acceso permitido para `admin`
+  - acceso denegado para `user`
+  - gestion global de usuarios y proyectos
+- flujos destructivos principales:
+  - borrado de requerimientos
+  - borrado de proyectos
+  - borrado admin de usuarios/proyectos
+- flujos de recuperacion:
+  - forgot password
+  - reset password
+  - limpieza de tokens cuando falla el email
 
 ### Hallazgos ya corregidos
 
@@ -112,37 +134,172 @@ La aplicacion ya tiene una base SaaS funcional bastante avanzada.
 - tokens de reset huerfanos cuando fallaba el email
 - validaciones flojas en `requirements`
 - ausencia de modos explicitos de reimportacion en proyectos vivos
-
-## Pendientes claros
-
-### Prioridad alta
-
-1. seguir con la auditoria funcional completa end-to-end
-2. revisar mas a fondo:
-   - comportamiento de filtros y exportaciones en dashboard desde la UI
-   - consistencia visual y funcional de la matriz en uso real
-   - escenarios de admin sobre datos ajenos desde interfaz
-3. revisar endurecimiento para produccion:
-   - dominio real verificado en Resend
-   - `EMAIL_FROM` de produccion
-   - revisar dependencia vulnerable pendiente si sigue presente
-
-### Prioridad media
-
+- sustitucion de `xlsx` por `exceljs` manteniendo archivos `.xlsx` para usuarios
+- vulnerabilidad `postcss` mitigada con `overrides` a `postcss@8.5.14`
 - responsive real en:
   - `app/projects/page.tsx`
-  - otras vistas principales
-- seguir puliendo UX de detalle de proyecto
-- homogeneizar mensajes de error y exito en toda la app
+  - `app/projects/[id]/ProjectClient.tsx`
+  - `app/projects/[id]/ProjectMatrixClient.tsx`
+  - `components/ComplianceMatrix.tsx`
+- mensajes de error/exito homogeneizados con `components/Notice.tsx`
+- avisos locales de dashboard y admin sustituidos por el componente comun
 
-## Tarea responsive pendiente ya acordada
+## Plan de trabajo actualizado
 
-Pendiente para mas adelante:
+### Completado
 
-- adaptar `app/projects/page.tsx` a responsive real
-  - 2 columnas comodas en escritorio
-  - 1 columna en movil
-  - comportamiento intermedio limpio en tablet
+- [x] Auditar flujo principal de proyecto end-to-end.
+- [x] Corregir importaciones Excel para soportar plantilla por rol y Excel de proyecto.
+- [x] Mantener compatibilidad de usuario con archivos `.xlsx`.
+- [x] Eliminar dependencia vulnerable `xlsx` y migrar parsing interno a `exceljs`.
+- [x] Mitigar vulnerabilidad `postcss` sin esperar fix upstream de Next/Tailwind.
+- [x] Endurecer validaciones de proyectos y requerimientos.
+- [x] Hacer explicitos los modos de reimportacion `append` y `replace`.
+- [x] Mejorar feedback de email/reportes cuando Resend esta en modo pruebas.
+- [x] Separar matriz de cumplimiento en vista independiente.
+- [x] Validar consistencia funcional dashboard/matriz tras editar o reimportar.
+- [x] Revisar flujos destructivos principales y recuperacion de cuenta.
+- [x] Implementar responsive real en listado de proyectos.
+- [x] Implementar responsive real en detalle de proyecto.
+- [x] Implementar responsive real inicial en matriz de cumplimiento.
+- [x] Homogeneizar mensajes de error/exito/info/warning con `components/Notice.tsx`.
+- [x] Pulir vista de detalle de proyecto:
+  - jerarquia visual
+  - formularios de alta/edicion
+  - filtros y ordenacion
+  - tarjetas de requerimientos
+  - navegacion entre alta, importacion, filtros, listado y matriz
+- [x] Revisar seguridad/produccion:
+  - sesiones y cookies
+  - middleware/proxy y protecciones API
+  - comportamiento `blocked` y `suspended`
+  - variables de entorno
+  - estado de migraciones Prisma/base de datos
+- [x] Pasada funcional de dashboard por HTTP/API:
+  - fuente de datos
+  - preferencias
+  - envio manual con Resend limitado
+- [x] Pasada funcional de matriz por HTTP/API.
+- [x] Pasada funcional de admin con datos ajenos temporales:
+  - cambio de estado
+  - bloqueo
+  - borrado de proyecto
+  - borrado de usuario
+- [x] Guardar en git los bloques previos ya cerrados.
+
+### Prioridad alta pendiente
+
+- [ ] Verificacion de produccion de email:
+  - verificar dominio real en Resend
+  - configurar `EMAIL_FROM` definitivo
+  - repetir prueba real de envio a usuarios no autorizados en modo test
+- [ ] Revision de seguridad y produccion:
+  - revisar logs de errores
+  - revisar rotacion/gestion real de secretos en el entorno de despliegue
+- [ ] Auditoria visual completa en navegador cuando el runtime permita probar formularios con `type=email` sin bloqueo.
+- [ ] Repetir una pasada UI manual sobre dashboard:
+  - filtros desde interfaz
+  - export CSV desde interfaz
+  - export PDF desde interfaz
+  - preferencias de notificacion desde interfaz
+- [ ] Repetir una pasada UI manual sobre matriz:
+  - filtros
+  - agrupaciones
+  - scroll horizontal en movil
+  - lectura en tablet/escritorio
+- [ ] Repetir una pasada UI manual sobre admin con datos ajenos:
+  - cambio de rol desde interfaz
+  - cambio de estado desde interfaz
+  - borrado de usuario desde interfaz
+  - borrado de proyecto desde interfaz
+
+### Prioridad media pendiente
+
+- [ ] Continuar responsive en vistas secundarias:
+  - `app/profile/page.tsx`
+  - `app/login/page.tsx`
+  - `app/register/page.tsx`
+  - `app/forgot-password/page.tsx`
+  - `app/reset-password/page.tsx`
+  - `app/dashboard/email-test/page.tsx`
+  - `app/admin/AdminPanelClient.tsx`
+- [ ] Unificacion visual restante:
+  - botones
+  - badges
+  - paneles
+  - tablas
+  - estados vacios
+  - confirmaciones destructivas
+- [ ] Unificar avisos restantes si aparecen nuevos patrones fuera de `components/Notice.tsx`.
+- [ ] Revisar textos con falta de acentos o restos de mojibake heredados.
+- [ ] Documentar formato de importacion Excel para usuario final:
+  - columnas aceptadas
+  - modos `append` / `replace`
+  - errores habituales y como corregirlos
+- [ ] Mejora de productividad del usuario:
+  - busquedas mas utiles
+  - filtros mas potentes
+  - ordenacion persistente o mas visible
+  - accesos rapidos
+  - acciones en contexto
+  - persistencia de algunos filtros
+  - mejor navegacion entre proyecto, matriz y dashboard
+- [ ] Alertas e informes:
+  - verificar envios de alertas en escenarios reales tras configurar Resend
+  - mejorar contenido del email
+  - revisar frecuencia y duplicados
+  - comprobar flujos manuales vs cron
+  - mejorar presentacion del PDF/CSV
+
+### Prioridad baja / preparacion futura
+
+- [ ] Preparar checklist de despliegue:
+  - variables de entorno
+  - migraciones Prisma
+  - build
+  - smoke test post-deploy
+- [ ] Revisar accesibilidad basica:
+  - labels
+  - foco visible
+  - navegacion por teclado
+  - contraste
+- [ ] Onboarding y primera experiencia:
+  - vacios guiados
+  - ayuda contextual ligera
+  - primera creacion de proyecto mas acompanada
+  - sugerencias de siguiente paso
+- [ ] Branding y presencia comercial:
+  - copy mas consistente
+  - pulido visual final
+  - datos demo de calidad
+  - cuenta demo
+  - presentacion comercial del producto
+- [ ] Evolucion funcional futura:
+  - historico de cambios
+  - comentarios o notas por requerimiento
+  - versionado de plantillas
+  - exportaciones mas ricas
+  - comparativas entre proyectos
+  - metricas por empresa
+- [ ] Evaluar tests automatizados de humo para APIs principales.
+- [ ] Revisar si conviene extraer mas estilos compartidos despues de cerrar responsive.
+
+### Quick wins pendientes
+
+- [x] Terminar el pulido de la vista de detalle del proyecto.
+- [x] Revisar mensajes de error/exito para que sean consistentes.
+- [ ] Homogeneizar botones, badges, paneles y tablas en toda la app.
+- [ ] Anadir mejor feedback al guardar, editar e importar donde aun falte.
+- [ ] Preparar un recorrido de prueba completo con un usuario demo.
+
+### Riesgos y notas abiertas
+
+- La verificacion visual completa en navegador sigue limitada por el runtime al escribir en campos `type=email`.
+- La ultima pasada de prioridad alta esta documentada en `docs/high-priority-audit-2026-05-10.md`.
+- Por API, los flujos funcionales criticos revisados estan pasando.
+- Resend sigue dependiendo de configuracion externa de dominio para envios reales a cualquier destinatario.
+- `npm audit --audit-level=moderate` paso limpio tras la mitigacion de `postcss`.
+- El plan actualizado queda alineado con el plan anterior: la vista de proyecto vuelve a prioridad alta, y las mejoras de productividad, alertas/informes, onboarding, branding, evolucion futura y quick wins quedan reflejadas sin duplicar tareas ya completadas.
 
 ## Recomendacion para retomar en un chat nuevo
 
@@ -152,7 +309,7 @@ Cuando se abra un chat nuevo dentro del proyecto:
 2. decir que el estado de referencia esta en este archivo:
    - `docs/handoff.md`
 3. empezar por:
-   - "continuamos la auditoria funcional end-to-end desde `docs/handoff.md`"
+   - "continuamos con el plan de trabajo actualizado desde `docs/handoff.md`"
 
 ## Comandos utiles
 
