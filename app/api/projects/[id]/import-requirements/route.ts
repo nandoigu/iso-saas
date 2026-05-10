@@ -9,7 +9,10 @@ import {
 } from "@/app/lib/auth";
 import { parseRequirementWorkbook } from "@/app/lib/requirementImport";
 import { prisma } from "@/app/lib/prisma";
-import { importRequirementsForProject } from "@/services/project-requirement-import.service";
+import {
+  importRequirementsForProject,
+  type ProjectRequirementImportMode,
+} from "@/services/project-requirement-import.service";
 
 export const runtime = "nodejs";
 
@@ -47,6 +50,9 @@ export async function POST(
 
     const formData = await req.formData();
     const file = formData.get("file");
+    const rawMode = formData.get("mode");
+    const mode: ProjectRequirementImportMode =
+      rawMode === "replace" ? "replace" : "append";
 
     if (!(file instanceof File)) {
       return NextResponse.json(
@@ -78,11 +84,14 @@ export async function POST(
       );
     }
 
-    const result = await importRequirementsForProject(project.id, parsed.rows);
+    const result = await importRequirementsForProject(project.id, parsed.rows, {
+      mode,
+    });
 
     return NextResponse.json({
       data: {
         ...result,
+        mode,
         format: parsed.format,
         skippedDuplicates:
           result.skippedDuplicates + parsed.skippedDuplicates,

@@ -36,6 +36,8 @@ type ProjectMeta = {
   role: string;
 };
 
+type ImportMode = "append" | "replace";
+
 export default function ProjectClient({ projectId }: ProjectClientProps) {
   const { requirements, loading, loadError, reloadRequirements } =
     useProjectRequirements(projectId);
@@ -60,6 +62,7 @@ export default function ProjectClient({ projectId }: ProjectClientProps) {
   const [deadline, setDeadline] = useState("");
   const [savingNew, setSavingNew] = useState(false);
   const [importingFile, setImportingFile] = useState<File | null>(null);
+  const [importMode, setImportMode] = useState<ImportMode>("append");
   const [importingRequirements, setImportingRequirements] = useState(false);
   const [importError, setImportError] = useState("");
   const [importSuccess, setImportSuccess] = useState("");
@@ -173,6 +176,16 @@ export default function ProjectClient({ projectId }: ProjectClientProps) {
       return;
     }
 
+    if (importMode === "replace") {
+      const confirmed = window.confirm(
+        "¿Quieres reemplazar todos los requerimientos actuales del proyecto por los del Excel? Esta accion eliminara los requerimientos existentes antes de importar los nuevos."
+      );
+
+      if (!confirmed) {
+        return;
+      }
+    }
+
     setImportingRequirements(true);
     setImportError("");
     setImportSuccess("");
@@ -181,6 +194,7 @@ export default function ProjectClient({ projectId }: ProjectClientProps) {
     try {
       const formData = new FormData();
       formData.append("file", importingFile);
+      formData.append("mode", importMode);
 
       const res = await fetch(
         `/api/projects/${encodeURIComponent(projectId)}/import-requirements`,
@@ -201,9 +215,7 @@ export default function ProjectClient({ projectId }: ProjectClientProps) {
       }
 
       setImportingFile(null);
-      setImportSuccess(
-        `Importacion completada: ${data.data.imported} nuevos, ${data.data.skippedDuplicates} duplicados omitidos, ${data.data.totalRows} filas validas.`
-      );
+      setImportSuccess(buildProjectImportSuccessMessage(data.data));
 
       const input = document.getElementById(
         "project-requirements-import-file"
@@ -788,8 +800,9 @@ export default function ProjectClient({ projectId }: ProjectClientProps) {
           <p style={{ color: "#6b7280", margin: "0 0 16px" }}>
             Sube un Excel especifico para este proyecto. Puedes usar tanto el
             formato detallado del proyecto como los Excel de plantillas por rol.
-            Solo se importaran los requerimientos nuevos y no se tocara la
-            plantilla global por rol.
+            Elige si quieres anadir solo los nuevos o reemplazar por completo
+            los requerimientos actuales del proyecto. La plantilla global por
+            rol nunca se modifica desde aqui.
           </p>
 
           <div
@@ -811,6 +824,20 @@ export default function ProjectClient({ projectId }: ProjectClientProps) {
                 }
                 style={controlStyle}
               />
+            </label>
+
+            <label style={filterLabelStyle}>
+              Modo de importacion
+              <select
+                value={importMode}
+                onChange={(event) =>
+                  setImportMode(event.target.value as ImportMode)
+                }
+                style={controlStyle}
+              >
+                <option value="append">Anadir solo nuevos</option>
+                <option value="replace">Reemplazar requerimientos del proyecto</option>
+              </select>
             </label>
 
             <button
@@ -1431,6 +1458,20 @@ function FilterPanel({
       </div>
     </section>
   );
+}
+
+function buildProjectImportSuccessMessage(data: {
+  imported: number;
+  skippedDuplicates: number;
+  totalRows: number;
+  removedExisting?: number;
+  mode?: string;
+}) {
+  if (data.mode === "replace") {
+    return `Importacion completada en modo reemplazo: ${data.imported} requisitos cargados, ${data.removedExisting ?? 0} requisitos anteriores eliminados y ${data.totalRows} filas validas procesadas.`;
+  }
+
+  return `Importacion completada: ${data.imported} nuevos, ${data.skippedDuplicates} duplicados omitidos, ${data.totalRows} filas validas.`;
 }
 
 function MetricCard({
