@@ -3,6 +3,8 @@ import { Resend } from "resend";
 
 let resendClient: Resend | null = null;
 
+export type EmailDeliveryMode = "test" | "production";
+
 export function getResendClient() {
   const apiKey = process.env.RESEND_API_KEY;
 
@@ -25,4 +27,9 @@ export function getEmailFromAddress() {
   }
 
   return from;
+}
+
+export function getEmailDeliveryMode(): EmailDeliveryMode {
+  const from = getEmailFromAddress().toLowerCase();
+  return from.includes("@resend.dev") ? "test" : "production";
 }

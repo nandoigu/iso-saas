@@ -8,12 +8,14 @@ export default function ForgotPasswordPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [deliveryHint, setDeliveryHint] = useState("");
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setLoading(true);
     setError("");
     setSuccess("");
+    setDeliveryHint("");
 
     try {
       const res = await fetch("/api/auth/forgot-password", {
@@ -35,6 +37,7 @@ export default function ForgotPasswordPage() {
         data?.data?.message ||
           "Si existe una cuenta con ese email, te enviaremos un enlace de recuperacion."
       );
+      setDeliveryHint(data?.data?.deliveryHint || "");
     } catch {
       setError("No se pudo procesar la solicitud.");
     } finally {
@@ -64,6 +67,7 @@ export default function ForgotPasswordPage() {
 
           {error && <p style={errorStyle}>{error}</p>}
           {success && <p style={successStyle}>{success}</p>}
+          {deliveryHint && <p style={hintStyle}>{deliveryHint}</p>}
 
           <button type="submit" disabled={loading} style={buttonStyle}>
             {loading ? "Enviando..." : "Enviar enlace"}
@@ -141,6 +145,15 @@ const successStyle: React.CSSProperties = {
   border: "1px solid #bbf7d0",
   borderRadius: 8,
   color: "#166534",
+  margin: 0,
+  padding: 10,
+};
+
+const hintStyle: React.CSSProperties = {
+  background: "#eff6ff",
+  border: "1px solid #bfdbfe",
+  borderRadius: 8,
+  color: "#1d4ed8",
   margin: 0,
   padding: 10,
 };
