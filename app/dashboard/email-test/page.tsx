@@ -70,16 +70,17 @@ export default function EmailTestPage() {
   };
 
   return (
-    <main style={{ display: "grid", gap: 24 }}>
+    <main style={{ display: "grid", gap: 24, padding: "20px 12px" }}>
       <section
         style={{
           background: "white",
           border: "1px solid #e2e8f0",
           borderRadius: 16,
+          boxSizing: "border-box",
           boxShadow: "0 10px 24px rgba(15,23,42,0.05)",
           margin: "0 auto",
           maxWidth: 640,
-          padding: 28,
+          padding: "clamp(20px, 4vw, 28px)",
           width: "100%",
         }}
       >
@@ -112,9 +113,12 @@ export default function EmailTestPage() {
               style={{
                 border: "1px solid #cbd5e1",
                 borderRadius: 12,
+                boxSizing: "border-box",
                 fontSize: 15,
                 minHeight: 46,
+                minWidth: 0,
                 padding: "10px 12px",
+                width: "100%",
               }}
             />
           </label>
@@ -134,6 +138,7 @@ export default function EmailTestPage() {
               minHeight: 46,
               opacity: loading || hydrating || !email.trim() ? 0.6 : 1,
               padding: "0 16px",
+              width: "100%",
             }}
           >
             {loading ? "Enviando..." : "Enviar email de prueba"}

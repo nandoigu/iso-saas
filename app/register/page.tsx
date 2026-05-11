@@ -105,16 +105,17 @@ const pageStyle: React.CSSProperties = {
   display: "grid",
   minHeight: "calc(100vh - 65px)",
   placeItems: "center",
-  padding: 24,
+  padding: "20px 12px",
 };
 
 const cardStyle: React.CSSProperties = {
   background: "white",
   border: "1px solid #e5e7eb",
   borderRadius: 14,
+  boxSizing: "border-box",
   boxShadow: "0 10px 30px rgba(15,23,42,0.08)",
   maxWidth: 440,
-  padding: 28,
+  padding: "clamp(20px, 4vw, 28px)",
   width: "100%",
 };
 
@@ -129,8 +130,11 @@ const labelStyle: React.CSSProperties = {
 const inputStyle: React.CSSProperties = {
   border: "1px solid #d1d5db",
   borderRadius: 8,
+  boxSizing: "border-box",
   minHeight: 42,
+  minWidth: 0,
   padding: "8px 10px",
+  width: "100%",
 };
 
 const buttonStyle: React.CSSProperties = {
@@ -141,4 +145,5 @@ const buttonStyle: React.CSSProperties = {
   cursor: "pointer",
   fontWeight: 700,
   minHeight: 42,
+  width: "100%",
 };

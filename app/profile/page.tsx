@@ -14,6 +14,7 @@ type ProfileUser = {
 };
 
 export default function ProfilePage() {
+  const isCompact = useProfileBreakpoint() === "compact";
   const [user, setUser] = useState<ProfileUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [savingProfile, setSavingProfile] = useState(false);
@@ -191,12 +192,17 @@ export default function ProfilePage() {
   };
 
   if (loading) {
-    return <main style={pageStyle}>Cargando perfil...</main>;
+    return <main style={{ ...pageStyle, ...(isCompact ? compactPageStyle : {}) }}>Cargando perfil...</main>;
   }
 
   return (
-    <main style={pageStyle}>
-      <section style={heroCardStyle}>
+    <main style={{ ...pageStyle, ...(isCompact ? compactPageStyle : {}) }}>
+      <section
+        style={{
+          ...heroCardStyle,
+          ...(isCompact ? compactHeroCardStyle : {}),
+        }}
+      >
         <div>
           <h1 style={{ margin: 0 }}>Perfil de usuario</h1>
           <p style={{ color: "#64748b", margin: "8px 0 0" }}>
@@ -224,7 +230,14 @@ export default function ProfilePage() {
       {passwordSuccess && <Notice tone="success" message={passwordSuccess} />}
       {recoverySuccess && <Notice tone="info" message={recoverySuccess} />}
 
-      <div style={contentGridStyle}>
+      <div
+        style={{
+          ...contentGridStyle,
+          gridTemplateColumns: isCompact
+            ? "minmax(0, 1fr)"
+            : "repeat(2, minmax(0, 1fr))",
+        }}
+      >
         <section style={cardStyle}>
           <h2 style={sectionTitleStyle}>Datos personales</h2>
 
@@ -364,10 +377,33 @@ function getStatusBadgeStyle(status: string): React.CSSProperties {
   };
 }
 
+function useProfileBreakpoint() {
+  const [breakpoint, setBreakpoint] = useState<"compact" | "wide">("wide");
+
+  useEffect(() => {
+    const updateBreakpoint = () => {
+      setBreakpoint(window.innerWidth < 900 ? "compact" : "wide");
+    };
+
+    updateBreakpoint();
+    window.addEventListener("resize", updateBreakpoint);
+
+    return () => {
+      window.removeEventListener("resize", updateBreakpoint);
+    };
+  }, []);
+
+  return breakpoint;
+}
+
 const pageStyle: React.CSSProperties = {
   display: "grid",
   gap: 24,
   padding: 32,
+};
+
+const compactPageStyle: React.CSSProperties = {
+  padding: "20px 12px 32px",
 };
 
 const heroCardStyle: React.CSSProperties = {
@@ -382,10 +418,15 @@ const heroCardStyle: React.CSSProperties = {
   padding: 24,
 };
 
+const compactHeroCardStyle: React.CSSProperties = {
+  alignItems: "flex-start",
+  display: "grid",
+  padding: 18,
+};
+
 const contentGridStyle: React.CSSProperties = {
   display: "grid",
   gap: 24,
-  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
 };
 
 const cardStyle: React.CSSProperties = {
@@ -411,8 +452,11 @@ const labelStyle: React.CSSProperties = {
 const inputStyle: React.CSSProperties = {
   border: "1px solid #d1d5db",
   borderRadius: 8,
+  boxSizing: "border-box",
   minHeight: 42,
+  minWidth: 0,
   padding: "8px 10px",
+  width: "100%",
 };
 
 const primaryButtonStyle: React.CSSProperties = {
@@ -423,6 +467,8 @@ const primaryButtonStyle: React.CSSProperties = {
   cursor: "pointer",
   fontWeight: 700,
   minHeight: 42,
+  padding: "0 14px",
+  width: "100%",
 };
 
 const secondaryButtonStyle: React.CSSProperties = {
@@ -434,4 +480,5 @@ const secondaryButtonStyle: React.CSSProperties = {
   fontWeight: 700,
   minHeight: 42,
   padding: "0 14px",
+  width: "100%",
 };

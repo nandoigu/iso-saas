@@ -66,8 +66,9 @@ export default function ProjectsPage() {
       try {
         const res = await fetch("/api/projects", { cache: "no-store" });
 
-        if (res.status === 401) {
-          router.push("/login");
+        if (res.status === 401 || res.status === 403) {
+          await fetch("/api/auth/logout", { method: "POST" });
+          router.replace("/login?next=/projects");
           return;
         }
 

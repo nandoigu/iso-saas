@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import {
   getProjectRoleBadgeStyle,
@@ -34,6 +35,7 @@ type AuthUser = {
 };
 
 export default function Home() {
+  const router = useRouter();
   const [projects, setProjects] = useState<Project[]>([]);
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
@@ -51,6 +53,12 @@ export default function Home() {
           fetch("/api/projects", { cache: "no-store" }),
           fetch("/api/auth/me", { cache: "no-store" }),
         ]);
+
+        if (projectsResponse.status === 401 || projectsResponse.status === 403) {
+          await fetch("/api/auth/logout", { method: "POST" });
+          router.replace("/login?next=/");
+          return;
+        }
 
         if (!projectsResponse.ok) {
           throw new Error("No se pudo cargar la informacion de proyectos.");
@@ -81,7 +89,7 @@ export default function Home() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [router]);
 
   const allRequirements = useMemo(
     () =>

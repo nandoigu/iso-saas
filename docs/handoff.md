@@ -129,6 +129,9 @@ La aplicacion ya tiene una base SaaS funcional bastante avanzada.
 
 ### Hallazgos ya corregidos
 
+- cookies de sesion antiguas tras cambio de `AUTH_SECRET`:
+  - login vuelve a ser accesible aunque exista una cookie invalida
+  - home/dashboard/projects limpian sesion y redirigen a login en `401/403`
 - incompatibilidad entre Excel por rol y Excel por proyecto
 - errores opacos en envio manual de informes
 - tokens de reset huerfanos cuando fallaba el email
@@ -185,6 +188,19 @@ La aplicacion ya tiene una base SaaS funcional bastante avanzada.
   - bloqueo
   - borrado de proyecto
   - borrado de usuario
+- [x] Corregir manejo de cookies de sesion invalidas tras endurecer `AUTH_SECRET`.
+- [x] Responsive en vistas secundarias de auth/perfil/email-test:
+  - `app/profile/page.tsx`
+  - `app/login/page.tsx`
+  - `app/register/page.tsx`
+  - `app/forgot-password/page.tsx`
+  - `app/reset-password/page.tsx`
+  - `app/dashboard/email-test/page.tsx`
+- [x] Responsive en panel admin:
+  - cabecera adaptable
+  - secciones apilables
+  - tablas con scroll horizontal estable
+  - controles de accion sin solapes
 - [x] Guardar en git los bloques previos ya cerrados.
 
 ### Prioridad alta pendiente
@@ -215,14 +231,6 @@ La aplicacion ya tiene una base SaaS funcional bastante avanzada.
 
 ### Prioridad media pendiente
 
-- [ ] Continuar responsive en vistas secundarias:
-  - `app/profile/page.tsx`
-  - `app/login/page.tsx`
-  - `app/register/page.tsx`
-  - `app/forgot-password/page.tsx`
-  - `app/reset-password/page.tsx`
-  - `app/dashboard/email-test/page.tsx`
-  - `app/admin/AdminPanelClient.tsx`
 - [ ] Unificacion visual restante:
   - botones
   - badges

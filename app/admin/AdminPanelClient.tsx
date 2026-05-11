@@ -33,6 +33,7 @@ export default function AdminPanelClient({
   currentUserEmail: string;
   currentUserId: string;
 }) {
+  const isCompact = useAdminBreakpoint() === "compact";
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
@@ -206,8 +207,19 @@ export default function AdminPanelClient({
   };
 
   return (
-    <main style={{ display: "grid", gap: 24 }}>
-      <section style={heroCardStyle}>
+    <main
+      style={{
+        display: "grid",
+        gap: isCompact ? 18 : 24,
+        minWidth: 0,
+      }}
+    >
+      <section
+        style={{
+          ...heroCardStyle,
+          ...(isCompact ? compactHeroCardStyle : {}),
+        }}
+      >
         <div>
           <h1 style={{ margin: 0, color: "#0f172a" }}>Panel de administracion</h1>
           <p style={{ color: "#64748b", margin: "8px 0 0" }}>
@@ -220,24 +232,36 @@ export default function AdminPanelClient({
       {error && <Notice tone="error" message={error} />}
       {success && <Notice tone="success" message={success} />}
 
-      <section style={sectionStyle}>
+      <section style={{ ...sectionStyle, ...(isCompact ? compactSectionStyle : {}) }}>
         <div style={sectionIntroStyle}>
           <span style={sectionEyebrowStyle}>Gestion de accesos</span>
-          <div style={sectionHeaderStyle}>
+          <div
+            style={{
+              ...sectionHeaderStyle,
+              ...(isCompact ? compactSectionHeaderStyle : {}),
+            }}
+          >
             <div>
               <h2 style={{ margin: 0 }}>Usuarios</h2>
               <p style={sectionDescriptionStyle}>
                 Control de roles, estado de cuenta y administracion de usuarios registrados.
               </p>
             </div>
-            <button onClick={loadData} style={buttonStyle} disabled={loading}>
+            <button
+              onClick={loadData}
+              style={{
+                ...buttonStyle,
+                width: isCompact ? "100%" : undefined,
+              }}
+              disabled={loading}
+            >
               {loading ? "Actualizando..." : "Recargar"}
             </button>
           </div>
         </div>
 
         <div style={tableWrapperStyle}>
-          <table style={tableStyle}>
+          <table style={{ ...tableStyle, minWidth: 920 }}>
             <thead>
               <tr>
                 <th style={thStyle}>Email</th>
@@ -328,10 +352,15 @@ export default function AdminPanelClient({
         </div>
       </section>
 
-      <section style={sectionStyle}>
+      <section style={{ ...sectionStyle, ...(isCompact ? compactSectionStyle : {}) }}>
         <div style={sectionIntroStyle}>
           <span style={sectionEyebrowStyle}>Vision global</span>
-          <div style={sectionHeaderStyle}>
+          <div
+            style={{
+              ...sectionHeaderStyle,
+              ...(isCompact ? compactSectionHeaderStyle : {}),
+            }}
+          >
             <div>
               <h2 style={{ margin: 0 }}>Todos los proyectos</h2>
               <p style={sectionDescriptionStyle}>
@@ -343,7 +372,7 @@ export default function AdminPanelClient({
         </div>
 
         <div style={tableWrapperStyle}>
-          <table style={tableStyle}>
+          <table style={{ ...tableStyle, minWidth: 760 }}>
             <thead>
               <tr>
                 <th style={thStyle}>Proyecto</th>
@@ -404,6 +433,25 @@ function getStatusLabel(status: string) {
   return "Activo";
 }
 
+function useAdminBreakpoint() {
+  const [breakpoint, setBreakpoint] = useState<"compact" | "wide">("wide");
+
+  useEffect(() => {
+    const updateBreakpoint = () => {
+      setBreakpoint(window.innerWidth < 900 ? "compact" : "wide");
+    };
+
+    updateBreakpoint();
+    window.addEventListener("resize", updateBreakpoint);
+
+    return () => {
+      window.removeEventListener("resize", updateBreakpoint);
+    };
+  }, []);
+
+  return breakpoint;
+}
+
 function getRoleBadgeStyle(role: string): React.CSSProperties {
   return {
     background: role === "admin" ? "#dbeafe" : "#eef2ff",
@@ -450,12 +498,22 @@ const heroCardStyle: React.CSSProperties = {
   padding: 24,
 };
 
+const compactHeroCardStyle: React.CSSProperties = {
+  alignItems: "flex-start",
+  display: "grid",
+  padding: 18,
+};
+
 const sectionStyle: React.CSSProperties = {
   background: "white",
   border: "1px solid #dbe3f1",
   borderRadius: 16,
   boxShadow: "0 10px 30px rgba(15,23,42,0.06)",
   padding: 24,
+};
+
+const compactSectionStyle: React.CSSProperties = {
+  padding: 16,
 };
 
 const sectionIntroStyle: React.CSSProperties = {
@@ -469,6 +527,11 @@ const sectionHeaderStyle: React.CSSProperties = {
   display: "flex",
   justifyContent: "space-between",
   gap: 16,
+};
+
+const compactSectionHeaderStyle: React.CSSProperties = {
+  alignItems: "stretch",
+  display: "grid",
 };
 
 const sectionEyebrowStyle: React.CSSProperties = {
@@ -499,6 +562,7 @@ const pillStyle: React.CSSProperties = {
 
 const tableWrapperStyle: React.CSSProperties = {
   overflowX: "auto",
+  WebkitOverflowScrolling: "touch",
 };
 
 const tableStyle: React.CSSProperties = {
@@ -543,8 +607,11 @@ const buttonStyle: React.CSSProperties = {
 const selectStyle: React.CSSProperties = {
   border: "1px solid #cbd5e1",
   borderRadius: 8,
+  boxSizing: "border-box",
   minHeight: 38,
+  minWidth: 0,
   padding: "0 10px",
+  width: "100%",
 };
 
 const helperTextStyle: React.CSSProperties = {
@@ -561,4 +628,5 @@ const dangerButtonStyle: React.CSSProperties = {
   fontWeight: 700,
   minHeight: 38,
   padding: "0 12px",
+  width: "100%",
 };

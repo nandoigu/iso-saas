@@ -5,6 +5,7 @@ import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Bar,
   BarChart,
@@ -104,6 +105,7 @@ const DEFAULT_NOTIFICATION_PREFERENCES: NotificationPreferences = {
 };
 
 export default function DashboardPage() {
+  const router = useRouter();
   const reportContentRef = useRef<HTMLDivElement>(null);
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
@@ -118,7 +120,13 @@ export default function DashboardPage() {
 
   useEffect(() => {
     fetch("/api/projects", { cache: "no-store" })
-      .then((res) => {
+      .then(async (res) => {
+        if (res.status === 401 || res.status === 403) {
+          await fetch("/api/auth/logout", { method: "POST" });
+          router.replace("/login?next=/dashboard");
+          return null;
+        }
+
         if (!res.ok) {
           throw new Error("No se pudo cargar el dashboard");
         }
@@ -126,6 +134,7 @@ export default function DashboardPage() {
         return res.json();
       })
       .then((data) => {
+        if (!data) return;
         setProjects(Array.isArray(data) ? data : []);
         setError("");
       })
@@ -137,7 +146,7 @@ export default function DashboardPage() {
       .finally(() => {
         setLoading(false);
       });
-  }, []);
+  }, [router]);
 
   useEffect(() => {
     fetch("/api/notifications/preferences", { cache: "no-store" })
