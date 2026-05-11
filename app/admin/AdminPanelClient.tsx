@@ -54,7 +54,7 @@ export default function AdminPanelClient({
       ]);
 
       if (!usersRes.ok || !projectsRes.ok) {
-        throw new Error("No se pudieron cargar los datos de administracion.");
+        throw new Error("No se pudieron cargar los datos de administración.");
       }
 
       const [usersData, projectsData] = await Promise.all([
@@ -66,7 +66,7 @@ export default function AdminPanelClient({
       setProjects(Array.isArray(projectsData) ? projectsData : []);
     } catch (loadError) {
       console.error(loadError);
-      setError("No se pudo cargar el panel de administracion.");
+      setError("No se pudo cargar el panel de administración.");
     } finally {
       setLoading(false);
     }
@@ -122,7 +122,7 @@ export default function AdminPanelClient({
 
   const deleteUser = async (user: AdminUser) => {
     const confirmed = window.confirm(
-      `Vas a eliminar al usuario ${user.email} y todos sus proyectos y requerimientos. Esta accion no se puede deshacer.`
+      `Vas a eliminar al usuario ${user.email} y todos sus proyectos y requerimientos. Esta acción no se puede deshacer.`
     );
 
     if (!confirmed) {
@@ -163,7 +163,7 @@ export default function AdminPanelClient({
 
   const deleteProject = async (project: Project) => {
     const confirmed = window.confirm(
-      `Seguro que quieres eliminar el proyecto "${project.name}"? Se eliminaran tambien sus requerimientos y esta accion no se puede deshacer.`
+      `¿Seguro que quieres eliminar el proyecto "${project.name}"? Se eliminarán también sus requerimientos y esta acción no se puede deshacer.`
     );
 
     if (!confirmed) {
@@ -221,9 +221,9 @@ export default function AdminPanelClient({
         }}
       >
         <div>
-          <h1 style={{ margin: 0, color: "#0f172a" }}>Panel de administracion</h1>
+          <h1 style={{ margin: 0, color: "#0f172a" }}>Panel de administración</h1>
           <p style={{ color: "#64748b", margin: "8px 0 0" }}>
-            Gestion centralizada de usuarios, roles y visibilidad global de proyectos.
+            Gestión centralizada de usuarios, roles y visibilidad global de proyectos.
           </p>
         </div>
         <div style={pillStyle}>{currentUserEmail}</div>
@@ -234,7 +234,7 @@ export default function AdminPanelClient({
 
       <section style={{ ...sectionStyle, ...(isCompact ? compactSectionStyle : {}) }}>
         <div style={sectionIntroStyle}>
-          <span style={sectionEyebrowStyle}>Gestion de accesos</span>
+          <span style={sectionEyebrowStyle}>Gestión de accesos</span>
           <div
             style={{
               ...sectionHeaderStyle,
@@ -244,7 +244,7 @@ export default function AdminPanelClient({
             <div>
               <h2 style={{ margin: 0 }}>Usuarios</h2>
               <p style={sectionDescriptionStyle}>
-                Control de roles, estado de cuenta y administracion de usuarios registrados.
+                Control de roles, estado de cuenta y administración de usuarios registrados.
               </p>
             </div>
             <button
@@ -354,7 +354,7 @@ export default function AdminPanelClient({
 
       <section style={{ ...sectionStyle, ...(isCompact ? compactSectionStyle : {}) }}>
         <div style={sectionIntroStyle}>
-          <span style={sectionEyebrowStyle}>Vision global</span>
+          <span style={sectionEyebrowStyle}>Visión global</span>
           <div
             style={{
               ...sectionHeaderStyle,
@@ -376,7 +376,7 @@ export default function AdminPanelClient({
             <thead>
               <tr>
                 <th style={thStyle}>Proyecto</th>
-                <th style={thStyle}>Codigo</th>
+                <th style={thStyle}>Código</th>
                 <th style={thStyle}>Propietario</th>
                 <th style={thStyle}>Creado</th>
                 <th style={thStyle}>Acciones</th>
@@ -386,7 +386,7 @@ export default function AdminPanelClient({
               {projects.map((project) => (
                 <tr key={project.id}>
                   <td style={tdStyle}>{project.name}</td>
-                  <td style={tdStyle}>{project.code || "Sin codigo"}</td>
+                  <td style={tdStyle}>{project.code || "Sin código"}</td>
                   <td style={tdStyle}>{project.user?.name || project.user?.email || "Sin usuario"}</td>
                   <td style={tdStyle}>{formatDate(project.createdAt)}</td>
                   <td style={tdStyle}>

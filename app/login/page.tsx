@@ -40,14 +40,14 @@ export default function LoginPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.error || "No se pudo iniciar sesion");
+        setError(data.error || "No se pudo iniciar sesión");
         return;
       }
 
       router.push(nextPath);
       router.refresh();
     } catch {
-      setError("Error inesperado iniciando sesion");
+      setError("Error inesperado iniciando sesión");
     } finally {
       setLoading(false);
     }
@@ -56,7 +56,7 @@ export default function LoginPage() {
   return (
     <main style={pageStyle}>
       <section style={cardStyle}>
-        <h1 style={{ margin: 0 }}>Iniciar sesion</h1>
+        <h1 style={{ margin: 0 }}>Iniciar sesión</h1>
         <p style={{ color: "#6b7280", margin: "8px 0 24px" }}>
           Accede a tus proyectos y requerimientos ISO 19650.
         </p>
@@ -74,7 +74,7 @@ export default function LoginPage() {
           </label>
 
           <label style={labelStyle}>
-            Contrasena
+            Contraseña
             <div style={passwordFieldStyle}>
               <input
                 type={showPassword ? "text" : "password"}
@@ -93,9 +93,9 @@ export default function LoginPage() {
                   background: isPasswordToggleHovered ? "#eff6ff" : "transparent",
                   color: isPasswordToggleHovered ? "#1d4ed8" : "#2563eb",
                 }}
-                aria-label={showPassword ? "Ocultar contrasena" : "Mostrar contrasena"}
+                aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
                 aria-pressed={showPassword}
-                title={showPassword ? "Ocultar contrasena" : "Mostrar contrasena"}
+                title={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
               >
                 {showPassword ? <EyeOffIcon /> : <EyeIcon />}
               </button>
@@ -111,12 +111,12 @@ export default function LoginPage() {
 
         <p style={{ margin: "14px 0 0" }}>
           <Link href="/forgot-password" style={{ color: "#2563eb", fontWeight: 700 }}>
-            He olvidado mi contrasena
+            He olvidado mi contraseña
           </Link>
         </p>
 
         <p style={{ color: "#6b7280", marginTop: 18 }}>
-          No tienes cuenta?{" "}
+          ¿No tienes cuenta?{" "}
           <Link href="/register" style={{ color: "#2563eb", fontWeight: 700 }}>
             Crear cuenta
           </Link>

@@ -92,7 +92,7 @@ export async function POST(req: Request) {
     if (code.length > MAX_PROJECT_CODE_LENGTH) {
       return NextResponse.json(
         {
-          error: `El codigo del proyecto no puede superar los ${MAX_PROJECT_CODE_LENGTH} caracteres.`,
+          error: `El código del proyecto no puede superar los ${MAX_PROJECT_CODE_LENGTH} caracteres.`,
         },
         { status: 400 }
       );
@@ -102,7 +102,7 @@ export async function POST(req: Request) {
       return NextResponse.json(
         {
           error:
-            "Debes seleccionar una funcion valida: adjudicador, adjudicatario principal o adjudicatario.",
+            "Debes seleccionar una función válida: adjudicador, adjudicatario principal o adjudicatario.",
         },
         { status: 400 }
       );
@@ -115,7 +115,7 @@ export async function POST(req: Request) {
 
       if (userProjectsCount >= USER_PROJECT_LIMIT) {
         return NextResponse.json(
-          { error: `Has alcanzado el limite de proyectos (${USER_PROJECT_LIMIT})` },
+          { error: `Has alcanzado el límite de proyectos (${USER_PROJECT_LIMIT})` },
           { status: 403 }
         );
       }
@@ -132,7 +132,7 @@ export async function POST(req: Request) {
 
       if (existingProject) {
         return NextResponse.json(
-          { error: "Ya existe otro proyecto tuyo con ese codigo." },
+          { error: "Ya existe otro proyecto tuyo con ese código." },
           { status: 409 }
         );
       }
@@ -183,7 +183,7 @@ export async function POST(req: Request) {
 
     if (!hydratedProject) {
       return NextResponse.json(
-        { error: "Proyecto creado pero no se pudo recuperar su informacion." },
+        { error: "Proyecto creado pero no se pudo recuperar su información." },
         { status: 500 }
       );
     }

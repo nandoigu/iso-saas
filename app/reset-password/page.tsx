@@ -37,7 +37,7 @@ function ResetPasswordForm() {
     }
 
     if (newPassword !== confirmPassword) {
-      setError("Las contrasenas no coinciden.");
+      setError("Las contraseñas no coinciden.");
       setLoading(false);
       return;
     }
@@ -57,7 +57,7 @@ function ResetPasswordForm() {
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.error || "No se pudo restablecer la contrasena.");
+        setError(data.error || "No se pudo restablecer la contraseña.");
         return;
       }
 
@@ -66,7 +66,7 @@ function ResetPasswordForm() {
         router.push("/login");
       }, 1200);
     } catch {
-      setError("No se pudo restablecer la contrasena.");
+      setError("No se pudo restablecer la contraseña.");
     } finally {
       setLoading(false);
     }
@@ -75,14 +75,14 @@ function ResetPasswordForm() {
   return (
     <main style={pageStyle}>
       <section style={cardStyle}>
-        <h1 style={{ margin: 0 }}>Nueva contrasena</h1>
+        <h1 style={{ margin: 0 }}>Nueva contraseña</h1>
         <p style={subtitleStyle}>
-          Define una nueva contrasena segura para recuperar el acceso a tu cuenta.
+          Define una nueva contraseña segura para recuperar el acceso a tu cuenta.
         </p>
 
         <form onSubmit={submit} style={{ display: "grid", gap: 14 }}>
           <label style={labelStyle}>
-            Nueva contrasena
+            Nueva contraseña
             <input
               type="password"
               value={newPassword}
@@ -94,7 +94,7 @@ function ResetPasswordForm() {
           </label>
 
           <label style={labelStyle}>
-            Confirmar contrasena
+            Confirmar contraseña
             <input
               type="password"
               value={confirmPassword}
@@ -109,7 +109,7 @@ function ResetPasswordForm() {
           {success && <Notice tone="success" message={success} compact />}
 
           <button type="submit" disabled={loading} style={buttonStyle}>
-            {loading ? "Actualizando..." : "Guardar nueva contrasena"}
+            {loading ? "Actualizando..." : "Guardar nueva contraseña"}
           </button>
         </form>
 

@@ -191,7 +191,7 @@ export async function PUT(req: Request, context: RouteContext) {
     if (code && code.length > MAX_PROJECT_CODE_LENGTH) {
       return NextResponse.json(
         {
-          error: `El codigo del proyecto no puede superar los ${MAX_PROJECT_CODE_LENGTH} caracteres.`,
+          error: `El código del proyecto no puede superar los ${MAX_PROJECT_CODE_LENGTH} caracteres.`,
         },
         { status: 400 }
       );
@@ -232,7 +232,7 @@ export async function PUT(req: Request, context: RouteContext) {
 
       if (duplicatedCode) {
         return NextResponse.json(
-          { error: "Ya existe otro proyecto de este propietario con ese codigo." },
+          { error: "Ya existe otro proyecto de este propietario con ese código." },
           { status: 409 }
         );
       }

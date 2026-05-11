@@ -22,7 +22,7 @@ export async function GET(req: Request) {
     data: {
       user,
       warning: isSuspendedStatus(user.status)
-        ? "Tu cuenta esta suspendida. Algunas funciones pueden estar limitadas."
+        ? "Tu cuenta está suspendida. Algunas funciones pueden estar limitadas."
         : null,
     },
   });

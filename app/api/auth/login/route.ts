@@ -20,7 +20,7 @@ export async function POST(req: Request) {
 
     if (!isValidEmail(email) || !password) {
       return NextResponse.json(
-        { error: "Email o contrasena incorrectos" },
+        { error: "Email o contraseña incorrectos" },
         { status: 400 }
       );
     }
@@ -40,7 +40,7 @@ export async function POST(req: Request) {
 
     if (!user) {
       return NextResponse.json(
-        { error: "Email o contrasena incorrectos" },
+        { error: "Email o contraseña incorrectos" },
         { status: 401 }
       );
     }
@@ -49,7 +49,7 @@ export async function POST(req: Request) {
 
     if (!validPassword) {
       return NextResponse.json(
-        { error: "Email o contrasena incorrectos" },
+        { error: "Email o contraseña incorrectos" },
         { status: 401 }
       );
     }
@@ -82,7 +82,7 @@ export async function POST(req: Request) {
   } catch (error) {
     console.error("ERROR LOGIN:", error);
     return NextResponse.json(
-      { error: "Error iniciando sesion" },
+      { error: "Error iniciando sesión" },
       { status: 500 }
     );
   }

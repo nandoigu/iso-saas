@@ -86,7 +86,7 @@ export function isSuspendedStatus(status: string | null | undefined) {
 
 export function validatePassword(password: string) {
   if (password.length < MIN_PASSWORD_LENGTH) {
-    return `La contrasena debe tener al menos ${MIN_PASSWORD_LENGTH} caracteres`;
+    return `La contraseña debe tener al menos ${MIN_PASSWORD_LENGTH} caracteres`;
   }
 
   return null;

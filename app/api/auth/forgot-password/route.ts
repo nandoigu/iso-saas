@@ -10,7 +10,7 @@ import { EmailDeliveryError, sendPasswordResetEmail } from "@/lib/email";
 import { getEmailDeliveryMode } from "@/lib/resend";
 
 const GENERIC_SUCCESS_MESSAGE =
-  "Si existe una cuenta con ese email, te enviaremos un enlace para restablecer la contrasena.";
+  "Si existe una cuenta con ese email, te enviaremos un enlace para restablecer la contraseña.";
 const TEST_MODE_HINT =
   "El entorno de email esta en modo de pruebas. Solo los destinatarios autorizados por Resend recibiran correos reales hasta verificar el dominio remitente.";
 

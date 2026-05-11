@@ -88,7 +88,7 @@ export default function MatrixIndexPage() {
                     textTransform: "uppercase",
                   }}
                 >
-                  {project.code || "Sin codigo"}
+                  {project.code || "Sin código"}
                 </div>
                 <h2
                   style={{

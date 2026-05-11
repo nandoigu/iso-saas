@@ -61,7 +61,7 @@ export default function Home() {
         }
 
         if (!projectsResponse.ok) {
-          throw new Error("No se pudo cargar la informacion de proyectos.");
+          throw new Error("No se pudo cargar la información de proyectos.");
         }
 
         const projectsData = await projectsResponse.json();
@@ -181,8 +181,8 @@ export default function Home() {
           <span style={eyebrowStyle}>Workspace ISO 19650</span>
           <h1 style={heroTitleStyle}>Panel de cumplimiento</h1>
           <p style={heroDescriptionStyle}>
-            {userLabel}, aqui tienes un resumen operativo de proyectos,
-            requerimientos y vencimientos para entrar rapido a lo importante.
+            {userLabel}, aquí tienes un resumen operativo de proyectos,
+            requerimientos y vencimientos para entrar rápido a lo importante.
           </p>
         </div>
 
@@ -274,7 +274,7 @@ export default function Home() {
                           </span>
                         </div>
                         <p style={projectMetaStyle}>
-                          {project.code || "Sin codigo"}{" "}
+                          {project.code || "Sin código"}{" "}
                           {project.createdAt
                             ? `- creado ${formatDateLong(project.createdAt)}`
                             : ""}
@@ -344,7 +344,7 @@ export default function Home() {
               <div>
                 <h2 style={panelTitleStyle}>Alertas</h2>
                 <p style={panelDescriptionStyle}>
-                  Requerimientos que requieren atencion inmediata.
+                  Requerimientos que requieren atención inmediata.
                 </p>
               </div>
               <Link href="/dashboard" style={textActionStyle}>
@@ -359,7 +359,7 @@ export default function Home() {
                 tone="risk"
               />
               <CounterCard
-                label="Proximos"
+                label="Próximos"
                 value={loading ? "..." : upcomingRequirements.length}
                 tone="warning"
               />
@@ -370,7 +370,7 @@ export default function Home() {
                 <div style={emptyStateCompactStyle}>Buscando alertas...</div>
               ) : overdueRequirements.length === 0 && upcomingRequirements.length === 0 ? (
                 <div style={emptyStateCompactStyle}>
-                  No hay vencimientos ni proximos plazos ahora mismo.
+                  No hay vencimientos ni próximos plazos ahora mismo.
                 </div>
               ) : (
                 [...overdueRequirements, ...upcomingRequirements]
@@ -403,14 +403,14 @@ export default function Home() {
           <section style={panelStyle}>
             <h2 style={panelTitleStyle}>Actividad reciente</h2>
             <p style={panelDescriptionStyle}>
-              Ultimos proyectos creados en tu espacio de trabajo.
+              Últimos proyectos creados en tu espacio de trabajo.
             </p>
 
             <div style={{ display: "grid", gap: 10 }}>
               {loading ? (
                 <div style={emptyStateCompactStyle}>Cargando actividad...</div>
               ) : recentProjects.length === 0 ? (
-                <div style={emptyStateCompactStyle}>Todavia no hay actividad reciente.</div>
+                <div style={emptyStateCompactStyle}>Todavía no hay actividad reciente.</div>
               ) : (
                 recentProjects.slice(0, 4).map((project) => (
                   <div key={project.id} style={activityItemStyle}>
@@ -432,34 +432,34 @@ export default function Home() {
           </section>
 
           <section style={panelStyle}>
-            <h2 style={panelTitleStyle}>Accesos rapidos</h2>
+            <h2 style={panelTitleStyle}>Accesos rápidos</h2>
             <p style={panelDescriptionStyle}>
-              Atajos para las acciones mas frecuentes de la plataforma.
+              Atajos para las acciones más frecuentes de la plataforma.
             </p>
 
             <div style={quickActionsGridStyle}>
               <Link href="/projects" style={quickActionTileStyle}>
                 <span style={quickActionTitleStyle}>Crear o gestionar proyectos</span>
                 <span style={quickActionDescriptionStyle}>
-                  Alta de proyectos, importacion y seguimiento.
+                  Alta de proyectos, importación y seguimiento.
                 </span>
               </Link>
               <Link href="/dashboard" style={quickActionTileStyle}>
                 <span style={quickActionTitleStyle}>Abrir dashboard BI</span>
                 <span style={quickActionDescriptionStyle}>
-                  Analisis de cumplimiento y vencimientos.
+                  Análisis de cumplimiento y vencimientos.
                 </span>
               </Link>
               <Link href="/matrix" style={quickActionTileStyle}>
                 <span style={quickActionTitleStyle}>Revisar matrices</span>
                 <span style={quickActionDescriptionStyle}>
-                  Consulta rapida de cumplimiento por proyecto.
+                  Consulta rápida de cumplimiento por proyecto.
                 </span>
               </Link>
               <Link href="/profile" style={quickActionTileStyle}>
                 <span style={quickActionTitleStyle}>Perfil y seguridad</span>
                 <span style={quickActionDescriptionStyle}>
-                  Datos de usuario, contrasena y preferencias.
+                  Datos de usuario, contraseña y preferencias.
                 </span>
               </Link>
             </div>
@@ -646,7 +646,7 @@ function getComplianceColor(value: number) {
 function getHealthLabel(compliance: number) {
   if (compliance >= 85) return "Estable";
   if (compliance >= 50) return "En seguimiento";
-  return "Critico";
+  return "Crítico";
 }
 
 function getHealthTone(

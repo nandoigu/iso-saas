@@ -49,7 +49,7 @@ export default function ForgotPasswordPage() {
   return (
     <main style={pageStyle}>
       <section style={cardStyle}>
-        <h1 style={{ margin: 0 }}>Recuperar contrasena</h1>
+        <h1 style={{ margin: 0 }}>Recuperar contraseña</h1>
         <p style={subtitleStyle}>
           Introduce tu email y te enviaremos un enlace seguro para restablecerla.
         </p>

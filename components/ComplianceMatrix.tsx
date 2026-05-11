@@ -75,7 +75,7 @@ export default function ComplianceMatrix({
       const searchableText = [
         norma,
         getDisplayValue(requirement.item, "Sin item"),
-        getDisplayValue(requirement.name, "Sin descripcion"),
+        getDisplayValue(requirement.name, "Sin descripción"),
         getDisplayValue(requirement.evidencia, "Sin evidencia"),
       ]
         .join(" ")
@@ -361,7 +361,7 @@ export default function ComplianceMatrix({
             >
               <option value="all">Todas las fechas</option>
               <option value="overdue">Vencidos</option>
-              <option value="upcoming">Proximos 7 dias</option>
+              <option value="upcoming">Próximos 7 días</option>
               <option value="no_date">Sin fecha</option>
             </select>
           </label>
@@ -418,7 +418,7 @@ export default function ComplianceMatrix({
         <SummaryCard label="Requerimientos" value={summary.total} />
         <SummaryCard label="Cumplimiento" value={`${summary.percent}%`} />
         <SummaryCard label="Vencidos" value={summary.overdue} accent="#dc2626" />
-        <SummaryCard label="Proximos" value={summary.upcoming} accent="#d97706" />
+        <SummaryCard label="Próximos" value={summary.upcoming} accent="#d97706" />
         <SummaryCard label="Sin fecha" value={summary.withoutDate} accent="#6b7280" />
         <SummaryCard
           label="No conforme"
@@ -546,8 +546,8 @@ export default function ComplianceMatrix({
                                 <th style={tableHeaderStyle}>Requerimiento</th>
                                 <th style={tableHeaderStyle}>Evidencia</th>
                                 <th style={tableHeaderStyle}>Estado</th>
-                                <th style={tableHeaderStyle}>Fecha limite</th>
-                                <th style={tableHeaderStyle}>Analitica</th>
+                                <th style={tableHeaderStyle}>Fecha límite</th>
+                                <th style={tableHeaderStyle}>Analítica</th>
                               </tr>
                             </thead>
                             <tbody>
@@ -555,8 +555,8 @@ export default function ComplianceMatrix({
                                 .slice()
                                 .sort((left, right) =>
                                   naturalTextCompare(
-                                    getDisplayValue(left.name, "Sin descripcion"),
-                                    getDisplayValue(right.name, "Sin descripcion")
+                                    getDisplayValue(left.name, "Sin descripción"),
+                                    getDisplayValue(right.name, "Sin descripción")
                                   )
                                 )
                                 .map((requirement) => {
@@ -576,7 +576,7 @@ export default function ComplianceMatrix({
                                         >
                                           {getDisplayValue(
                                             requirement.name,
-                                            "Sin descripcion"
+                                            "Sin descripción"
                                           )}
                                         </div>
                                       </td>
@@ -672,7 +672,7 @@ function getDeadlineState(requirement: Requirement) {
 
   if (isRequirementUpcoming(requirement)) {
     return {
-      label: "Proximo",
+      label: "Próximo",
       symbol: "●",
       textColor: "#c2410c",
       background: "#ffedd5",

@@ -328,7 +328,7 @@ function parseOptionalDeadline(
   }
 
   if (typeof value !== "string") {
-    return { ok: false, error: "La fecha limite no es valida." };
+    return { ok: false, error: "La fecha límite no es válida." };
   }
 
   const trimmedValue = value.trim();
@@ -340,7 +340,7 @@ function parseOptionalDeadline(
   const parsedDate = new Date(trimmedValue);
 
   if (Number.isNaN(parsedDate.getTime())) {
-    return { ok: false, error: "La fecha limite no es valida." };
+    return { ok: false, error: "La fecha límite no es válida." };
   }
 
   return { ok: true, value: parsedDate };

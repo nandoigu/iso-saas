@@ -70,7 +70,7 @@ export async function POST(req: Request) {
   } catch (error) {
     console.error("ERROR POST /api/auth/reset-password:", error);
     return NextResponse.json(
-      { error: "No se pudo restablecer la contrasena." },
+      { error: "No se pudo restablecer la contraseña." },
       { status: 500 }
     );
   }

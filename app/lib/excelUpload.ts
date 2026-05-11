@@ -25,7 +25,7 @@ export async function readSafeXlsxUpload(file: File) {
   if (file.size > MAX_XLSX_UPLOAD_BYTES) {
     return {
       ok: false as const,
-      error: `El archivo supera el limite de ${formatMegabytes(
+      error: `El archivo supera el límite de ${formatMegabytes(
         MAX_XLSX_UPLOAD_BYTES
       )} MB.`,
     };

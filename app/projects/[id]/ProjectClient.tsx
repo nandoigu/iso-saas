@@ -99,7 +99,7 @@ export default function ProjectClient({ projectId }: ProjectClientProps) {
         setProjectCodeDraft(data.code || "");
       } catch (error) {
         console.error("Error cargando metadatos del proyecto:", error);
-        setMetaError("No se pudo cargar la funcion del proyecto.");
+        setMetaError("No se pudo cargar la función del proyecto.");
       }
     };
 
@@ -181,7 +181,7 @@ export default function ProjectClient({ projectId }: ProjectClientProps) {
 
     if (importMode === "replace") {
       const confirmed = window.confirm(
-        "¿Quieres reemplazar todos los requerimientos actuales del proyecto por los del Excel? Esta accion eliminara los requerimientos existentes antes de importar los nuevos."
+        "¿Quieres reemplazar todos los requerimientos actuales del proyecto por los del Excel? Esta acción eliminará los requerimientos existentes antes de importar los nuevos."
       );
 
       if (!confirmed) {
@@ -377,7 +377,7 @@ export default function ProjectClient({ projectId }: ProjectClientProps) {
     const confirmed = window.confirm(
       `¿Seguro que quieres eliminar el requerimiento "${getDisplayValue(
         requirement.name,
-        "Sin descripcion"
+        "Sin descripción"
       )}"?`
     );
 
@@ -609,7 +609,7 @@ export default function ProjectClient({ projectId }: ProjectClientProps) {
                   />
                 </label>
                 <label style={inlineFieldStyle}>
-                  Codigo
+                  Código
                   <input
                     value={projectCodeDraft}
                     onChange={(event) => setProjectCodeDraft(event.target.value)}
@@ -628,8 +628,8 @@ export default function ProjectClient({ projectId }: ProjectClientProps) {
                 }}
               >
                 <span style={{ color: "#64748b", fontSize: 13 }}>
-                  La funcion del proyecto se mantiene fija para no desalinear
-                  los requerimientos generados automaticamente.
+                  La función del proyecto se mantiene fija para no desalinear
+                  los requerimientos generados automáticamente.
                 </span>
                 <div
                   style={{
@@ -680,8 +680,8 @@ export default function ProjectClient({ projectId }: ProjectClientProps) {
                 </button>
               </div>
               <p style={{ color: "#6b7280", margin: "8px 0 0" }}>
-                Alta, edicion y seguimiento de requerimientos, evidencias, estados y
-                fechas limite del proyecto.
+                Alta, edición y seguimiento de requerimientos, evidencias, estados y
+                fechas límite del proyecto.
               </p>
             </>
           )}
@@ -718,7 +718,7 @@ export default function ProjectClient({ projectId }: ProjectClientProps) {
       >
         <MetricCard label="Requerimientos" value={summary.total} />
         <MetricCard label="Cumplimiento" value={`${summary.percent}%`} />
-        <MetricCard label="Proximos 7 dias" value={summary.upcoming} tone="warning" />
+        <MetricCard label="Próximos 7 días" value={summary.upcoming} tone="warning" />
         <MetricCard label="Vencidos" value={summary.overdue} tone="risk" />
       </section>
 
@@ -726,7 +726,7 @@ export default function ProjectClient({ projectId }: ProjectClientProps) {
         <div style={{ minWidth: 0 }}>
           <strong style={{ display: "block" }}>Flujo de trabajo</strong>
           <span style={{ color: "#64748b", fontSize: 13 }}>
-            Alta, importacion, revision filtrada y matriz quedan conectadas desde aqui.
+            Alta, importación, revisión filtrada y matriz quedan conectadas desde aquí.
           </span>
         </div>
         <div
@@ -777,7 +777,7 @@ export default function ProjectClient({ projectId }: ProjectClientProps) {
           <SectionHeader
             eyebrow="Alta manual"
             title="Nuevo requerimiento"
-            description="Registra nuevos requisitos del proyecto con su estado, evidencia y fecha limite desde un unico bloque operativo."
+            description="Registra nuevos requisitos del proyecto con su estado, evidencia y fecha límite desde un único bloque operativo."
           />
 
           <div
@@ -825,7 +825,7 @@ export default function ProjectClient({ projectId }: ProjectClientProps) {
             </label>
 
             <label style={inlineFieldStyle}>
-              Fecha limite
+              Fecha límite
               <input
                 type="date"
                 value={deadline}
@@ -877,7 +877,7 @@ export default function ProjectClient({ projectId }: ProjectClientProps) {
               opacity: savingNew ? 0.7 : 1,
             }}
           >
-            {savingNew ? "Guardando..." : "Anadir requerimiento"}
+            {savingNew ? "Guardando..." : "Añadir requerimiento"}
           </button>
         </section>
 
@@ -885,7 +885,7 @@ export default function ProjectClient({ projectId }: ProjectClientProps) {
           <SectionHeader
             eyebrow="Carga masiva"
             title="Importar requisitos del proyecto"
-            description="Sube un Excel especifico para este proyecto. Puedes anadir solo nuevos requerimientos o reemplazar por completo el listado actual."
+            description="Sube un Excel específico para este proyecto. Puedes añadir solo nuevos requerimientos o reemplazar por completo el listado actual."
           />
 
           <div
@@ -912,7 +912,7 @@ export default function ProjectClient({ projectId }: ProjectClientProps) {
             </label>
 
             <label style={filterLabelStyle}>
-              Modo de importacion
+              Modo de importación
               <select
                 value={importMode}
                 onChange={(event) =>
@@ -920,7 +920,7 @@ export default function ProjectClient({ projectId }: ProjectClientProps) {
                 }
                 style={controlStyle}
               >
-                <option value="append">Anadir solo nuevos</option>
+                <option value="append">Añadir solo nuevos</option>
                 <option value="replace">Reemplazar requerimientos del proyecto</option>
               </select>
             </label>
@@ -940,6 +940,21 @@ export default function ProjectClient({ projectId }: ProjectClientProps) {
             >
               {importingRequirements ? "Importando..." : "Importar Excel"}
             </button>
+          </div>
+
+          <div style={importHelpStyle}>
+            <strong>Formato Excel del proyecto</strong>
+            <p>
+              La primera fila debe contener <code> norma </code>, <code> item </code>,
+              <code> requerimiento </code>, <code> evidencia </code>, <code> estado </code>
+              y <code> fecha_limite </code>. También se aceptan encabezados con acentos,
+              como <code> descripción </code> o <code> fecha límite </code>.
+            </p>
+            <p>
+              Estados válidos: <code>total</code>, <code>parcial</code> y
+              <code>no_conforme</code>. Las fechas deben venir como fecha de Excel o en
+              formato <code>YYYY-MM-DD</code>.
+            </p>
           </div>
 
           {importError ? (
@@ -1165,7 +1180,7 @@ function RequirementCard({
                   maxWidth: compactLayout ? "100%" : "92%",
                 }}
               >
-                {getDisplayValue(requirement.name, "Sin descripcion")}
+                {getDisplayValue(requirement.name, "Sin descripción")}
               </h4>
             </div>
 
@@ -1217,7 +1232,7 @@ function RequirementCard({
               compact
             />
             <InfoBlock
-              label="Fecha limite"
+              label="Fecha límite"
               value={formatDate(requirement.deadline)}
               tone={overdue ? "risk" : upcoming ? "warning" : "default"}
               compact
@@ -1276,7 +1291,7 @@ function EditRequirementForm({
       >
         <div>
           <div style={{ color: "#64748b", fontSize: 12, fontWeight: 700 }}>
-            Modo edicion
+            Modo edición
           </div>
           <div style={{ color: "#0f172a", fontSize: 14, fontWeight: 700, marginTop: 4 }}>
             Ajusta el requerimiento directamente en contexto y guarda los cambios.
@@ -1353,7 +1368,7 @@ function EditRequirementForm({
         </label>
 
         <label style={inlineFieldStyle}>
-          Fecha limite
+          Fecha límite
           <input
             type="date"
             value={editData.deadline}
@@ -1382,7 +1397,7 @@ function EditRequirementForm({
             onChange={(event) =>
               onEditChange({ ...editData, name: event.target.value })
             }
-            placeholder="Descripcion"
+            placeholder="Descripción"
             rows={4}
             style={textAreaStyle}
           />
@@ -1493,7 +1508,7 @@ function FilterPanel({
         }}
       >
         <div>
-          <h3 style={{ margin: 0 }}>Filtros y ordenacion</h3>
+          <h3 style={{ margin: 0 }}>Filtros y ordenación</h3>
           <p style={{ color: "#6b7280", fontSize: 13, margin: "6px 0 0" }}>
             {filteredCount} de {totalCount} requerimientos visibles
             {activeFilterCount > 0
@@ -1531,7 +1546,7 @@ function FilterPanel({
           <input
             value={searchTerm}
             onChange={(event) => onSearchTermChange(event.target.value)}
-            placeholder="Norma, item, descripcion o evidencia"
+            placeholder="Norma, item, descripción o evidencia"
             style={controlStyle}
           />
         </label>
@@ -1599,7 +1614,7 @@ function FilterPanel({
           >
             <option value="all">Todas las fechas</option>
             <option value="overdue">Vencidos</option>
-            <option value="upcoming">Proximos 7 dias</option>
+            <option value="upcoming">Próximos 7 días</option>
             <option value="no_date">Sin fecha</option>
           </select>
         </label>
@@ -1614,7 +1629,7 @@ function FilterPanel({
             style={controlStyle}
           >
             <option value="natural">Norma e item</option>
-            <option value="deadline">Fecha limite</option>
+            <option value="deadline">Fecha límite</option>
             <option value="status">Estado</option>
             <option value="created">Orden original</option>
           </select>
@@ -1632,10 +1647,10 @@ function buildProjectImportSuccessMessage(data: {
   mode?: string;
 }) {
   if (data.mode === "replace") {
-    return `Importacion completada en modo reemplazo: ${data.imported} requisitos cargados, ${data.removedExisting ?? 0} requisitos anteriores eliminados y ${data.totalRows} filas validas procesadas.`;
+    return `Importación completada en modo reemplazo: ${data.imported} requisitos cargados, ${data.removedExisting ?? 0} requisitos anteriores eliminados y ${data.totalRows} filas válidas procesadas.`;
   }
 
-  return `Importacion completada: ${data.imported} nuevos, ${data.skippedDuplicates} duplicados omitidos, ${data.totalRows} filas validas.`;
+  return `Importación completada: ${data.imported} nuevos, ${data.skippedDuplicates} duplicados omitidos, ${data.totalRows} filas válidas.`;
 }
 
 function SectionHeader({
@@ -1901,6 +1916,19 @@ const detailsListStyle: React.CSSProperties = {
   color: "#9a3412",
   marginTop: 14,
   padding: "10px 10px 10px 28px",
+};
+
+const importHelpStyle: React.CSSProperties = {
+  background: "#f8fafc",
+  border: "1px solid #dbe5f1",
+  borderRadius: 10,
+  color: "#334155",
+  display: "grid",
+  fontSize: 13,
+  gap: 6,
+  lineHeight: 1.5,
+  marginTop: 14,
+  padding: 14,
 };
 
 const projectRoleBadgeBaseStyle: React.CSSProperties = {

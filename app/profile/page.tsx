@@ -108,13 +108,13 @@ export default function ProfilePage() {
     setPasswordSuccess("");
 
     if (newPassword.length < 8) {
-      setError("La nueva contrasena debe tener al menos 8 caracteres.");
+      setError("La nueva contraseña debe tener al menos 8 caracteres.");
       setSavingPassword(false);
       return;
     }
 
     if (newPassword !== confirmPassword) {
-      setError("Las contrasenas no coinciden.");
+      setError("Las contraseñas no coinciden.");
       setSavingPassword(false);
       return;
     }
@@ -134,19 +134,19 @@ export default function ProfilePage() {
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.error || "No se pudo cambiar la contrasena.");
+        throw new Error(data.error || "No se pudo cambiar la contraseña.");
       }
 
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
-      setPasswordSuccess("Contrasena actualizada correctamente.");
+      setPasswordSuccess("Contraseña actualizada correctamente.");
     } catch (passwordError) {
       console.error(passwordError);
       setError(
         passwordError instanceof Error
           ? passwordError.message
-          : "No se pudo cambiar la contrasena."
+          : "No se pudo cambiar la contraseña."
       );
     } finally {
       setSavingPassword(false);
@@ -172,19 +172,19 @@ export default function ProfilePage() {
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.error || "No se pudo enviar el email de recuperacion.");
+        throw new Error(data.error || "No se pudo enviar el email de recuperación.");
       }
 
       setRecoverySuccess(
         data?.data?.message ||
-          "Si existe una cuenta con ese email, te enviaremos un enlace de recuperacion."
+          "Si existe una cuenta con ese email, te enviaremos un enlace de recuperación."
       );
     } catch (recoveryError) {
       console.error(recoveryError);
       setError(
         recoveryError instanceof Error
           ? recoveryError.message
-          : "No se pudo enviar el email de recuperacion."
+          : "No se pudo enviar el email de recuperación."
       );
     } finally {
       setSendingRecovery(false);
@@ -221,7 +221,7 @@ export default function ProfilePage() {
       {user?.status === "suspended" && (
         <Notice
           tone="warning"
-          message="Tu cuenta esta suspendida. Algunas funciones pueden estar limitadas."
+          message="Tu cuenta está suspendida. Algunas funciones pueden estar limitadas."
         />
       )}
 
@@ -282,7 +282,7 @@ export default function ProfilePage() {
 
           <form onSubmit={changePassword} style={{ display: "grid", gap: 14 }}>
             <label style={labelStyle}>
-              Contrasena actual
+              Contraseña actual
               <input
                 type="password"
                 value={currentPassword}
@@ -293,7 +293,7 @@ export default function ProfilePage() {
             </label>
 
             <label style={labelStyle}>
-              Nueva contrasena
+              Nueva contraseña
               <input
                 type="password"
                 value={newPassword}
@@ -305,7 +305,7 @@ export default function ProfilePage() {
             </label>
 
             <label style={labelStyle}>
-              Confirmar contrasena
+              Confirmar contraseña
               <input
                 type="password"
                 value={confirmPassword}
@@ -317,7 +317,7 @@ export default function ProfilePage() {
             </label>
 
             <button type="submit" disabled={savingPassword} style={primaryButtonStyle}>
-              {savingPassword ? "Actualizando..." : "Cambiar contrasena"}
+              {savingPassword ? "Actualizando..." : "Cambiar contraseña"}
             </button>
           </form>
 
@@ -328,7 +328,7 @@ export default function ProfilePage() {
               onClick={sendRecoveryEmail}
               style={secondaryButtonStyle}
             >
-              {sendingRecovery ? "Enviando..." : "Enviar email de recuperacion"}
+              {sendingRecovery ? "Enviando..." : "Enviar email de recuperación"}
             </button>
           </div>
         </section>

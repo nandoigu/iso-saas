@@ -435,14 +435,14 @@ function isEmptyRow(row: unknown[]) {
 
 function validateWorkbookMatrix(matrix: unknown[][]) {
   if (matrix.length > MAX_WORKBOOK_ROWS) {
-    return `El archivo supera el limite de ${MAX_WORKBOOK_ROWS} filas importables.`;
+    return `El archivo supera el límite de ${MAX_WORKBOOK_ROWS} filas importables.`;
   }
 
   for (let rowIndex = 0; rowIndex < matrix.length; rowIndex += 1) {
     const row = matrix[rowIndex];
 
     if (row.length > MAX_WORKBOOK_COLUMNS) {
-      return `La fila ${rowIndex + 1} supera el limite de ${MAX_WORKBOOK_COLUMNS} columnas.`;
+      return `La fila ${rowIndex + 1} supera el límite de ${MAX_WORKBOOK_COLUMNS} columnas.`;
     }
 
     for (const cell of row) {

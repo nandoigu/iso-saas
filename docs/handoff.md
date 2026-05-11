@@ -231,73 +231,75 @@ La aplicacion ya tiene una base SaaS funcional bastante avanzada.
 
 ### Prioridad media pendiente
 
-- [ ] Unificacion visual restante:
+- [ ] Unificación visual restante:
   - botones
   - badges
   - paneles
   - tablas
-  - estados vacios
+  - estados vacíos
   - confirmaciones destructivas
 - [ ] Unificar avisos restantes si aparecen nuevos patrones fuera de `components/Notice.tsx`.
-- [ ] Revisar textos con falta de acentos o restos de mojibake heredados.
-- [ ] Documentar formato de importacion Excel para usuario final:
+- [x] Revisar textos con falta de acentos o restos de mojibake heredados en UI y mensajes API principales.
+- [x] Documentar formato de importación Excel para usuario final:
   - columnas aceptadas
   - modos `append` / `replace`
-  - errores habituales y como corregirlos
+  - errores habituales y cómo corregirlos
+  - referencia interna: `docs/excel-import-format.md`
+  - ayuda visible en importación global y en importación por proyecto
 - [ ] Mejora de productividad del usuario:
-  - busquedas mas utiles
-  - filtros mas potentes
-  - ordenacion persistente o mas visible
-  - accesos rapidos
+  - búsquedas más útiles
+  - filtros más potentes
+  - ordenación persistente o más visible
+  - accesos rápidos
   - acciones en contexto
   - persistencia de algunos filtros
-  - mejor navegacion entre proyecto, matriz y dashboard
+  - mejor navegación entre proyecto, matriz y dashboard
 - [ ] Alertas e informes:
-  - verificar envios de alertas en escenarios reales tras configurar Resend
+  - verificar envíos de alertas en escenarios reales tras configurar Resend
   - mejorar contenido del email
   - revisar frecuencia y duplicados
   - comprobar flujos manuales vs cron
-  - mejorar presentacion del PDF/CSV
+  - mejorar presentación del PDF/CSV
 
-### Prioridad baja / preparacion futura
+### Prioridad baja / preparación futura
 
 - [ ] Preparar checklist de despliegue:
   - variables de entorno
   - migraciones Prisma
   - build
   - smoke test post-deploy
-- [ ] Revisar accesibilidad basica:
+- [ ] Revisar accesibilidad básica:
   - labels
   - foco visible
-  - navegacion por teclado
+  - navegación por teclado
   - contraste
 - [ ] Onboarding y primera experiencia:
-  - vacios guiados
+  - vacíos guiados
   - ayuda contextual ligera
-  - primera creacion de proyecto mas acompanada
+  - primera creación de proyecto más acompañada
   - sugerencias de siguiente paso
 - [ ] Branding y presencia comercial:
   - copy mas consistente
   - pulido visual final
   - datos demo de calidad
   - cuenta demo
-  - presentacion comercial del producto
-- [ ] Evolucion funcional futura:
-  - historico de cambios
+  - presentación comercial del producto
+- [ ] Evolución funcional futura:
+  - histórico de cambios
   - comentarios o notas por requerimiento
   - versionado de plantillas
-  - exportaciones mas ricas
+  - exportaciones más ricas
   - comparativas entre proyectos
-  - metricas por empresa
+  - métricas por empresa
 - [ ] Evaluar tests automatizados de humo para APIs principales.
-- [ ] Revisar si conviene extraer mas estilos compartidos despues de cerrar responsive.
+- [ ] Revisar si conviene extraer más estilos compartidos después de cerrar responsive.
 
 ### Quick wins pendientes
 
 - [x] Terminar el pulido de la vista de detalle del proyecto.
 - [x] Revisar mensajes de error/exito para que sean consistentes.
 - [ ] Homogeneizar botones, badges, paneles y tablas en toda la app.
-- [ ] Anadir mejor feedback al guardar, editar e importar donde aun falte.
+- [ ] Añadir mejor feedback al guardar, editar e importar donde aún falte.
 - [ ] Preparar un recorrido de prueba completo con un usuario demo.
 
 ### Riesgos y notas abiertas

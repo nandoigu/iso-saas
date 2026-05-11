@@ -22,7 +22,7 @@ export async function POST(req: Request) {
       return NextResponse.json(
         {
           error:
-            "Has alcanzado el limite temporal de envios de prueba. Espera unos minutos antes de reintentar.",
+            "Has alcanzado el límite temporal de envíos de prueba. Espera unos minutos antes de reintentar.",
         },
         { status: 429 }
       );

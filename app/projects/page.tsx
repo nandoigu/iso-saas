@@ -280,7 +280,7 @@ export default function ProjectsPage() {
             Gestion de proyectos
           </h1>
           <p style={heroDescriptionStyle}>
-            Crea proyectos, define su funcion ISO 19650 y administra las
+            Crea proyectos, define su función ISO 19650 y administra las
             plantillas base que se cargan automaticamente.
           </p>
         </div>
@@ -343,7 +343,7 @@ export default function ProjectsPage() {
               <div>
                 <h2 style={panelTitleStyle}>Crear proyecto</h2>
                 <p style={panelDescriptionStyle}>
-                  Elige la funcion del proyecto para cargar automaticamente los
+                  Elige la función del proyecto para cargar automáticamente los
                   requerimientos aplicables.
                 </p>
               </div>
@@ -466,6 +466,19 @@ export default function ProjectsPage() {
               </div>
             </form>
 
+            <div style={importHelpStyle}>
+              <strong>Formato aceptado para plantilla global</strong>
+              <p>
+                Usa una hoja Excel con cabecera en la primera fila y las columnas
+                <code> norma </code>, <code> item </code>, <code> titulo </code> y
+                <code> descripcion </code>. La columna <code> fase </code> es opcional.
+              </p>
+              <p>
+                Si marcas reemplazar, la plantilla actual se vacía antes de cargar las
+                filas válidas del archivo.
+              </p>
+            </div>
+
             {importError && <FeedbackBox tone="error" message={importError} />}
 
             {importDetails.length > 0 && (
@@ -479,7 +492,7 @@ export default function ProjectsPage() {
             {importResult && (
               <FeedbackBox
                 tone="success"
-                message={`Importacion completada: ${importResult.imported} nuevos, ${importResult.skippedDuplicates} duplicados omitidos, ${importResult.totalRows} filas validas.`}
+                message={`Importación completada: ${importResult.imported} nuevos, ${importResult.skippedDuplicates} duplicados omitidos, ${importResult.totalRows} filas válidas.`}
               />
             )}
           </section>
@@ -550,7 +563,7 @@ export default function ProjectsPage() {
                           </span>
                         </div>
                         <p style={projectMetaStyle}>
-                          {project.code || "Sin codigo"}
+                          {project.code || "Sin código"}
                           {project.createdAt
                             ? ` - creado ${formatDateLong(project.createdAt)}`
                             : ""}
@@ -1006,6 +1019,19 @@ const detailsStyle: React.CSSProperties = {
   color: "#9a3412",
   margin: "14px 0 0",
   padding: "10px 10px 10px 28px",
+};
+
+const importHelpStyle: React.CSSProperties = {
+  background: "#f8fafc",
+  border: "1px solid #dbe3f1",
+  borderRadius: 10,
+  color: "#334155",
+  display: "grid",
+  fontSize: 13,
+  gap: 6,
+  lineHeight: 1.5,
+  marginTop: 14,
+  padding: 14,
 };
 
 const kpiLabelStyle: React.CSSProperties = {

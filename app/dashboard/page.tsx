@@ -306,7 +306,7 @@ export default function DashboardPage() {
       });
       setEmailFeedback({
         tone: "success",
-        text: "Preferencias de notificacion guardadas correctamente.",
+        text: "Preferencias de notificación guardadas correctamente.",
       });
     } catch (err) {
       setNotificationPreferences(notificationPreferences);
@@ -315,7 +315,7 @@ export default function DashboardPage() {
         text:
           err instanceof Error
             ? err.message
-            : "No se pudieron guardar las preferencias de notificacion.",
+            : "No se pudieron guardar las preferencias de notificación.",
       });
     } finally {
       setSavingPreferences(false);
@@ -365,7 +365,7 @@ export default function DashboardPage() {
         <div>
           <h1 style={{ margin: 0 }}>Dashboard BI</h1>
           <p style={{ margin: "8px 0 0", color: "#64748b" }}>
-            Analisis interactivo de cumplimiento ISO 19650 por proyecto, norma y estado.
+            Análisis interactivo de cumplimiento ISO 19650 por proyecto, norma y estado.
           </p>
         </div>
 
@@ -545,7 +545,7 @@ function FiltersPanel({
           options={[
             { value: "all", label: "Todas" },
             { value: "overdue", label: "Vencidos" },
-            { value: "upcoming", label: "Proximos 7 dias" },
+            { value: "upcoming", label: "Próximos 7 días" },
             { value: "not_overdue", label: "No vencidos" },
             { value: "no_date", label: "Sin fecha" },
           ]}
@@ -602,7 +602,7 @@ function AlertsPanel({
               color="#dc2626"
             />
             <AlertCounter
-              label="Proximos 7 dias"
+              label="Próximos 7 días"
               value={alertRequirements.upcoming.length}
               color="#d97706"
             />
@@ -611,7 +611,7 @@ function AlertsPanel({
           <div style={{ display: "grid", gap: 10, marginTop: 16 }}>
             {highlightedRequirements.length === 0 ? (
               <p style={{ color: "#16a34a", fontWeight: 700, margin: 0 }}>
-                No hay requerimientos vencidos ni proximos a vencer.
+                No hay requerimientos vencidos ni próximos a vencer.
               </p>
             ) : (
               highlightedRequirements.map((requirement) => (
@@ -677,7 +677,7 @@ function AlertsPanel({
                 })
               }
             />
-            Informes periodicos por email
+            Informes periódicos por email
           </label>
 
           <label style={{ display: "grid", gap: 8, marginTop: 12 }}>
@@ -722,7 +722,7 @@ function AlertsPanel({
           {savingPreferences ? (
             <Notice
               tone="info"
-              message="Guardando preferencias de notificacion..."
+              message="Guardando preferencias de notificación..."
               compact
               style={{ marginTop: 12 }}
             />
@@ -1215,7 +1215,7 @@ function generatePDF({
         "Requerimiento",
         "Evidencia",
         "Estado",
-        "Fecha limite",
+        "Fecha límite",
         "Vencido",
       ],
     ],
@@ -1286,7 +1286,7 @@ function formatTableData(requirements: DashboardRequirement[]) {
       project: getDisplayValue(requirement.projectName, "Sin proyecto"),
       norma: getDisplayValue(requirement.norma, "Sin norma"),
       item: getDisplayValue(requirement.item, "Sin item"),
-      name: getDisplayValue(requirement.name, "Sin descripcion"),
+      name: getDisplayValue(requirement.name, "Sin descripción"),
       evidence: getDisplayValue(requirement.evidencia, "Sin evidencia"),
       status,
       statusLabel: STATUS_META[status].label,

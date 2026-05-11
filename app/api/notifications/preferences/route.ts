@@ -39,7 +39,7 @@ export async function GET(req: Request) {
   } catch (error) {
     console.error("ERROR GET /api/notifications/preferences:", error);
     return NextResponse.json(
-      { error: "Error obteniendo preferencias de notificacion" },
+      { error: "Error obteniendo preferencias de notificación" },
       { status: 500 }
     );
   }
@@ -85,7 +85,7 @@ export async function PATCH(req: Request) {
   } catch (error) {
     console.error("ERROR PATCH /api/notifications/preferences:", error);
     return NextResponse.json(
-      { error: "Error actualizando preferencias de notificacion" },
+      { error: "Error actualizando preferencias de notificación" },
       { status: 500 }
     );
   }

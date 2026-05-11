@@ -162,7 +162,7 @@ export default function EmailTestPage() {
           }}
         >
           <div>
-            El envio se ejecuta solo en servidor y utiliza las variables
+            El envío se ejecuta solo en servidor y utiliza las variables
             <code> RESEND_API_KEY </code>
             y
             <code> EMAIL_FROM </code>.

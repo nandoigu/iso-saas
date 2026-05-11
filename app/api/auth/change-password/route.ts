@@ -31,7 +31,7 @@ export async function POST(req: Request) {
 
     if (!currentPassword || passwordError) {
       return NextResponse.json(
-        { error: passwordError || "Debes indicar tu contrasena actual." },
+        { error: passwordError || "Debes indicar tu contraseña actual." },
         { status: 400 }
       );
     }
@@ -49,7 +49,7 @@ export async function POST(req: Request) {
 
     if (!validPassword) {
       return NextResponse.json(
-        { error: "La contrasena actual no es correcta." },
+        { error: "La contraseña actual no es correcta." },
         { status: 400 }
       );
     }
@@ -65,7 +65,7 @@ export async function POST(req: Request) {
   } catch (error) {
     console.error("ERROR POST /api/auth/change-password:", error);
     return NextResponse.json(
-      { error: "No se pudo actualizar la contrasena." },
+      { error: "No se pudo actualizar la contraseña." },
       { status: 500 }
     );
   }

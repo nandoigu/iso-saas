@@ -186,8 +186,8 @@ export function compareRequirementsNaturally(a: Requirement, b: Requirement) {
       getDisplayValue(b.item, "Sin item")
     ) ||
     naturalTextCompare(
-      getDisplayValue(a.name, "Sin descripcion"),
-      getDisplayValue(b.name, "Sin descripcion")
+      getDisplayValue(a.name, "Sin descripción"),
+      getDisplayValue(b.name, "Sin descripción")
     )
   );
 }
