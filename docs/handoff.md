@@ -73,8 +73,29 @@ La aplicacion ya tiene una base SaaS funcional bastante avanzada.
 ### Email
 
 - Resend esta integrado
-- en entorno actual puede haber restricciones de envio si el remitente sigue en modo pruebas (`@resend.dev`)
-- el sistema ya devuelve mensajes utiles cuando el proveedor esta en modo test
+- dominio remitente verificado en Resend
+- `EMAIL_FROM` definitivo configurado en Vercel con remitente del dominio real
+- forgot password / reset password probado correctamente en produccion
+- el sistema ya devuelve mensajes utiles cuando el proveedor esta en modo test o restringe destinatarios
+
+### Produccion
+
+- despliegue en Vercel operativo sobre rama `main`
+- build de Vercel corregido con `prisma generate && next build`
+- base de datos Neon asociada a produccion y migraciones Prisma aplicadas
+- variables de entorno criticas configuradas en Vercel:
+  - `DATABASE_URL`
+  - `APP_URL`
+  - `AUTH_SECRET`
+  - `JWT_SECRET`
+  - `RESEND_API_KEY`
+  - `EMAIL_FROM`
+- password del role de Neon rotado tras la puesta en marcha y `DATABASE_URL` actualizada en Vercel
+- usuario admin operativo en produccion:
+  - email: `figual@eficax.com`
+  - rol: `admin`
+  - estado: `active`
+  - no documentar contrasenas ni secretos en este archivo
 
 ## Ultimos commits relevantes
 
@@ -88,6 +109,8 @@ La aplicacion ya tiene una base SaaS funcional bastante avanzada.
 - `d2f014d` Clarify password reset email test-mode behavior
 - `d875a46` Harden email delivery feedback and cleanup
 - `12dea58` Normalize role and project requirement imports
+- `118c12c` Generate Prisma client during build
+- `372acfa` Trigger Vercel deployment
 
 ## Auditoria funcional: estado
 
@@ -126,6 +149,12 @@ La aplicacion ya tiene una base SaaS funcional bastante avanzada.
   - forgot password
   - reset password
   - limpieza de tokens cuando falla el email
+- puesta en produccion:
+  - Vercel build y deploy correctos
+  - Neon conectado y migrado
+  - admin creado/activado
+  - Resend con dominio verificado
+  - forgot password y reset password confirmados con email real
 
 ### Hallazgos ya corregidos
 
@@ -205,11 +234,11 @@ La aplicacion ya tiene una base SaaS funcional bastante avanzada.
 
 ### Prioridad alta pendiente
 
-- [ ] Verificacion de produccion de email:
+- [x] Verificacion de produccion de email:
   - verificar dominio real en Resend
   - configurar `EMAIL_FROM` definitivo
   - repetir prueba real de envio a usuarios no autorizados en modo test
-- [ ] Revision de seguridad y produccion:
+- [x] Revision de seguridad y produccion:
   - revisar logs de errores
   - revisar rotacion/gestion real de secretos en el entorno de despliegue
 - [ ] Auditoria visual completa en navegador cuando el runtime permita probar formularios con `type=email` sin bloqueo.
@@ -314,7 +343,7 @@ La aplicacion ya tiene una base SaaS funcional bastante avanzada.
 - La verificacion visual completa en navegador sigue limitada por el runtime al escribir en campos `type=email`.
 - La ultima pasada de prioridad alta esta documentada en `docs/high-priority-audit-2026-05-10.md`.
 - Por API, los flujos funcionales criticos revisados estan pasando.
-- Resend sigue dependiendo de configuracion externa de dominio para envios reales a cualquier destinatario.
+- Resend ya tiene dominio remitente verificado para produccion; queda probar alertas e informes reales.
 - `npm audit --audit-level=moderate` paso limpio tras la mitigacion de `postcss`.
 - El plan actualizado queda alineado con el plan anterior: la vista de proyecto vuelve a prioridad alta, y las mejoras de productividad, alertas/informes, onboarding, branding, evolucion futura y quick wins quedan reflejadas sin duplicar tareas ya completadas.
 
@@ -342,3 +371,19 @@ App local habitual:
 ## Nota final
 
 La base funcional del producto ya esta bien montada. El siguiente trabajo recomendado no es abrir muchas piezas nuevas, sino cerrar bien auditoria, robustez y preparacion de produccion.
+
+## Ultima sesion de produccion - 2026-05-11
+
+- Vercel fallaba inicialmente por Prisma Client desactualizado; se corrigio el script de build para ejecutar `prisma generate`.
+- Neon estaba conectado pero sin tablas; se aplico `npx prisma migrate deploy` y quedaron aplicadas las 18 migraciones.
+- Registro/login fallaban por falta de secreto de sesion en produccion; se configuro `AUTH_SECRET` en Vercel.
+- Se creo/activo un usuario admin directamente en Neon para recuperar acceso administrativo.
+- Se verifico dominio real en Resend y se cambio `EMAIL_FROM` desde `onboarding@resend.dev` a un remitente del dominio verificado.
+- Se rodo la password del role de Neon despues de haberla usado durante la configuracion, se actualizo `DATABASE_URL` en Vercel y se redesplego.
+- Comprobaciones finales correctas:
+  - login admin en produccion
+  - forgot password con email real
+  - recepcion del email desde `no-reply@eficax.com`
+  - reset password desde enlace recibido
+  - login posterior con la nueva contrasena
+- Proxima sesion recomendada: validar emails de alertas e informes en escenarios reales, incluyendo frecuencia, duplicados, envio manual vs cron y contenido recibido.
