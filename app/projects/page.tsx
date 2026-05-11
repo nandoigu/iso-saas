@@ -10,6 +10,15 @@ import {
   PROJECT_ROLE_VALUES,
   type ProjectRole,
 } from "@/app/lib/projectRoles";
+import {
+  appDangerButtonStyle,
+  appEmptyStateStyle,
+  appFieldStyle,
+  appHelpPanelStyle,
+  appPanelStyle,
+  appPrimaryButtonStyle,
+  appSecondaryButtonStyle,
+} from "@/components/uiStyles";
 
 type RequirementStatus = "total" | "parcial" | "no_conforme";
 
@@ -928,11 +937,7 @@ const feedbackStackStyle: React.CSSProperties = {
 };
 
 const panelStyle: React.CSSProperties = {
-  background: "#ffffff",
-  border: "1px solid #e2e8f0",
-  borderRadius: 12,
-  boxShadow: "0 10px 24px rgba(15, 23, 42, 0.04)",
-  minWidth: 0,
+  ...appPanelStyle,
   padding: 20,
 };
 
@@ -987,27 +992,19 @@ const formActionRowStyle: React.CSSProperties = {
 };
 
 const inputStyle: React.CSSProperties = {
-  background: "#ffffff",
-  border: "1px solid #cbd5e1",
-  borderRadius: 10,
+  ...appFieldStyle,
   minHeight: 44,
   padding: "10px 12px",
 };
 
 const fileInputStyle: React.CSSProperties = {
-  background: "#ffffff",
-  border: "1px solid #cbd5e1",
-  borderRadius: 10,
+  ...appFieldStyle,
   minHeight: 44,
   padding: 8,
 };
 
 const primaryButtonStyle: React.CSSProperties = {
-  background: "#0025df",
-  border: "1px solid #0025df",
-  borderRadius: 10,
-  color: "#ffffff",
-  fontWeight: 700,
+  ...appPrimaryButtonStyle,
   minHeight: 44,
   padding: "10px 16px",
 };
@@ -1022,10 +1019,7 @@ const detailsStyle: React.CSSProperties = {
 };
 
 const importHelpStyle: React.CSSProperties = {
-  background: "#f8fafc",
-  border: "1px solid #dbe3f1",
-  borderRadius: 10,
-  color: "#334155",
+  ...appHelpPanelStyle,
   display: "grid",
   fontSize: 13,
   gap: 6,
@@ -1049,12 +1043,7 @@ const kpiValueStyle: React.CSSProperties = {
 };
 
 const emptyStateStyle: React.CSSProperties = {
-  background: "#f8fafc",
-  border: "1px dashed #cbd5e1",
-  borderRadius: 12,
-  color: "#64748b",
-  padding: 22,
-  textAlign: "center",
+  ...appEmptyStateStyle,
 };
 
 const projectCardStyle: React.CSSProperties = {
@@ -1187,23 +1176,18 @@ const mobileProjectActionsStyle: React.CSSProperties = {
 };
 
 const secondaryInlineActionStyle: React.CSSProperties = {
-  background: "#f8fafc",
-  border: "1px solid #d9e3f0",
-  borderRadius: 10,
+  ...appSecondaryButtonStyle,
   color: "#002a4e",
   fontSize: 13,
-  fontWeight: 700,
+  minHeight: 0,
   padding: "8px 12px",
   textDecoration: "none",
 };
 
 const dangerButtonStyle: React.CSSProperties = {
-  background: "#ffffff",
-  border: "1px solid #fecaca",
-  borderRadius: 10,
-  color: "#b91c1c",
+  ...appDangerButtonStyle,
   fontSize: 13,
-  fontWeight: 700,
+  minHeight: 0,
   padding: "8px 12px",
   whiteSpace: "nowrap",
 };

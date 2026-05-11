@@ -2,6 +2,12 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { Notice } from "@/components/Notice";
+import {
+  appDangerButtonStyle,
+  appFieldStyle,
+  appPanelStyle,
+  appPrimaryButtonStyle,
+} from "@/components/uiStyles";
 
 type AdminUser = {
   id: string;
@@ -487,11 +493,8 @@ function getStatusBadgeStyle(status: string): React.CSSProperties {
 }
 
 const heroCardStyle: React.CSSProperties = {
+  ...appPanelStyle,
   alignItems: "center",
-  background: "white",
-  border: "1px solid #dbe3f1",
-  borderRadius: 16,
-  boxShadow: "0 10px 30px rgba(15,23,42,0.06)",
   display: "flex",
   justifyContent: "space-between",
   gap: 16,
@@ -505,10 +508,7 @@ const compactHeroCardStyle: React.CSSProperties = {
 };
 
 const sectionStyle: React.CSSProperties = {
-  background: "white",
-  border: "1px solid #dbe3f1",
-  borderRadius: 16,
-  boxShadow: "0 10px 30px rgba(15,23,42,0.06)",
+  ...appPanelStyle,
   padding: 24,
 };
 
@@ -594,24 +594,15 @@ const emptyStyle: React.CSSProperties = {
 };
 
 const buttonStyle: React.CSSProperties = {
-  background: "#0025df",
-  border: "1px solid #0025df",
-  borderRadius: 8,
-  color: "white",
-  cursor: "pointer",
-  fontWeight: 700,
+  ...appPrimaryButtonStyle,
   minHeight: 40,
   padding: "0 14px",
 };
 
 const selectStyle: React.CSSProperties = {
-  border: "1px solid #cbd5e1",
-  borderRadius: 8,
-  boxSizing: "border-box",
+  ...appFieldStyle,
   minHeight: 38,
-  minWidth: 0,
   padding: "0 10px",
-  width: "100%",
 };
 
 const helperTextStyle: React.CSSProperties = {
@@ -621,11 +612,7 @@ const helperTextStyle: React.CSSProperties = {
 };
 
 const dangerButtonStyle: React.CSSProperties = {
-  background: "#ffffff",
-  border: "1px solid #fecaca",
-  borderRadius: 8,
-  color: "#b91c1c",
-  fontWeight: 700,
+  ...appDangerButtonStyle,
   minHeight: 38,
   padding: "0 12px",
   width: "100%",

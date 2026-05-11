@@ -22,6 +22,11 @@ import {
   YAxis,
 } from "recharts";
 import { Notice, type NoticeTone } from "@/components/Notice";
+import {
+  appPanelStyle,
+  appPrimaryButtonStyle,
+  appSecondaryButtonStyle,
+} from "@/components/uiStyles";
 
 type RequirementStatus = "total" | "parcial" | "no_conforme";
 type DateFilter = "all" | "overdue" | "upcoming" | "not_overdue" | "no_date";
@@ -1497,50 +1502,31 @@ function naturalCompare(a: string, b: string) {
 }
 
 const panelStyle: React.CSSProperties = {
-  background: "white",
-  border: "1px solid #e2e8f0",
-  borderRadius: 16,
-  boxShadow: "0 10px 24px rgba(15,23,42,0.05)",
-  minWidth: 0,
+  ...appPanelStyle,
   padding: 20,
 };
 
 const primaryLinkStyle: React.CSSProperties = {
-  background: "#2563eb",
-  borderRadius: 10,
-  color: "white",
-  fontWeight: 700,
+  ...appPrimaryButtonStyle,
+  display: "inline-flex",
   padding: "10px 14px",
   textDecoration: "none",
 };
 
 const secondaryLinkStyle: React.CSSProperties = {
-  background: "white",
-  border: "1px solid #cbd5e1",
-  borderRadius: 10,
-  color: "#0f172a",
-  fontWeight: 700,
+  ...appSecondaryButtonStyle,
+  display: "inline-flex",
   padding: "10px 14px",
   textDecoration: "none",
 };
 
 const primaryButtonStyle: React.CSSProperties = {
-  background: "#2563eb",
-  border: "1px solid #2563eb",
-  borderRadius: 10,
-  color: "white",
-  cursor: "pointer",
-  fontWeight: 700,
+  ...appPrimaryButtonStyle,
   padding: "10px 14px",
 };
 
 const secondaryButtonStyle: React.CSSProperties = {
-  background: "white",
-  border: "1px solid #cbd5e1",
-  borderRadius: 10,
-  color: "#0f172a",
-  cursor: "pointer",
-  fontWeight: 700,
+  ...appSecondaryButtonStyle,
   padding: "10px 14px",
 };
 

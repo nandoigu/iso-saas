@@ -8,6 +8,13 @@ import {
 } from "@/app/lib/projectRoles";
 import { Notice } from "@/components/Notice";
 import {
+  appFieldStyle,
+  appHelpPanelStyle,
+  appPanelStyle,
+  appPrimaryButtonStyle,
+  appSecondaryButtonStyle,
+} from "@/components/uiStyles";
+import {
   compareRequirementsNaturally,
   EMPTY_EDIT_DATA,
   formatDate,
@@ -1858,13 +1865,8 @@ function useProjectDetailBreakpoint() {
 }
 
 const controlStyle: React.CSSProperties = {
-  border: "1px solid #d1d5db",
-  borderRadius: 8,
-  boxSizing: "border-box",
+  ...appFieldStyle,
   minHeight: 40,
-  minWidth: 0,
-  padding: "8px 10px",
-  width: "100%",
 };
 
 const filterLabelStyle: React.CSSProperties = {
@@ -1876,36 +1878,16 @@ const filterLabelStyle: React.CSSProperties = {
 };
 
 const primaryButtonStyle: React.CSSProperties = {
-  background: "#2563eb",
-  border: "1px solid #2563eb",
-  borderRadius: 8,
-  color: "white",
-  cursor: "pointer",
-  fontWeight: 700,
-  minHeight: 40,
-  padding: "9px 14px",
+  ...appPrimaryButtonStyle,
 };
 
 const secondaryButtonStyle: React.CSSProperties = {
-  background: "white",
-  border: "1px solid #d1d5db",
-  borderRadius: 8,
-  color: "#111827",
-  cursor: "pointer",
-  fontWeight: 700,
-  minHeight: 40,
-  padding: "9px 14px",
+  ...appSecondaryButtonStyle,
 };
 
 const linkButtonStyle: React.CSSProperties = {
-  background: "white",
-  border: "1px solid #d1d5db",
-  borderRadius: 8,
-  color: "#111827",
+  ...appSecondaryButtonStyle,
   display: "inline-flex",
-  fontWeight: 700,
-  minHeight: 40,
-  padding: "9px 14px",
   textDecoration: "none",
 };
 
@@ -1919,10 +1901,7 @@ const detailsListStyle: React.CSSProperties = {
 };
 
 const importHelpStyle: React.CSSProperties = {
-  background: "#f8fafc",
-  border: "1px solid #dbe5f1",
-  borderRadius: 10,
-  color: "#334155",
+  ...appHelpPanelStyle,
   display: "grid",
   fontSize: 13,
   gap: 6,
@@ -1966,19 +1945,13 @@ const mobilePageStyle: React.CSSProperties = {
 };
 
 const panelStyle: React.CSSProperties = {
-  background: "white",
-  border: "1px solid #e5e7eb",
-  borderRadius: 12,
-  boxShadow: "0 2px 6px rgba(0,0,0,0.04)",
+  ...appPanelStyle,
   padding: 20,
 };
 
 const quickNavStyle: React.CSSProperties = {
+  ...appPanelStyle,
   alignItems: "center",
-  background: "#ffffff",
-  border: "1px solid #dbe5f1",
-  borderRadius: 12,
-  boxShadow: "0 2px 6px rgba(0,0,0,0.04)",
   display: "flex",
   flexWrap: "wrap",
   gap: 14,

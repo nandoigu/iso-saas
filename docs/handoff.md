@@ -232,6 +232,7 @@ La aplicacion ya tiene una base SaaS funcional bastante avanzada.
 ### Prioridad media pendiente
 
 - [ ] Unificación visual restante:
+  - [x] primera pasada de estilos compartidos para botones, paneles, campos, ayudas y estados vacíos en vistas operativas principales
   - botones
   - badges
   - paneles

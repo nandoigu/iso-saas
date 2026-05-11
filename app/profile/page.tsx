@@ -2,6 +2,12 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import { Notice } from "@/components/Notice";
+import {
+  appFieldStyle,
+  appPanelStyle,
+  appPrimaryButtonStyle,
+  appSecondaryButtonStyle,
+} from "@/components/uiStyles";
 
 type ProfileUser = {
   id: string;
@@ -407,11 +413,8 @@ const compactPageStyle: React.CSSProperties = {
 };
 
 const heroCardStyle: React.CSSProperties = {
+  ...appPanelStyle,
   alignItems: "center",
-  background: "white",
-  border: "1px solid #dbe3f1",
-  borderRadius: 16,
-  boxShadow: "0 10px 30px rgba(15,23,42,0.06)",
   display: "flex",
   justifyContent: "space-between",
   gap: 16,
@@ -430,10 +433,7 @@ const contentGridStyle: React.CSSProperties = {
 };
 
 const cardStyle: React.CSSProperties = {
-  background: "white",
-  border: "1px solid #dbe3f1",
-  borderRadius: 16,
-  boxShadow: "0 10px 30px rgba(15,23,42,0.06)",
+  ...appPanelStyle,
   padding: 24,
 };
 
@@ -450,34 +450,18 @@ const labelStyle: React.CSSProperties = {
 };
 
 const inputStyle: React.CSSProperties = {
-  border: "1px solid #d1d5db",
-  borderRadius: 8,
-  boxSizing: "border-box",
-  minHeight: 42,
-  minWidth: 0,
-  padding: "8px 10px",
-  width: "100%",
+  ...appFieldStyle,
 };
 
 const primaryButtonStyle: React.CSSProperties = {
-  background: "#0025df",
-  border: "1px solid #0025df",
-  borderRadius: 8,
-  color: "white",
-  cursor: "pointer",
-  fontWeight: 700,
+  ...appPrimaryButtonStyle,
   minHeight: 42,
   padding: "0 14px",
   width: "100%",
 };
 
 const secondaryButtonStyle: React.CSSProperties = {
-  background: "white",
-  border: "1px solid #dbe3f1",
-  borderRadius: 8,
-  color: "#002a4e",
-  cursor: "pointer",
-  fontWeight: 700,
+  ...appSecondaryButtonStyle,
   minHeight: 42,
   padding: "0 14px",
   width: "100%",

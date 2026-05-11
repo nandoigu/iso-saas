@@ -19,6 +19,11 @@ import {
 } from "@/app/projects/[id]/project-requirements";
 import { exportMatrixToExcel } from "@/utils/exportExcel";
 import { exportMatrixToPDF } from "@/utils/exportPDF";
+import {
+  appFieldStyle,
+  appPanelStyle,
+  appSecondaryButtonStyle,
+} from "@/components/uiStyles";
 
 type ComplianceMatrixProps = {
   requirements: Requirement[];
@@ -220,11 +225,7 @@ export default function ComplianceMatrix({
     <section style={{ display: "grid", gap: isCompact ? 14 : 18, minWidth: 0 }}>
       <section
         style={{
-          background: "white",
-          border: "1px solid #e5e7eb",
-          borderRadius: 12,
-          boxShadow: "0 2px 6px rgba(0,0,0,0.04)",
-          minWidth: 0,
+          ...appPanelStyle,
           padding: isCompact ? 14 : 18,
         }}
       >
@@ -438,12 +439,8 @@ export default function ComplianceMatrix({
             <div
               key={normaKey}
               style={{
-                background: "white",
-                border: "1px solid #e5e7eb",
-                borderRadius: 12,
-                boxShadow: "0 2px 6px rgba(0,0,0,0.04)",
+                ...appPanelStyle,
                 overflow: "hidden",
-                minWidth: 0,
               }}
             >
               <div
@@ -821,10 +818,8 @@ function useMatrixBreakpoint() {
 }
 
 const controlStyle: React.CSSProperties = {
-  border: "1px solid #d1d5db",
-  borderRadius: 8,
+  ...appFieldStyle,
   minHeight: 40,
-  padding: "8px 10px",
 };
 
 const filterLabelStyle: React.CSSProperties = {
@@ -836,14 +831,7 @@ const filterLabelStyle: React.CSSProperties = {
 };
 
 const secondaryButtonStyle: React.CSSProperties = {
-  background: "white",
-  border: "1px solid #d1d5db",
-  borderRadius: 8,
-  color: "#111827",
-  cursor: "pointer",
-  fontWeight: 700,
-  minHeight: 40,
-  padding: "9px 14px",
+  ...appSecondaryButtonStyle,
 };
 
 const tableHeaderStyle: React.CSSProperties = {
