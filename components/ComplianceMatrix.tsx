@@ -23,6 +23,8 @@ import {
   appFieldStyle,
   appPanelStyle,
   appSecondaryButtonStyle,
+  appTableCellStyle,
+  appTableHeaderStyle,
 } from "@/components/uiStyles";
 
 type ComplianceMatrixProps = {
@@ -835,18 +837,17 @@ const secondaryButtonStyle: React.CSSProperties = {
 };
 
 const tableHeaderStyle: React.CSSProperties = {
+  ...appTableHeaderStyle,
   borderBottom: "1px solid #e5e7eb",
   color: "#6b7280",
   fontSize: 12,
-  fontWeight: 700,
-  padding: "12px 14px",
-  textAlign: "left",
   textTransform: "uppercase",
 };
 
 const tableCellStyle: React.CSSProperties = {
+  ...appTableCellStyle,
   borderTop: "1px solid #f3f4f6",
+  borderBottom: "none",
   padding: "12px 14px",
-  verticalAlign: "top",
 };
 

@@ -67,3 +67,61 @@ export const appHelpPanelStyle: CSSProperties = {
   borderRadius: 8,
   color: "#334155",
 };
+
+export const appBadgeBaseStyle: CSSProperties = {
+  borderRadius: 999,
+  display: "inline-flex",
+  fontSize: 12,
+  fontWeight: 800,
+  padding: "6px 10px",
+  whiteSpace: "nowrap",
+};
+
+export const appTableStyle: CSSProperties = {
+  borderCollapse: "collapse",
+  width: "100%",
+};
+
+export const appTableHeaderStyle: CSSProperties = {
+  background: "#f8fafc",
+  borderBottom: "1px solid #e2e8f0",
+  color: "#475569",
+  fontSize: 13,
+  fontWeight: 700,
+  padding: "12px 14px",
+  textAlign: "left",
+};
+
+export const appTableCellStyle: CSSProperties = {
+  borderBottom: "1px solid #e2e8f0",
+  color: "#0f172a",
+  fontSize: 14,
+  padding: "14px",
+  verticalAlign: "top",
+};
+
+export function getUserRoleBadgeStyle(role: string): CSSProperties {
+  return {
+    ...appBadgeBaseStyle,
+    background: role === "admin" ? "#dbeafe" : "#eef2ff",
+    border: `1px solid ${role === "admin" ? "#93c5fd" : "#c7d2fe"}`,
+    color: role === "admin" ? "#1d4ed8" : "#4338ca",
+  };
+}
+
+export function getUserStatusBadgeStyle(status: string): CSSProperties {
+  const map = {
+    active: { background: "#f0fdf4", border: "#bbf7d0", color: "#166534" },
+    suspended: { background: "#fff7ed", border: "#fdba74", color: "#c2410c" },
+    blocked: { background: "#fef2f2", border: "#fecaca", color: "#b91c1c" },
+  } as const;
+
+  const current = map[status as keyof typeof map] || map.active;
+
+  return {
+    ...appBadgeBaseStyle,
+    background: current.background,
+    border: `1px solid ${current.border}`,
+    color: current.color,
+  };
+}

@@ -177,7 +177,7 @@ export default function ProjectsPage() {
 
   const deleteProject = async (project: Project) => {
     const confirmed = window.confirm(
-      `Seguro que quieres eliminar el proyecto "${project.name}"?`
+      `¿Seguro que quieres eliminar el proyecto "${project.name}"?\n\nEsta acción eliminará también sus requerimientos y no se puede deshacer.`
     );
 
     if (!confirmed) {

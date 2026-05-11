@@ -5,8 +5,13 @@ import { Notice } from "@/components/Notice";
 import {
   appDangerButtonStyle,
   appFieldStyle,
+  appTableCellStyle,
+  appTableHeaderStyle,
+  appTableStyle,
   appPanelStyle,
   appPrimaryButtonStyle,
+  getUserRoleBadgeStyle,
+  getUserStatusBadgeStyle,
 } from "@/components/uiStyles";
 
 type AdminUser = {
@@ -128,7 +133,7 @@ export default function AdminPanelClient({
 
   const deleteUser = async (user: AdminUser) => {
     const confirmed = window.confirm(
-      `Vas a eliminar al usuario ${user.email} y todos sus proyectos y requerimientos. Esta acción no se puede deshacer.`
+      `¿Seguro que quieres eliminar al usuario ${user.email}?\n\nSe eliminarán también todos sus proyectos y requerimientos. Esta acción no se puede deshacer.`
     );
 
     if (!confirmed) {
@@ -169,7 +174,7 @@ export default function AdminPanelClient({
 
   const deleteProject = async (project: Project) => {
     const confirmed = window.confirm(
-      `¿Seguro que quieres eliminar el proyecto "${project.name}"? Se eliminarán también sus requerimientos y esta acción no se puede deshacer.`
+      `¿Seguro que quieres eliminar el proyecto "${project.name}"?\n\nSe eliminarán también sus requerimientos y esta acción no se puede deshacer.`
     );
 
     if (!confirmed) {
@@ -288,10 +293,12 @@ export default function AdminPanelClient({
                   </td>
                   <td style={tdStyle}>{user.companyName || "Sin empresa"}</td>
                   <td style={tdStyle}>
-                    <span style={getRoleBadgeStyle(user.role)}>{user.role}</span>
+                    <span style={getUserRoleBadgeStyle(user.role)}>{user.role}</span>
                   </td>
                   <td style={tdStyle}>
-                    <span style={getStatusBadgeStyle(user.status)}>{getStatusLabel(user.status)}</span>
+                    <span style={getUserStatusBadgeStyle(user.status)}>
+                      {getStatusLabel(user.status)}
+                    </span>
                   </td>
                   <td style={tdStyle}>{user.projectCount}</td>
                   <td style={tdStyle}>{formatDate(user.createdAt)}</td>
@@ -458,40 +465,6 @@ function useAdminBreakpoint() {
   return breakpoint;
 }
 
-function getRoleBadgeStyle(role: string): React.CSSProperties {
-  return {
-    background: role === "admin" ? "#dbeafe" : "#eef2ff",
-    border: `1px solid ${role === "admin" ? "#93c5fd" : "#c7d2fe"}`,
-    borderRadius: 999,
-    color: role === "admin" ? "#1d4ed8" : "#4338ca",
-    display: "inline-flex",
-    fontSize: 12,
-    fontWeight: 800,
-    padding: "6px 10px",
-  };
-}
-
-function getStatusBadgeStyle(status: string): React.CSSProperties {
-  const map = {
-    active: { background: "#f0fdf4", border: "#bbf7d0", color: "#166534" },
-    suspended: { background: "#fff7ed", border: "#fdba74", color: "#c2410c" },
-    blocked: { background: "#fef2f2", border: "#fecaca", color: "#b91c1c" },
-  } as const;
-
-  const current = map[status as keyof typeof map] || map.active;
-
-  return {
-    background: current.background,
-    border: `1px solid ${current.border}`,
-    borderRadius: 999,
-    color: current.color,
-    display: "inline-flex",
-    fontSize: 12,
-    fontWeight: 800,
-    padding: "6px 10px",
-  };
-}
-
 const heroCardStyle: React.CSSProperties = {
   ...appPanelStyle,
   alignItems: "center",
@@ -566,25 +539,15 @@ const tableWrapperStyle: React.CSSProperties = {
 };
 
 const tableStyle: React.CSSProperties = {
-  borderCollapse: "collapse",
-  width: "100%",
+  ...appTableStyle,
 };
 
 const thStyle: React.CSSProperties = {
-  background: "#f8fafc",
-  borderBottom: "1px solid #e2e8f0",
-  color: "#475569",
-  fontSize: 13,
-  padding: "12px 14px",
-  textAlign: "left",
+  ...appTableHeaderStyle,
 };
 
 const tdStyle: React.CSSProperties = {
-  borderBottom: "1px solid #e2e8f0",
-  color: "#0f172a",
-  fontSize: 14,
-  padding: "14px",
-  verticalAlign: "top",
+  ...appTableCellStyle,
 };
 
 const emptyStyle: React.CSSProperties = {

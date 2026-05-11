@@ -3,6 +3,10 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
+import {
+  getUserRoleBadgeStyle,
+  getUserStatusBadgeStyle,
+} from "@/components/uiStyles";
 
 type CurrentUser = {
   id: string;
@@ -228,10 +232,12 @@ export default function Navbar() {
                 </span>
               </div>
 
-              <span style={getRoleBadgeStyle(user.role)}>{user.role === "admin" ? "ADMIN" : "USER"}</span>
+              <span style={navbarBadgeStyle(getUserRoleBadgeStyle(user.role))}>
+                {user.role === "admin" ? "ADMIN" : "USER"}
+              </span>
 
               {user.status !== "active" && (
-                <span style={getStatusBadgeStyle(user.status)}>
+                <span style={navbarBadgeStyle(getUserStatusBadgeStyle(user.status))}>
                   {user.status === "blocked" ? "BLOCKED" : "SUSPENDED"}
                 </span>
               )}
@@ -307,40 +313,13 @@ function isRouteActive(pathname: string, href: string) {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
-function getRoleBadgeStyle(role: string): React.CSSProperties {
+function navbarBadgeStyle(style: React.CSSProperties): React.CSSProperties {
   return {
-    background: role === "admin" ? "#dbeafe" : "#eef2ff",
-    border: `1px solid ${role === "admin" ? "#93c5fd" : "#c7d2fe"}`,
-    borderRadius: 999,
-    color: role === "admin" ? "#1d4ed8" : "#4338ca",
-    fontSize: 12,
-    fontWeight: 800,
+    ...style,
+    alignItems: "center",
     letterSpacing: "0.04em",
     minHeight: 40,
     padding: "10px 12px",
-    whiteSpace: "nowrap",
-  };
-}
-
-function getStatusBadgeStyle(status: string): React.CSSProperties {
-  const map = {
-    suspended: { background: "#fff7ed", border: "#fdba74", color: "#c2410c" },
-    blocked: { background: "#fef2f2", border: "#fecaca", color: "#b91c1c" },
-  } as const;
-
-  const current = map[status as keyof typeof map] || map.suspended;
-
-  return {
-    background: current.background,
-    border: `1px solid ${current.border}`,
-    borderRadius: 999,
-    color: current.color,
-    fontSize: 12,
-    fontWeight: 800,
-    letterSpacing: "0.04em",
-    minHeight: 40,
-    padding: "10px 12px",
-    whiteSpace: "nowrap",
   };
 }
 

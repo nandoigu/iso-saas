@@ -188,7 +188,7 @@ export default function ProjectClient({ projectId }: ProjectClientProps) {
 
     if (importMode === "replace") {
       const confirmed = window.confirm(
-        "¿Quieres reemplazar todos los requerimientos actuales del proyecto por los del Excel? Esta acción eliminará los requerimientos existentes antes de importar los nuevos."
+        "¿Quieres reemplazar todos los requerimientos actuales del proyecto por los del Excel?\n\nEsta acción eliminará los requerimientos existentes antes de importar los nuevos y no se puede deshacer."
       );
 
       if (!confirmed) {
@@ -385,7 +385,7 @@ export default function ProjectClient({ projectId }: ProjectClientProps) {
       `¿Seguro que quieres eliminar el requerimiento "${getDisplayValue(
         requirement.name,
         "Sin descripción"
-      )}"?`
+      )}"?\n\nEsta acción no se puede deshacer.`
     );
 
     if (!confirmed) {

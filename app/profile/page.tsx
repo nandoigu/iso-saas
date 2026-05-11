@@ -7,6 +7,8 @@ import {
   appPanelStyle,
   appPrimaryButtonStyle,
   appSecondaryButtonStyle,
+  getUserRoleBadgeStyle,
+  getUserStatusBadgeStyle,
 } from "@/components/uiStyles";
 
 type ProfileUser = {
@@ -218,8 +220,12 @@ export default function ProfilePage() {
 
         {user && (
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-            <span style={getRoleBadgeStyle(user.role)}>{user.role.toUpperCase()}</span>
-            <span style={getStatusBadgeStyle(user.status)}>{getStatusLabel(user.status)}</span>
+            <span style={profileBadgeStyle(getUserRoleBadgeStyle(user.role))}>
+              {user.role.toUpperCase()}
+            </span>
+            <span style={profileBadgeStyle(getUserStatusBadgeStyle(user.status))}>
+              {getStatusLabel(user.status)}
+            </span>
           </div>
         )}
       </section>
@@ -349,35 +355,9 @@ function getStatusLabel(status: string) {
   return "Activo";
 }
 
-function getRoleBadgeStyle(role: string): React.CSSProperties {
+function profileBadgeStyle(style: React.CSSProperties): React.CSSProperties {
   return {
-    background: role === "admin" ? "#dbeafe" : "#eef2ff",
-    border: `1px solid ${role === "admin" ? "#93c5fd" : "#c7d2fe"}`,
-    borderRadius: 999,
-    color: role === "admin" ? "#1d4ed8" : "#4338ca",
-    fontSize: 12,
-    fontWeight: 800,
-    letterSpacing: "0.04em",
-    padding: "8px 12px",
-  };
-}
-
-function getStatusBadgeStyle(status: string): React.CSSProperties {
-  const map = {
-    active: { background: "#f0fdf4", border: "#bbf7d0", color: "#166534" },
-    suspended: { background: "#fff7ed", border: "#fdba74", color: "#c2410c" },
-    blocked: { background: "#fef2f2", border: "#fecaca", color: "#b91c1c" },
-  } as const;
-
-  const current = map[status as keyof typeof map] || map.active;
-
-  return {
-    background: current.background,
-    border: `1px solid ${current.border}`,
-    borderRadius: 999,
-    color: current.color,
-    fontSize: 12,
-    fontWeight: 800,
+    ...style,
     letterSpacing: "0.04em",
     padding: "8px 12px",
   };

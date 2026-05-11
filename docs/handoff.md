@@ -233,6 +233,9 @@ La aplicacion ya tiene una base SaaS funcional bastante avanzada.
 
 - [ ] Unificación visual restante:
   - [x] primera pasada de estilos compartidos para botones, paneles, campos, ayudas y estados vacíos en vistas operativas principales
+  - [x] badges de usuario/estado centralizados en `components/uiStyles.ts`
+  - [x] tablas principales conectadas a estilos compartidos en admin y matriz
+  - [x] confirmaciones destructivas homogeneizadas en proyectos, detalle y admin
   - botones
   - badges
   - paneles
