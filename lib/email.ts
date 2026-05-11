@@ -36,6 +36,7 @@ type SendComplianceEmailInput = {
   userName: string | null;
   subject: string;
   report: ComplianceReport;
+  deliveryMode?: "manual" | "cron";
 };
 
 type AlertDigestItem = {
@@ -53,6 +54,7 @@ type SendAlertDigestEmailInput = {
   userName: string | null;
   overdueRequirements: AlertDigestItem[];
   upcomingRequirements: AlertDigestItem[];
+  deliveryMode?: "manual" | "cron";
 };
 
 type SendPasswordResetEmailInput = {
@@ -130,9 +132,10 @@ export async function sendComplianceEmail({
   userName,
   subject,
   report,
+  deliveryMode = "cron",
 }: SendComplianceEmailInput) {
-  const html = getComplianceEmailHtml({ userName, report });
-  const text = getComplianceEmailText({ userName, report });
+  const html = getComplianceEmailHtml({ userName, report, deliveryMode });
+  const text = getComplianceEmailText({ userName, report, deliveryMode });
 
   return sendEmail({
     to,
@@ -141,7 +144,7 @@ export async function sendComplianceEmail({
     text,
     tags: [
       { name: "category", value: "compliance_report" },
-      { name: "type", value: "alerts" },
+      { name: "type", value: deliveryMode },
     ],
   });
 }
@@ -151,21 +154,23 @@ export async function sendAlertDigestEmail({
   userName,
   overdueRequirements,
   upcomingRequirements,
+  deliveryMode = "cron",
 }: SendAlertDigestEmailInput) {
   const template = getAlertDigestEmailTemplate({
     userName,
     overdueRequirements,
     upcomingRequirements,
+    deliveryMode,
   });
 
   return sendEmail({
     to,
-    subject: "Alertas de cumplimiento ISO 19650",
+    subject: `Alertas ISO 19650: ${overdueRequirements.length} vencidos, ${upcomingRequirements.length} próximos`,
     html: template.html,
     text: template.text,
     tags: [
       { name: "category", value: "compliance_alerts" },
-      { name: "type", value: "cron" },
+      { name: "type", value: deliveryMode },
     ],
   });
 }
@@ -286,9 +291,11 @@ export function getTestEmailTemplate({
 export function getComplianceEmailHtml({
   userName,
   report,
+  deliveryMode,
 }: {
   userName: string | null;
   report: ComplianceReport;
+  deliveryMode: "manual" | "cron";
 }) {
   const generatedAt = new Intl.DateTimeFormat("es-ES", {
     dateStyle: "long",
@@ -299,18 +306,19 @@ export function getComplianceEmailHtml({
   return getBaseEmailTemplate({
     previewText: "Resumen de cumplimiento y alertas de vencimiento.",
     title: "Informe de Cumplimiento ISO 19650",
-    subtitle: `Generado el ${generatedAt}`,
+    subtitle: `${deliveryMode === "manual" ? "Informe manual" : "Informe automático"} generado el ${generatedAt}`,
     bodyHtml: `
       <p style="margin:0 0 18px;font-size:15px;line-height:1.7;">
-        Hola ${escapeHtml(userName || "usuario")}, este es el resumen actualizado del estado de cumplimiento de tus proyectos.
+        Hola ${escapeHtml(userName || "usuario")}, este es el resumen actualizado del estado de cumplimiento de tus proyectos. Incluye los datos actuales del dashboard y las alertas operativas más relevantes.
       </p>
       <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:22px;">
         ${summaryCard("Cumplimiento", `${report.metrics.compliance}%`)}
         ${summaryCard("Requerimientos", String(report.metrics.totalRequirements))}
         ${summaryCard("Vencidos", String(report.metrics.overdue), "#dc2626")}
-        ${summaryCard("Proximos", String(report.metrics.upcoming), "#d97706")}
+        ${summaryCard("Próximos", String(report.metrics.upcoming), "#d97706")}
       </div>
-      <h2 style="font-size:16px;margin:0 0 12px;">Requerimientos vencidos o proximos a vencer</h2>
+      ${buildEmailCallout(report)}
+      <h2 style="font-size:16px;margin:22px 0 12px;">Requerimientos vencidos o próximos a vencer</h2>
       ${buildRequirementsTable(rows)}
     `,
   }).html;
@@ -320,10 +328,12 @@ export function getAlertDigestEmailTemplate({
   userName,
   overdueRequirements,
   upcomingRequirements,
+  deliveryMode,
 }: {
   userName: string | null;
   overdueRequirements: AlertDigestItem[];
   upcomingRequirements: AlertDigestItem[];
+  deliveryMode: "manual" | "cron";
 }) {
   const generatedAt = new Intl.DateTimeFormat("es-ES", {
     dateStyle: "long",
@@ -332,21 +342,21 @@ export function getAlertDigestEmailTemplate({
 
   return getBaseEmailTemplate({
     previewText:
-      "Tienes requerimientos vencidos o proximos a vencer en tus proyectos.",
+      "Tienes requerimientos vencidos o próximos a vencer en tus proyectos.",
     title: "Alertas de cumplimiento ISO 19650",
-    subtitle: `Generado el ${generatedAt}`,
+    subtitle: `${deliveryMode === "manual" ? "Envío manual" : "Envío automático diario"} generado el ${generatedAt}`,
     bodyHtml: `
       <p style="margin:0 0 18px;font-size:15px;line-height:1.7;">
         Hola ${escapeHtml(
           userName || "usuario"
-        )}, te enviamos el resumen diario de alertas de vencimiento de tus requerimientos.
+        )}, te enviamos el resumen de alertas de vencimiento de tus requerimientos. Revisa primero los vencidos y después los próximos 7 días.
       </p>
       <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-bottom:22px;">
         ${summaryCard("Vencidos", String(overdueRequirements.length), "#dc2626")}
-        ${summaryCard("Proximos 7 dias", String(upcomingRequirements.length), "#d97706")}
+        ${summaryCard("Próximos 7 días", String(upcomingRequirements.length), "#d97706")}
       </div>
       ${buildAlertSection("Vencidos", overdueRequirements, "#dc2626")}
-      ${buildAlertSection("Proximos a vencer", upcomingRequirements, "#d97706")}
+      ${buildAlertSection("Próximos a vencer", upcomingRequirements, "#d97706")}
     `,
   });
 }
@@ -393,12 +403,15 @@ export function getPasswordResetEmailTemplate({
 function getComplianceEmailText({
   userName,
   report,
+  deliveryMode,
 }: {
   userName: string | null;
   report: ComplianceReport;
+  deliveryMode: "manual" | "cron";
 }) {
   const header = [
     "Informe de Cumplimiento ISO 19650",
+    deliveryMode === "manual" ? "Envio manual" : "Envio automatico",
     `Hola ${userName || "usuario"}`,
     `Cumplimiento: ${report.metrics.compliance}%`,
     `Requerimientos: ${report.metrics.totalRequirements}`,
@@ -422,6 +435,30 @@ function getComplianceEmailText({
   return [...header, ...rows, "", "Generado por BMO ISO 19650 SaaS."].join("\n");
 }
 
+function buildEmailCallout(report: ComplianceReport) {
+  if (report.metrics.overdue > 0) {
+    return `
+      <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:12px;color:#991b1b;padding:14px 16px;font-size:14px;line-height:1.6;">
+        Hay ${report.metrics.overdue} requerimientos vencidos. Prioriza su revisión y actualiza evidencia, estado o fecha límite desde el proyecto.
+      </div>
+    `;
+  }
+
+  if (report.metrics.upcoming > 0) {
+    return `
+      <div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:12px;color:#9a3412;padding:14px 16px;font-size:14px;line-height:1.6;">
+        Hay ${report.metrics.upcoming} requerimientos próximos a vencer en los próximos 7 días.
+      </div>
+    `;
+  }
+
+  return `
+    <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;color:#166534;padding:14px 16px;font-size:14px;line-height:1.6;">
+      No hay vencimientos activos en este momento.
+    </div>
+  `;
+}
+
 function summaryCard(label: string, value: string, color = "#0f172a") {
   return `
     <div style="border:1px solid #e2e8f0;border-radius:12px;padding:14px;background:#f8fafc;">
@@ -433,7 +470,7 @@ function summaryCard(label: string, value: string, color = "#0f172a") {
 
 function buildRequirementsTable(rows: ComplianceReport["requirements"]) {
   if (rows.length === 0) {
-    return `<p style="color:#16a34a;font-weight:700;margin:0;">No hay requerimientos vencidos ni proximos a vencer.</p>`;
+    return `<p style="color:#16a34a;font-weight:700;margin:0;">No hay requerimientos vencidos ni próximos a vencer.</p>`;
   }
 
   return `
@@ -444,7 +481,7 @@ function buildRequirementsTable(rows: ComplianceReport["requirements"]) {
           <th style="${thStyle}">Norma</th>
           <th style="${thStyle}">Item</th>
           <th style="${thStyle}">Estado</th>
-          <th style="${thStyle}">Fecha limite</th>
+          <th style="${thStyle}">Fecha límite</th>
         </tr>
       </thead>
       <tbody>
@@ -473,7 +510,7 @@ function buildAlertSection(title: string, rows: AlertDigestItem[], color: string
     return `
       <div style="margin:18px 0 0;">
         <h2 style="font-size:16px;margin:0 0 10px;color:${color};">${escapeHtml(title)}</h2>
-        <p style="margin:0;color:#64748b;">No hay elementos en esta seccion.</p>
+        <p style="margin:0;color:#64748b;">No hay elementos en esta sección.</p>
       </div>
     `;
   }
@@ -489,7 +526,7 @@ function buildAlertSection(title: string, rows: AlertDigestItem[], color: string
             <th style="${thStyle}">Item</th>
             <th style="${thStyle}">Requerimiento</th>
             <th style="${thStyle}">Estado</th>
-            <th style="${thStyle}">Fecha limite</th>
+            <th style="${thStyle}">Fecha límite</th>
           </tr>
         </thead>
         <tbody>

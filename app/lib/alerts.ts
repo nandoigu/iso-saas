@@ -7,6 +7,7 @@ export type AlertRequirement = {
   name: string;
   status: string;
   deadline: Date | string | null;
+  lastNotifiedAt?: Date | string | null;
   projectName: string;
 };
 

@@ -262,11 +262,11 @@ La aplicacion ya tiene una base SaaS funcional bastante avanzada.
   - persistencia de algunos filtros
   - mejor navegación entre proyecto, matriz y dashboard
 - [ ] Alertas e informes:
-  - verificar envíos de alertas en escenarios reales tras configurar Resend
-  - mejorar contenido del email
-  - revisar frecuencia y duplicados
-  - comprobar flujos manuales vs cron
-  - mejorar presentación del PDF/CSV
+  - [x] mejorar contenido de emails de alertas e informes con resumen, contexto manual/cron y llamadas de atención
+  - [x] separar flujo manual de informe completo y flujo cron de alertas/informes periódicos
+  - [x] revisar frecuencia y duplicados con `lastAlertEmailAt`, `lastReportEmailAt` y `lastNotifiedAt`
+  - [x] mejorar presentación de CSV para Excel y PDF con resumen filtrado
+  - [ ] verificar envíos de alertas en escenarios reales tras configurar Resend
 
 ### Prioridad baja / preparación futura
 

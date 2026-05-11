@@ -270,13 +270,14 @@ export default function DashboardPage() {
 
   const exportCsv = () => {
     const headers = [
-      "proyecto",
-      "norma",
-      "item",
-      "descripcion",
-      "evidencia",
-      "estado",
-      "deadline",
+      "Proyecto",
+      "Norma",
+      "Item",
+      "Requerimiento",
+      "Evidencia",
+      "Estado",
+      "Fecha límite",
+      "Vencido",
     ];
 
     const rows = filteredRequirements.map((requirement) => [
@@ -285,23 +286,24 @@ export default function DashboardPage() {
       requirement.item || "",
       requirement.name || "",
       requirement.evidencia || "",
-      normalizeStatus(requirement.status),
-      requirement.deadline || "",
+      STATUS_META[normalizeStatus(requirement.status)].label,
+      formatDate(requirement.deadline),
+      isRequirementOverdue(requirement) ? "Sí" : "No",
     ]);
 
-    const csv = [headers, ...rows]
+    const csv = ["sep=;", headers, ...rows]
       .map((row) =>
-        row
-          .map((cell) => `"${String(cell).replaceAll('"', '""')}"`)
-          .join(",")
+        Array.isArray(row)
+          ? row.map((cell) => `"${String(cell).replaceAll('"', '""')}"`).join(";")
+          : row
       )
       .join("\n");
 
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    const blob = new Blob([`\uFEFF${csv}`], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = "dashboard-requerimientos.csv";
+    link.download = getDashboardExportFilename("csv");
     link.click();
     URL.revokeObjectURL(url);
   };
@@ -320,8 +322,7 @@ export default function DashboardPage() {
         requirements: filteredRequirements,
         dashboardImages,
       });
-      const today = new Date().toISOString().slice(0, 10);
-      pdf.save(`informe_iso_${today}.pdf`);
+      pdf.save(getDashboardExportFilename("pdf"));
     } finally {
       setGeneratingPdf(false);
     }
@@ -386,7 +387,9 @@ export default function DashboardPage() {
 
       setEmailFeedback({
         tone: "success",
-        text: data.message || "Informe enviado correctamente.",
+        text:
+          data.message ||
+          `Informe enviado correctamente. Emails enviados: ${data.emailsSent ?? 1}.`,
       });
     } catch (err) {
       setEmailFeedback({
@@ -1184,6 +1187,10 @@ function generatePDF({
     timeStyle: "short",
   }).format(new Date());
   const tableRows = formatTableData(requirements);
+  const riskLabel =
+    metrics.overdue > 0
+      ? `${metrics.overdue} vencidos requieren atención`
+      : "Sin vencimientos activos";
 
   pdf.setFillColor(15, 23, 42);
   pdf.rect(0, 0, 297, 28, "F");
@@ -1195,6 +1202,9 @@ function generatePDF({
   pdf.setFont("helvetica", "normal");
   pdf.text("Informe de Cumplimiento ISO 19650", 14, 20);
   pdf.text(`Generado: ${generatedAt}`, 225, 20, { align: "left" });
+  pdf.setTextColor(71, 85, 105);
+  pdf.setFontSize(9);
+  pdf.text(`Alcance: ${requirements.length} requerimientos filtrados · ${riskLabel}`, 14, 32);
 
   const summaryCards = [
     { label: "Proyectos", value: String(metrics.totalProjects) },
@@ -1207,22 +1217,22 @@ function generatePDF({
     const x = 14 + index * 68;
     pdf.setFillColor(248, 250, 252);
     pdf.setDrawColor(226, 232, 240);
-    pdf.roundedRect(x, 36, 58, 22, 2, 2, "FD");
+    pdf.roundedRect(x, 40, 58, 22, 2, 2, "FD");
     pdf.setTextColor(100, 116, 139);
     pdf.setFontSize(8);
     pdf.setFont("helvetica", "normal");
-    pdf.text(card.label, x + 4, 44);
+    pdf.text(card.label, x + 4, 48);
     pdf.setTextColor(index === 3 ? 220 : 15, index === 3 ? 38 : 23, index === 3 ? 38 : 42);
     pdf.setFontSize(14);
     pdf.setFont("helvetica", "bold");
-    pdf.text(card.value, x + 4, 53);
+    pdf.text(card.value, x + 4, 57);
   });
 
   if (dashboardImages && dashboardImages.length > 0) {
     pdf.setTextColor(15, 23, 42);
     pdf.setFontSize(12);
     pdf.setFont("helvetica", "bold");
-    pdf.text("Resumen visual del dashboard filtrado", 14, 70);
+    pdf.text("Resumen visual del dashboard filtrado", 14, 74);
 
     dashboardImages.forEach((image, index) => {
       if (index > 0) {
@@ -1237,7 +1247,7 @@ function generatePDF({
         image.dataUrl,
         "PNG",
         14,
-        index === 0 ? 76 : 24,
+        index === 0 ? 80 : 24,
         269,
         image.height,
         undefined,
@@ -1264,7 +1274,7 @@ function generatePDF({
         "Requerimiento",
         "Evidencia",
         "Estado",
-        "Fecha límite",
+      "Fecha límite",
         "Vencido",
       ],
     ],
@@ -1325,6 +1335,11 @@ function generatePDF({
   }
 
   return pdf;
+}
+
+function getDashboardExportFilename(extension: "csv" | "pdf") {
+  const today = new Date().toISOString().slice(0, 10);
+  return `informe_iso_19650_${today}.${extension}`;
 }
 
 function formatTableData(requirements: DashboardRequirement[]) {

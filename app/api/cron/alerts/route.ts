@@ -1,7 +1,17 @@
 import { NextResponse } from "next/server";
 import { getAuthSession, unauthorized } from "@/app/lib/auth";
+import {
+  buildComplianceReport,
+  shouldSendDailyEmail,
+  shouldSendReportEmail,
+  type AlertRequirement,
+} from "@/app/lib/alerts";
 import { prisma } from "@/app/lib/prisma";
-import { EmailDeliveryError, sendAlertDigestEmail } from "@/lib/email";
+import {
+  EmailDeliveryError,
+  sendAlertDigestEmail,
+  sendComplianceEmail,
+} from "@/lib/email";
 
 export const runtime = "nodejs";
 
@@ -15,25 +25,22 @@ export async function GET(req: Request) {
 
     const users = await prisma.user.findMany({
       where: {
-        notifyAlerts: true,
+        OR: [{ notifyAlerts: true }, { notifyReports: true }],
       },
       select: {
         id: true,
         email: true,
         name: true,
+        notifyAlerts: true,
+        notifyReports: true,
+        reportFrequency: true,
+        lastAlertEmailAt: true,
+        lastReportEmailAt: true,
         projects: {
           select: {
             id: true,
             name: true,
             requirements: {
-              where: {
-                deadline: {
-                  not: null,
-                },
-                NOT: {
-                  status: "total",
-                },
-              },
               select: {
                 id: true,
                 norma: true,
@@ -53,70 +60,99 @@ export async function GET(req: Request) {
     const endOfUpcomingWindow = getUpcomingLimit(startOfToday, UPCOMING_DAYS);
     let emailsSent = 0;
     let emailFailures = 0;
+    let alertEmailsSent = 0;
+    let reportEmailsSent = 0;
 
     for (const user of users) {
       try {
-        const overdueRequirements = [];
-        const upcomingRequirements = [];
+        const allRequirements = flattenUserRequirements(user.projects);
+        const overdueRequirements: AlertRequirement[] = [];
+        const upcomingRequirements: AlertRequirement[] = [];
 
-        for (const project of user.projects) {
-          for (const requirement of project.requirements) {
-            if (!requirement.deadline) {
-              continue;
-            }
+        for (const requirement of allRequirements) {
+          if (!requirement.deadline) {
+            continue;
+          }
 
-            const deadline = new Date(requirement.deadline);
-            if (Number.isNaN(deadline.getTime())) {
-              continue;
-            }
+          const deadline = new Date(requirement.deadline);
+          if (Number.isNaN(deadline.getTime())) {
+            continue;
+          }
 
-            if (wasNotifiedToday(requirement.lastNotifiedAt, startOfToday)) {
-              continue;
-            }
+          if (wasNotifiedToday(requirement.lastNotifiedAt, startOfToday)) {
+            continue;
+          }
 
-            const enrichedRequirement = {
-              ...requirement,
-              projectName: project.name,
-            };
+          if (deadline < startOfToday) {
+            overdueRequirements.push(requirement);
+            continue;
+          }
 
-            if (deadline < startOfToday) {
-              overdueRequirements.push(enrichedRequirement);
-              continue;
-            }
-
-            if (deadline <= endOfUpcomingWindow) {
-              upcomingRequirements.push(enrichedRequirement);
-            }
+          if (deadline <= endOfUpcomingWindow) {
+            upcomingRequirements.push(requirement);
           }
         }
 
-        if (overdueRequirements.length === 0 && upcomingRequirements.length === 0) {
-          continue;
+        if (
+          user.notifyAlerts &&
+          shouldSendDailyEmail(user.lastAlertEmailAt) &&
+          (overdueRequirements.length > 0 || upcomingRequirements.length > 0)
+        ) {
+          await sendAlertDigestEmail({
+            to: user.email,
+            userName: user.name,
+            overdueRequirements,
+            upcomingRequirements,
+            deliveryMode: "cron",
+          });
+
+          const requirementIds = [...overdueRequirements, ...upcomingRequirements].map(
+            (requirement) => requirement.id
+          );
+
+          await prisma.$transaction([
+            prisma.requirement.updateMany({
+              where: {
+                id: {
+                  in: requirementIds,
+                },
+              },
+              data: {
+                lastNotifiedAt: new Date(),
+              },
+            }),
+            prisma.user.update({
+              where: { id: user.id },
+              data: { lastAlertEmailAt: new Date() },
+            }),
+          ]);
+
+          emailsSent += 1;
+          alertEmailsSent += 1;
         }
 
-        await sendAlertDigestEmail({
-          to: user.email,
-          userName: user.name,
-          overdueRequirements,
-          upcomingRequirements,
-        });
+        if (
+          user.notifyReports &&
+          shouldSendReportEmail(user.reportFrequency, user.lastReportEmailAt)
+        ) {
+          const report = buildComplianceReport(allRequirements, UPCOMING_DAYS);
 
-        const requirementIds = [...overdueRequirements, ...upcomingRequirements].map(
-          (requirement) => requirement.id
-        );
+          await sendComplianceEmail({
+            to: user.email,
+            userName: user.name,
+            subject: getReportSubject(user.reportFrequency, report.metrics.compliance),
+            report,
+            deliveryMode: "cron",
+          });
 
-        await prisma.requirement.updateMany({
-          where: {
-            id: {
-              in: requirementIds,
-            },
-          },
-          data: {
-            lastNotifiedAt: new Date(),
-          },
-        });
+          await prisma.user.update({
+            where: { id: user.id },
+            data: { lastReportEmailAt: new Date() },
+          });
 
-        emailsSent += 1;
+          emailsSent += 1;
+          reportEmailsSent += 1;
+        }
       } catch (error) {
         console.error(`ERROR /api/cron/alerts user ${user.id}:`, error);
         emailFailures += 1;
@@ -127,6 +163,8 @@ export async function GET(req: Request) {
       success: true,
       usersProcessed: users.length,
       emailsSent,
+      alertEmailsSent,
+      reportEmailsSent,
       emailFailures,
     });
   } catch (error) {
@@ -136,6 +174,8 @@ export async function GET(req: Request) {
         success: false,
         usersProcessed: 0,
         emailsSent: 0,
+        alertEmailsSent: 0,
+        reportEmailsSent: 0,
         emailFailures: 0,
       },
       { status: 500 }
@@ -162,14 +202,6 @@ export async function POST(req: Request) {
             id: true,
             name: true,
             requirements: {
-              where: {
-                deadline: {
-                  not: null,
-                },
-                NOT: {
-                  status: "total",
-                },
-              },
               select: {
                 id: true,
                 norma: true,
@@ -189,59 +221,31 @@ export async function POST(req: Request) {
       return unauthorized();
     }
 
-    const startOfToday = getStartOfToday();
-    const endOfUpcomingWindow = getUpcomingLimit(startOfToday, UPCOMING_DAYS);
-    const overdueRequirements = [];
-    const upcomingRequirements = [];
+    const allRequirements = flattenUserRequirements(fullUser.projects);
+    const report = buildComplianceReport(allRequirements, UPCOMING_DAYS);
 
-    for (const project of fullUser.projects) {
-      for (const requirement of project.requirements) {
-        if (!requirement.deadline) {
-          continue;
-        }
-
-        const deadline = new Date(requirement.deadline);
-        if (Number.isNaN(deadline.getTime())) {
-          continue;
-        }
-
-        const enrichedRequirement = {
-          ...requirement,
-          projectName: project.name,
-        };
-
-        if (deadline < startOfToday) {
-          overdueRequirements.push(enrichedRequirement);
-          continue;
-        }
-
-        if (deadline <= endOfUpcomingWindow) {
-          upcomingRequirements.push(enrichedRequirement);
-        }
-      }
-    }
-
-    if (overdueRequirements.length === 0 && upcomingRequirements.length === 0) {
+    if (allRequirements.length === 0) {
       return NextResponse.json({
         success: true,
         usersProcessed: 1,
         emailsSent: 0,
-        message: "No hay alertas pendientes para enviar.",
+        message: "No hay requerimientos para incluir en el informe.",
       });
     }
 
-    await sendAlertDigestEmail({
+    await sendComplianceEmail({
       to: fullUser.email,
       userName: fullUser.name,
-      overdueRequirements,
-      upcomingRequirements,
+      subject: `Informe manual ISO 19650 - ${report.metrics.compliance}% cumplimiento`,
+      report,
+      deliveryMode: "manual",
     });
 
     return NextResponse.json({
       success: true,
       usersProcessed: 1,
       emailsSent: 1,
-      message: "Informe enviado correctamente.",
+      message: "Informe manual enviado correctamente.",
     });
   } catch (error) {
     console.error("ERROR POST /api/cron/alerts:", error);
@@ -281,15 +285,49 @@ function isAuthorizedCronRequest(req: Request) {
   return authorization === `Bearer ${cronSecret}`;
 }
 
+function flattenUserRequirements(
+  projects: Array<{
+    name: string;
+    requirements: Array<{
+      id: string;
+      norma: string | null;
+      item: string | null;
+      name: string;
+      status: string;
+      deadline: Date | null;
+      lastNotifiedAt: Date | null;
+    }>;
+  }>
+): AlertRequirement[] {
+  return projects.flatMap((project) =>
+    project.requirements.map((requirement) => ({
+      ...requirement,
+      projectName: project.name,
+    }))
+  );
+}
+
+function getReportSubject(frequency: string, compliance: number) {
+  const label = frequency === "daily" ? "diario" : "semanal";
+  return `Informe ${label} ISO 19650 - ${compliance}% cumplimiento`;
+}
+
 function wasNotifiedToday(
-  lastNotifiedAt: Date | null,
+  lastNotifiedAt: Date | string | null | undefined,
   startOfToday: Date
 ) {
   if (!lastNotifiedAt) {
     return false;
   }
 
-  return lastNotifiedAt >= startOfToday;
+  const notifiedAt =
+    lastNotifiedAt instanceof Date ? lastNotifiedAt : new Date(lastNotifiedAt);
+
+  if (Number.isNaN(notifiedAt.getTime())) {
+    return false;
+  }
+
+  return notifiedAt >= startOfToday;
 }
 
 function getStartOfToday() {
