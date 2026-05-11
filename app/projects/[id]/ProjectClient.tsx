@@ -47,6 +47,8 @@ type ProjectMeta = {
 
 type ImportMode = "append" | "replace";
 
+const PROJECT_FILTERS_STORAGE_PREFIX = "bmo:project-filters:";
+
 export default function ProjectClient({ projectId }: ProjectClientProps) {
   const isMobile = useProjectDetailBreakpoint() === "mobile";
   const { requirements, loading, loadError, reloadRequirements } =
@@ -63,6 +65,7 @@ export default function ProjectClient({ projectId }: ProjectClientProps) {
   const [selectedStatuses, setSelectedStatuses] = useState<RequirementStatus[]>([]);
   const [dateFilter, setDateFilter] = useState<DateFilter>("all");
   const [searchTerm, setSearchTerm] = useState("");
+  const [filtersHydrated, setFiltersHydrated] = useState(false);
 
   const [norma, setNorma] = useState("");
   const [item, setItem] = useState("");
@@ -112,6 +115,64 @@ export default function ProjectClient({ projectId }: ProjectClientProps) {
 
     loadProjectMeta();
   }, [projectId]);
+
+  useEffect(() => {
+    if (!projectId) return;
+
+    try {
+      const raw = window.localStorage.getItem(
+        `${PROJECT_FILTERS_STORAGE_PREFIX}${projectId}`
+      );
+      const saved = raw ? JSON.parse(raw) : null;
+
+      if (typeof saved?.sortMode === "string") {
+        setSortMode(saved.sortMode as SortMode);
+      }
+      if (typeof saved?.selectedNorma === "string") {
+        setSelectedNorma(saved.selectedNorma);
+      }
+      if (Array.isArray(saved?.selectedStatuses)) {
+        setSelectedStatuses(
+          saved.selectedStatuses.filter((value: string): value is RequirementStatus =>
+            ["total", "parcial", "no_conforme"].includes(value)
+          )
+        );
+      }
+      if (typeof saved?.dateFilter === "string") {
+        setDateFilter(saved.dateFilter as DateFilter);
+      }
+      if (typeof saved?.searchTerm === "string") {
+        setSearchTerm(saved.searchTerm);
+      }
+    } catch (error) {
+      console.error("Error recuperando filtros del proyecto:", error);
+    } finally {
+      setFiltersHydrated(true);
+    }
+  }, [projectId]);
+
+  useEffect(() => {
+    if (!projectId || !filtersHydrated) return;
+
+    window.localStorage.setItem(
+      `${PROJECT_FILTERS_STORAGE_PREFIX}${projectId}`,
+      JSON.stringify({
+        sortMode,
+        selectedNorma,
+        selectedStatuses,
+        dateFilter,
+        searchTerm,
+      })
+    );
+  }, [
+    dateFilter,
+    filtersHydrated,
+    projectId,
+    searchTerm,
+    selectedNorma,
+    selectedStatuses,
+    sortMode,
+  ]);
 
   const createRequirement = async () => {
     if (!projectId) {
@@ -712,6 +773,12 @@ export default function ProjectClient({ projectId }: ProjectClientProps) {
           <Link href={`/projects/${projectId}/matrix`} style={linkButtonStyle}>
             Ver matriz de cumplimiento
           </Link>
+          <Link
+            href={`/dashboard?projectId=${encodeURIComponent(projectId)}`}
+            style={linkButtonStyle}
+          >
+            Ver en dashboard
+          </Link>
         </div>
       </header>
 
@@ -734,6 +801,7 @@ export default function ProjectClient({ projectId }: ProjectClientProps) {
           <strong style={{ display: "block" }}>Flujo de trabajo</strong>
           <span style={{ color: "#64748b", fontSize: 13 }}>
             Alta, importación, revisión filtrada y matriz quedan conectadas desde aquí.
+            Los filtros se conservan al volver a este proyecto.
           </span>
         </div>
         <div

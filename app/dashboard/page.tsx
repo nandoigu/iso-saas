@@ -91,6 +91,7 @@ const EMPTY_FILTERS: DashboardFilters = {
   projectId: "all",
   date: "all",
 };
+const DASHBOARD_FILTERS_STORAGE_KEY = "bmo:dashboard-filters";
 
 const STATUS_META: Record<
   RequirementStatus,
@@ -122,6 +123,7 @@ export default function DashboardPage() {
     useState<NotificationPreferences>(DEFAULT_NOTIFICATION_PREFERENCES);
   const [error, setError] = useState("");
   const [filters, setFilters] = useState<DashboardFilters>(EMPTY_FILTERS);
+  const [filtersHydrated, setFiltersHydrated] = useState(false);
 
   useEffect(() => {
     fetch("/api/projects", { cache: "no-store" })
@@ -152,6 +154,47 @@ export default function DashboardPage() {
         setLoading(false);
       });
   }, [router]);
+
+  useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem(DASHBOARD_FILTERS_STORAGE_KEY);
+      const saved = raw ? JSON.parse(raw) : null;
+      const nextFilters: DashboardFilters = {
+        norma:
+          typeof saved?.norma === "string" && saved.norma.trim()
+            ? saved.norma
+            : EMPTY_FILTERS.norma,
+        status: isRequirementStatus(saved?.status) ? saved.status : "all",
+        projectId:
+          typeof saved?.projectId === "string" && saved.projectId.trim()
+            ? saved.projectId
+            : EMPTY_FILTERS.projectId,
+        date: isDateFilter(saved?.date) ? saved.date : "all",
+      };
+
+      const queryParams = new URLSearchParams(window.location.search);
+      const queryProjectId = queryParams.get("projectId");
+      const queryNorma = queryParams.get("norma");
+      const queryStatus = queryParams.get("status");
+      const queryDate = queryParams.get("date");
+
+      if (queryProjectId) nextFilters.projectId = queryProjectId;
+      if (queryNorma) nextFilters.norma = queryNorma;
+      if (isRequirementStatus(queryStatus)) nextFilters.status = queryStatus;
+      if (isDateFilter(queryDate)) nextFilters.date = queryDate;
+
+      setFilters(nextFilters);
+    } catch (error) {
+      console.error("Error recuperando filtros del dashboard:", error);
+    } finally {
+      setFiltersHydrated(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!filtersHydrated) return;
+    window.localStorage.setItem(DASHBOARD_FILTERS_STORAGE_KEY, JSON.stringify(filters));
+  }, [filters, filtersHydrated]);
 
   useEffect(() => {
     fetch("/api/notifications/preferences", { cache: "no-store" })
@@ -485,6 +528,7 @@ function FiltersPanel({
           <p style={{ color: "#64748b", fontSize: 13, margin: "6px 0 0" }}>
             {resultCount} de {totalCount} requerimientos visibles
             {activeFilterCount > 0 ? ` - ${activeFilterCount} filtros activos` : ""}
+            {" · filtros recordados"}
           </p>
         </div>
 
@@ -1404,6 +1448,20 @@ function normalizeStatus(status?: RequirementStatus | string | null): Requiremen
   }
 
   return "no_conforme";
+}
+
+function isRequirementStatus(value: unknown): value is RequirementStatus {
+  return value === "total" || value === "parcial" || value === "no_conforme";
+}
+
+function isDateFilter(value: unknown): value is DateFilter {
+  return (
+    value === "all" ||
+    value === "overdue" ||
+    value === "upcoming" ||
+    value === "not_overdue" ||
+    value === "no_date"
+  );
 }
 
 function getDisplayValue(value: string | null | undefined, fallback: string) {

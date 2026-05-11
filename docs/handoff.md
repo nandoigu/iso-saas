@@ -251,6 +251,9 @@ La aplicacion ya tiene una base SaaS funcional bastante avanzada.
   - referencia interna: `docs/excel-import-format.md`
   - ayuda visible en importación global y en importación por proyecto
 - [ ] Mejora de productividad del usuario:
+  - [x] listado de proyectos con búsqueda por nombre/código/rol, filtros por rol/riesgo y ordenación persistente
+  - [x] detalle de proyecto conserva búsqueda, filtros y ordenación por proyecto en `localStorage`
+  - [x] dashboard conserva filtros globales y acepta enlaces con `projectId` desde el detalle
   - búsquedas más útiles
   - filtros más potentes
   - ordenación persistente o más visible

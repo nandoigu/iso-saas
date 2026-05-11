@@ -7,6 +7,7 @@ import {
   DEFAULT_PROJECT_ROLE,
   getProjectRoleBadgeStyle,
   getProjectRoleLabel,
+  isProjectRole,
   PROJECT_ROLE_VALUES,
   type ProjectRole,
 } from "@/app/lib/projectRoles";
@@ -43,6 +44,15 @@ type ImportResult = {
   totalRows: number;
 };
 
+type ProjectSortMode = "recent" | "name" | "compliance" | "overdue";
+type ProjectRiskFilter = "all" | "overdue" | "low_compliance" | "empty";
+
+const PROJECT_LIST_FILTERS_STORAGE_KEY = "bmo:project-list-filters";
+const naturalCollator = new Intl.Collator("es", {
+  numeric: true,
+  sensitivity: "base",
+});
+
 export default function ProjectsPage() {
   const router = useRouter();
   const breakpoint = useProjectsBreakpoint();
@@ -66,6 +76,11 @@ export default function ProjectsPage() {
   const [importError, setImportError] = useState("");
   const [importDetails, setImportDetails] = useState<string[]>([]);
   const [importResult, setImportResult] = useState<ImportResult | null>(null);
+  const [listSearchTerm, setListSearchTerm] = useState("");
+  const [listRoleFilter, setListRoleFilter] = useState<ProjectRole | "all">("all");
+  const [listRiskFilter, setListRiskFilter] = useState<ProjectRiskFilter>("all");
+  const [listSortMode, setListSortMode] = useState<ProjectSortMode>("recent");
+  const [listFiltersHydrated, setListFiltersHydrated] = useState(false);
 
   useEffect(() => {
     const loadProjects = async () => {
@@ -100,6 +115,50 @@ export default function ProjectsPage() {
     loadProjects();
   }, [router]);
 
+  useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem(PROJECT_LIST_FILTERS_STORAGE_KEY);
+      const saved = raw ? JSON.parse(raw) : null;
+
+      if (typeof saved?.searchTerm === "string") {
+        setListSearchTerm(saved.searchTerm);
+      }
+      if (saved?.roleFilter === "all" || isProjectRoleFilter(saved?.roleFilter)) {
+        setListRoleFilter(saved.roleFilter);
+      }
+      if (isProjectRiskFilter(saved?.riskFilter)) {
+        setListRiskFilter(saved.riskFilter);
+      }
+      if (isProjectSortMode(saved?.sortMode)) {
+        setListSortMode(saved.sortMode);
+      }
+    } catch (error) {
+      console.error("Error recuperando filtros de proyectos:", error);
+    } finally {
+      setListFiltersHydrated(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!listFiltersHydrated) return;
+
+    window.localStorage.setItem(
+      PROJECT_LIST_FILTERS_STORAGE_KEY,
+      JSON.stringify({
+        searchTerm: listSearchTerm,
+        roleFilter: listRoleFilter,
+        riskFilter: listRiskFilter,
+        sortMode: listSortMode,
+      })
+    );
+  }, [
+    listFiltersHydrated,
+    listRiskFilter,
+    listRoleFilter,
+    listSearchTerm,
+    listSortMode,
+  ]);
+
   const metrics = useMemo(() => {
     const allRequirements = projects.flatMap((project) => project.requirements || []);
     const overdue = allRequirements.filter(isRequirementOverdue).length;
@@ -118,6 +177,85 @@ export default function ProjectsPage() {
           : 0,
     };
   }, [projects]);
+
+  const projectCards = useMemo(() => {
+    const normalizedSearch = listSearchTerm.trim().toLowerCase();
+
+    return projects
+      .map((project) => {
+        const requirements = project.requirements || [];
+        const overdue = requirements.filter(isRequirementOverdue).length;
+        const score = requirements.reduce(
+          (sum, requirement) => sum + getRequirementScore(requirement.status),
+          0
+        );
+        const compliance =
+          requirements.length > 0
+            ? Math.round((score / requirements.length) * 100)
+            : 0;
+
+        return {
+          ...project,
+          compliance,
+          overdue,
+          requirementCount: requirements.length,
+        };
+      })
+      .filter((project) => {
+        if (listRoleFilter !== "all" && project.role !== listRoleFilter) {
+          return false;
+        }
+
+        if (listRiskFilter === "overdue" && project.overdue === 0) return false;
+        if (listRiskFilter === "low_compliance" && project.compliance >= 50) {
+          return false;
+        }
+        if (listRiskFilter === "empty" && project.requirementCount > 0) return false;
+
+        if (!normalizedSearch) return true;
+
+        const haystack = [
+          project.name,
+          project.code,
+          getProjectRoleLabel(project.role),
+          String(project.requirementCount),
+        ]
+          .map((value) => String(value ?? "").toLowerCase())
+          .join(" ");
+
+        return haystack.includes(normalizedSearch);
+      })
+      .sort((left, right) => {
+        if (listSortMode === "name") {
+          return naturalCompare(left.name, right.name);
+        }
+
+        if (listSortMode === "compliance") {
+          return right.compliance - left.compliance || naturalCompare(left.name, right.name);
+        }
+
+        if (listSortMode === "overdue") {
+          return right.overdue - left.overdue || naturalCompare(left.name, right.name);
+        }
+
+        const leftTime = left.createdAt ? new Date(left.createdAt).getTime() : 0;
+        const rightTime = right.createdAt ? new Date(right.createdAt).getTime() : 0;
+        return rightTime - leftTime || naturalCompare(left.name, right.name);
+      });
+  }, [listRiskFilter, listRoleFilter, listSearchTerm, listSortMode, projects]);
+
+  const activeProjectFilterCount =
+    (listSearchTerm.trim() ? 1 : 0) +
+    (listRoleFilter !== "all" ? 1 : 0) +
+    (listRiskFilter !== "all" ? 1 : 0) +
+    (listSortMode !== "recent" ? 1 : 0);
+
+  const resetProjectListFilters = () => {
+    setListSearchTerm("");
+    setListRoleFilter("all");
+    setListRiskFilter("all");
+    setListSortMode("recent");
+  };
 
   const createProject = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -514,16 +652,112 @@ export default function ProjectsPage() {
             <div>
               <h2 style={panelTitleStyle}>Listado de proyectos</h2>
               <p style={panelDescriptionStyle}>
-                Accede rapido a cada proyecto o elimina los que ya no necesitas.
+                Accede rápido a cada proyecto, ordena la cartera y vuelve sin perder
+                tus filtros.
               </p>
             </div>
+            <button
+              type="button"
+              onClick={resetProjectListFilters}
+              disabled={activeProjectFilterCount === 0}
+              style={{
+                ...secondaryInlineActionStyle,
+                cursor: activeProjectFilterCount === 0 ? "not-allowed" : "pointer",
+                opacity: activeProjectFilterCount === 0 ? 0.5 : 1,
+              }}
+            >
+              Limpiar filtros
+            </button>
           </div>
+
+          <div
+            style={{
+              display: "grid",
+              gap: 12,
+              gridTemplateColumns: isCompact
+                ? "minmax(0, 1fr)"
+                : "minmax(260px, 1.2fr) repeat(3, minmax(170px, 0.8fr))",
+              marginBottom: 18,
+            }}
+          >
+            <label style={fieldStyle}>
+              Buscar
+              <input
+                value={listSearchTerm}
+                onChange={(event) => setListSearchTerm(event.target.value)}
+                placeholder="Nombre, código, rol o métricas"
+                style={inputStyle}
+              />
+            </label>
+
+            <label style={fieldStyle}>
+              Rol
+              <select
+                value={listRoleFilter}
+                onChange={(event) =>
+                  setListRoleFilter(event.target.value as ProjectRole | "all")
+                }
+                style={inputStyle}
+              >
+                <option value="all">Todos</option>
+                {PROJECT_ROLE_VALUES.map((projectRole) => (
+                  <option key={projectRole} value={projectRole}>
+                    {getProjectRoleLabel(projectRole)}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label style={fieldStyle}>
+              Riesgo
+              <select
+                value={listRiskFilter}
+                onChange={(event) =>
+                  setListRiskFilter(event.target.value as ProjectRiskFilter)
+                }
+                style={inputStyle}
+              >
+                <option value="all">Todos</option>
+                <option value="overdue">Con vencidos</option>
+                <option value="low_compliance">Cumplimiento bajo</option>
+                <option value="empty">Sin requerimientos</option>
+              </select>
+            </label>
+
+            <label style={fieldStyle}>
+              Ordenar
+              <select
+                value={listSortMode}
+                onChange={(event) =>
+                  setListSortMode(event.target.value as ProjectSortMode)
+                }
+                style={inputStyle}
+              >
+                <option value="recent">Más recientes</option>
+                <option value="name">Nombre</option>
+                <option value="compliance">Cumplimiento</option>
+                <option value="overdue">Vencidos</option>
+              </select>
+            </label>
+          </div>
+
+          <p style={{ color: "#64748b", fontSize: 13, margin: "0 0 14px" }}>
+            {projectCards.length} de {projects.length} proyectos visibles
+            {activeProjectFilterCount > 0
+              ? ` · ${activeProjectFilterCount} filtros activos`
+              : ""}{" "}
+            · filtros recordados
+          </p>
 
           {loading ? (
             <div style={emptyStateStyle}>Cargando proyectos...</div>
           ) : projects.length === 0 ? (
             <div style={emptyStateStyle}>
-              Aun no hay proyectos creados en este espacio de trabajo.
+              Aún no hay proyectos creados en este espacio de trabajo.
+            </div>
+          ) : projectCards.length === 0 ? (
+            <div style={emptyStateStyle}>
+              No hay proyectos que coincidan con los filtros actuales.
             </div>
           ) : (
             <div
@@ -534,18 +768,7 @@ export default function ProjectsPage() {
                   : projectListGridStyle.gridTemplateColumns,
               }}
             >
-              {projects.map((project) => {
-                const requirements = project.requirements || [];
-                const overdue = requirements.filter(isRequirementOverdue).length;
-                const score = requirements.reduce(
-                  (sum, requirement) => sum + getRequirementScore(requirement.status),
-                  0
-                );
-                const compliance =
-                  requirements.length > 0
-                    ? Math.round((score / requirements.length) * 100)
-                    : 0;
-
+              {projectCards.map((project) => {
                 return (
                   <article key={project.id} style={projectCardStyle}>
                     <div
@@ -585,7 +808,7 @@ export default function ProjectsPage() {
                           ...(isMobile ? mobileProgressSummaryStyle : {}),
                         }}
                       >
-                        <span style={progressValueStyle}>{compliance}%</span>
+                        <span style={progressValueStyle}>{project.compliance}%</span>
                         <span style={progressLabelStyle}>cumplimiento</span>
                       </div>
                     </div>
@@ -600,17 +823,17 @@ export default function ProjectsPage() {
                     >
                       <MiniMetric
                         label="Requerimientos"
-                        value={String(requirements.length)}
+                        value={String(project.requirementCount)}
                       />
                       <MiniMetric
                         label="Vencidos"
-                        value={String(overdue)}
-                        emphasis={overdue > 0 ? "risk" : "neutral"}
+                        value={String(project.overdue)}
+                        emphasis={project.overdue > 0 ? "risk" : "neutral"}
                       />
                       <MiniMetric
                         label="Estado"
-                        value={getHealthLabel(compliance)}
-                        emphasis={getHealthTone(compliance)}
+                        value={getHealthLabel(project.compliance)}
+                        emphasis={getHealthTone(project.compliance)}
                       />
                     </div>
 
@@ -618,8 +841,8 @@ export default function ProjectsPage() {
                       <div
                         style={{
                           ...progressBarFillStyle,
-                          width: `${Math.max(compliance, 6)}%`,
-                          background: getComplianceColor(compliance),
+                          width: `${Math.max(project.compliance, 6)}%`,
+                          background: getComplianceColor(project.compliance),
                         }}
                       />
                     </div>
@@ -842,6 +1065,32 @@ function getHealthTone(
   if (compliance >= 85) return "success";
   if (compliance >= 50) return "warning";
   return "risk";
+}
+
+function naturalCompare(left: string, right: string) {
+  return naturalCollator.compare(left, right);
+}
+
+function isProjectRoleFilter(value: unknown): value is ProjectRole {
+  return isProjectRole(value);
+}
+
+function isProjectRiskFilter(value: unknown): value is ProjectRiskFilter {
+  return (
+    value === "all" ||
+    value === "overdue" ||
+    value === "low_compliance" ||
+    value === "empty"
+  );
+}
+
+function isProjectSortMode(value: unknown): value is ProjectSortMode {
+  return (
+    value === "recent" ||
+    value === "name" ||
+    value === "compliance" ||
+    value === "overdue"
+  );
 }
 
 const pageStyle: React.CSSProperties = {
