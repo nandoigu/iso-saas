@@ -82,6 +82,8 @@ export default function ProjectClient({ projectId }: ProjectClientProps) {
   const [importDetails, setImportDetails] = useState<string[]>([]);
   const [actionError, setActionError] = useState("");
   const [actionSuccess, setActionSuccess] = useState("");
+  const [generatingBaseRequirements, setGeneratingBaseRequirements] =
+    useState(false);
 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editData, setEditData] = useState<EditData>(EMPTY_EDIT_DATA);
@@ -387,6 +389,49 @@ export default function ProjectClient({ projectId }: ProjectClientProps) {
       setActionError("Error inesperado actualizando el proyecto.");
     } finally {
       setSavingProjectMeta(false);
+    }
+  };
+
+  const generateBaseRequirements = async () => {
+    if (!projectMeta || generatingBaseRequirements) return;
+
+    setGeneratingBaseRequirements(true);
+    setActionError("");
+    setActionSuccess("");
+
+    try {
+      const res = await fetch("/api/generate-requirements", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          projectId,
+          role: projectMeta.role,
+        }),
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(
+          data.error || "No se pudieron cargar los requisitos base."
+        );
+      }
+
+      await reloadRequirements();
+      setActionSuccess(
+        `Requisitos base cargados: ${data.data?.created ?? 0} de ${
+          data.data?.totalTemplates ?? 0
+        }.`
+      );
+    } catch (error) {
+      setActionError(
+        error instanceof Error
+          ? error.message
+          : "No se pudieron cargar los requisitos base."
+      );
+    } finally {
+      setGeneratingBaseRequirements(false);
     }
   };
 
@@ -1132,8 +1177,29 @@ export default function ProjectClient({ projectId }: ProjectClientProps) {
             title={requirements.length === 0 ? "Sin requerimientos" : "Sin resultados"}
             description={
               requirements.length === 0
-                ? "Anade el primer requerimiento para comenzar a medir cumplimiento."
+                ? "Carga los requisitos base de la función del proyecto o añade requisitos manualmente."
                 : "No hay requerimientos que coincidan con los filtros activos."
+            }
+            action={
+              requirements.length === 0 && projectMeta ? (
+                <button
+                  type="button"
+                  onClick={generateBaseRequirements}
+                  disabled={generatingBaseRequirements}
+                  style={{
+                    ...primaryButtonStyle,
+                    marginTop: 14,
+                    opacity: generatingBaseRequirements ? 0.65 : 1,
+                    cursor: generatingBaseRequirements ? "wait" : "pointer",
+                  }}
+                >
+                  {generatingBaseRequirements
+                    ? "Cargando requisitos..."
+                    : `Cargar requisitos base (${getProjectRoleLabel(
+                        projectMeta.role
+                      )})`}
+                </button>
+              ) : null
             }
           />
         )}
@@ -1888,10 +1954,12 @@ function OverdueBadge({ compact = false }: { compact?: boolean }) {
 function EmptyState({
   title,
   description,
+  action,
   tone = "default",
 }: {
   title: string;
   description: string;
+  action?: React.ReactNode;
   tone?: "default" | "risk";
 }) {
   return (
@@ -1909,6 +1977,7 @@ function EmptyState({
         {title}
       </strong>
       <p style={{ margin: "6px 0 0" }}>{description}</p>
+      {action}
     </div>
   );
 }
