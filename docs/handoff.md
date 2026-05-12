@@ -349,6 +349,36 @@ La aplicacion ya tiene una base SaaS funcional bastante avanzada.
 - `npm audit --audit-level=moderate` paso limpio tras la mitigacion de `postcss`.
 - El plan actualizado queda alineado con el plan anterior: la vista de proyecto vuelve a prioridad alta, y las mejoras de productividad, alertas/informes, onboarding, branding, evolucion futura y quick wins quedan reflejadas sin duplicar tareas ya completadas.
 
+## Auditoria UI produccion - 2026-05-12
+
+- Entorno auditado: `https://iso-saas-gamma.vercel.app`
+- Login:
+  - corregida mezcla visual de `/login` con navbar autenticada.
+  - usuarios autenticados se redirigen fuera de `/login`.
+- Cabecera responsive:
+  - corregido solape en ancho estrecho.
+  - nav principal baja a segunda linea con scroll horizontal.
+- Dashboard:
+  - carga correcta con datos reales.
+  - filtros por estado, fecha y norma correctos.
+  - limpiar filtros correcto.
+  - preferencias de notificacion guardan correctamente.
+  - envio manual de informe correcto.
+  - email real recibido: `Informe manual ISO 19650 - 0% cumplimiento`.
+- Matriz:
+  - vista global correcta.
+  - matriz de `Hospital Norte 2` carga con 35 requerimientos.
+  - busqueda, filtro por norma y limpiar filtros correctos.
+- Admin:
+  - panel carga correctamente.
+  - cuenta propia protegida en la interfaz.
+  - `owner@example.com` probado con cambio reversible de estado `Activo -> Suspendido -> Activo`.
+  - `owner@example.com` probado con cambio reversible de rol `user -> admin -> user`.
+- Pendiente por limitacion del navegador integrado:
+  - validar descargas reales CSV/PDF/Excel desde Chrome normal.
+  - validar checkboxes de estado en matriz desde Chrome normal.
+- No se probaron borrados destructivos en produccion.
+
 ## Recomendacion para retomar en un chat nuevo
 
 Cuando se abra un chat nuevo dentro del proyecto:
