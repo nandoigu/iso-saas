@@ -65,14 +65,19 @@ export default function Navbar() {
     };
   }, [pathname]);
 
-  const isAuthPage = pathname === "/login" || pathname === "/register";
+  const isAuthPage =
+    pathname === "/login" ||
+    pathname === "/register" ||
+    pathname === "/forgot-password" ||
+    pathname === "/reset-password";
+  const authenticatedUser = isAuthPage ? null : user;
 
   const visibleNavigation = useMemo(() => {
-    if (!user) return [];
+    if (!authenticatedUser) return [];
 
     const items = [...navigationItems];
 
-    if (user.role === "admin") {
+    if (authenticatedUser.role === "admin") {
       items.push({ href: "/admin", label: "Admin" });
     }
 
@@ -80,7 +85,7 @@ export default function Navbar() {
       ...item,
       active: isRouteActive(pathname, item.href),
     }));
-  }, [pathname, user]);
+  }, [authenticatedUser, pathname]);
 
   const logout = async () => {
     await fetch("/api/auth/logout", { method: "POST" });
@@ -106,7 +111,7 @@ export default function Navbar() {
           alignItems: "center",
           display: "grid",
           gap: 16,
-          gridTemplateColumns: user
+          gridTemplateColumns: authenticatedUser
             ? "minmax(180px, auto) minmax(0, 1fr) auto"
             : "minmax(180px, auto) auto",
           margin: "0 auto",
@@ -116,7 +121,7 @@ export default function Navbar() {
         }}
       >
         <Link
-          href={user ? "/dashboard" : "/login"}
+          href={authenticatedUser ? "/dashboard" : "/login"}
           style={{
             alignItems: "center",
             color: BRAND,
@@ -169,7 +174,7 @@ export default function Navbar() {
           </div>
         </Link>
 
-        {user ? (
+        {authenticatedUser ? (
           <nav
             aria-label="Navegacion principal"
             style={{
@@ -207,7 +212,7 @@ export default function Navbar() {
             minWidth: 0,
           }}
         >
-          {!user && !isAuthPage && !loadingUser && (
+          {!authenticatedUser && !isAuthPage && !loadingUser && (
             <>
               <Link href="/login" style={ghostLinkStyle}>
                 Login
@@ -218,7 +223,7 @@ export default function Navbar() {
             </>
           )}
 
-          {user && (
+          {authenticatedUser && (
             <>
               <div style={userPillStyle}>
                 <span
@@ -228,17 +233,17 @@ export default function Navbar() {
                     whiteSpace: "nowrap",
                   }}
                 >
-                  {user.name || user.email}
+                  {authenticatedUser.name || authenticatedUser.email}
                 </span>
               </div>
 
-              <span style={navbarBadgeStyle(getUserRoleBadgeStyle(user.role))}>
-                {user.role === "admin" ? "ADMIN" : "USER"}
+              <span style={navbarBadgeStyle(getUserRoleBadgeStyle(authenticatedUser.role))}>
+                {authenticatedUser.role === "admin" ? "ADMIN" : "USER"}
               </span>
 
-              {user.status !== "active" && (
-                <span style={navbarBadgeStyle(getUserStatusBadgeStyle(user.status))}>
-                  {user.status === "blocked" ? "BLOCKED" : "SUSPENDED"}
+              {authenticatedUser.status !== "active" && (
+                <span style={navbarBadgeStyle(getUserStatusBadgeStyle(authenticatedUser.status))}>
+                  {authenticatedUser.status === "blocked" ? "BLOCKED" : "SUSPENDED"}
                 </span>
               )}
 

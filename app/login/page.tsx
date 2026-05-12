@@ -19,11 +19,20 @@ export default function LoginPage() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const next = params.get("next");
+    const safeNext = next?.startsWith("/") ? next : "/dashboard";
 
-    if (next?.startsWith("/")) {
-      setNextPath(next);
-    }
-  }, []);
+    setNextPath(safeNext);
+
+    fetch("/api/auth/me", { cache: "no-store" })
+      .then((res) => {
+        if (res.ok) {
+          router.replace(safeNext);
+        }
+      })
+      .catch(() => {
+        // Stay on login when the session check cannot be completed.
+      });
+  }, [router]);
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
