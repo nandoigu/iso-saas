@@ -375,8 +375,11 @@ La aplicacion ya tiene una base SaaS funcional bastante avanzada.
   - `owner@example.com` probado con cambio reversible de estado `Activo -> Suspendido -> Activo`.
   - `owner@example.com` probado con cambio reversible de rol `user -> admin -> user`.
 - Pendiente por limitacion del navegador integrado:
-  - validar descargas reales CSV/PDF/Excel desde Chrome normal.
   - validar checkboxes de estado en matriz desde Chrome normal.
+- Validado posteriormente en Chrome normal:
+  - descarga Excel de matriz correcta y legible.
+  - descarga PDF de dashboard correcta, con KPIs, graficos y tabla.
+  - descarga PDF de matriz correcta, con tabla de requerimientos.
 - No se probaron borrados destructivos en produccion.
 
 ## Recomendacion para retomar en un chat nuevo
