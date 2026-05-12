@@ -32,6 +32,7 @@ export default function Navbar() {
   const router = useRouter();
   const [user, setUser] = useState<CurrentUser | null>(null);
   const [loadingUser, setLoadingUser] = useState(true);
+  const [isCompact, setIsCompact] = useState(false);
 
   useEffect(() => {
     const loadUser = () => {
@@ -64,6 +65,19 @@ export default function Navbar() {
       window.removeEventListener("bmo:user-updated", handleUserUpdated);
     };
   }, [pathname]);
+
+  useEffect(() => {
+    const updateLayout = () => {
+      setIsCompact(window.innerWidth < 920);
+    };
+
+    updateLayout();
+    window.addEventListener("resize", updateLayout);
+
+    return () => {
+      window.removeEventListener("resize", updateLayout);
+    };
+  }, []);
 
   const isAuthPage =
     pathname === "/login" ||
@@ -111,13 +125,14 @@ export default function Navbar() {
           alignItems: "center",
           display: "grid",
           gap: 16,
-          gridTemplateColumns: authenticatedUser
-            ? "minmax(180px, auto) minmax(0, 1fr) auto"
-            : "minmax(180px, auto) auto",
+          gridTemplateColumns:
+            authenticatedUser && !isCompact
+              ? "minmax(180px, auto) minmax(0, 1fr) auto"
+              : "minmax(0, 1fr) auto",
           margin: "0 auto",
           maxWidth: 1440,
-          minHeight: 70,
-          padding: "0 28px",
+          minHeight: isCompact ? 86 : 70,
+          padding: isCompact ? "10px 16px" : "0 28px",
         }}
       >
         <Link
@@ -154,9 +169,10 @@ export default function Navbar() {
             <div
               style={{
                 color: BRAND,
-                fontSize: 17,
+                fontSize: isCompact ? 15 : 17,
                 fontWeight: 800,
                 lineHeight: 1.2,
+                whiteSpace: "nowrap",
               }}
             >
               BMO ISO 19650
@@ -167,6 +183,7 @@ export default function Navbar() {
                 fontSize: 12,
                 lineHeight: 1.3,
                 marginTop: 2,
+                whiteSpace: "nowrap",
               }}
             >
               Compliance SaaS
@@ -184,8 +201,10 @@ export default function Navbar() {
               borderRadius: 12,
               display: "flex",
               gap: 8,
-              justifyContent: "center",
+              gridColumn: isCompact ? "1 / -1" : undefined,
+              justifyContent: isCompact ? "flex-start" : "center",
               minWidth: 0,
+              overflowX: "auto",
               padding: 6,
             }}
           >
@@ -337,7 +356,7 @@ const userPillStyle: React.CSSProperties = {
   display: "inline-flex",
   fontSize: 13,
   fontWeight: 700,
-  maxWidth: 220,
+  maxWidth: 160,
   minHeight: 40,
   padding: "0 12px",
 };
