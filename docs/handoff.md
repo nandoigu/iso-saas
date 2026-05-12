@@ -374,13 +374,14 @@ La aplicacion ya tiene una base SaaS funcional bastante avanzada.
   - cuenta propia protegida en la interfaz.
   - `owner@example.com` probado con cambio reversible de estado `Activo -> Suspendido -> Activo`.
   - `owner@example.com` probado con cambio reversible de rol `user -> admin -> user`.
-- Pendiente por limitacion del navegador integrado:
-  - validar checkboxes de estado en matriz desde Chrome normal.
+  - borrado de proyecto validado en Chrome normal.
+  - borrado de usuario validado en Chrome normal.
 - Validado posteriormente en Chrome normal:
+  - checkboxes de estado en matriz correctos.
+  - busqueda, norma y estado combinan correctamente en matriz.
   - descarga Excel de matriz correcta y legible.
   - descarga PDF de dashboard correcta, con KPIs, graficos y tabla.
   - descarga PDF de matriz correcta, con tabla de requerimientos.
-- No se probaron borrados destructivos en produccion.
 
 ## Recomendacion para retomar en un chat nuevo
 
