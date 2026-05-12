@@ -187,7 +187,7 @@ export async function sendPasswordResetEmail({
 
   return sendEmail({
     to,
-    subject: "Restablece tu contrasena en BMO ISO 19650",
+    subject: "Restablece tu contraseña en BMO ISO 19650",
     html: template.html,
     text: template.text,
     tags: [
@@ -369,33 +369,42 @@ export function getPasswordResetEmailTemplate({
   resetUrl: string;
 }) {
   return getBaseEmailTemplate({
-    previewText: "Has solicitado restablecer tu contrasena.",
-    title: "Restablecimiento de contrasena",
+    previewText: "Usa este enlace seguro para recuperar el acceso a tu cuenta.",
+    title: "Restablece tu contraseña",
     subtitle: "Este enlace caduca en 1 hora y solo puede usarse una vez.",
+    footerText:
+      "Este correo se ha enviado por seguridad desde BMO ISO 19650. Si no has solicitado este cambio, no necesitas hacer nada.",
     bodyHtml: `
       <p style="margin:0 0 16px;font-size:15px;line-height:1.7;">
         Hola ${escapeHtml(userName || "usuario")},
       </p>
       <p style="margin:0 0 16px;font-size:15px;line-height:1.7;">
-        Hemos recibido una solicitud para restablecer la contrasena de tu cuenta en <strong>BMO ISO 19650</strong>.
+        Hemos recibido una solicitud para restablecer la contraseña de tu cuenta en <strong>BMO ISO 19650</strong>.
       </p>
-      <div style="margin:24px 0;">
-        <a
-          href="${escapeHtml(resetUrl)}"
-          style="display:inline-block;background:#2563eb;color:#ffffff;text-decoration:none;padding:12px 18px;border-radius:10px;font-weight:700;"
-        >
-          Restablecer contrasena
-        </a>
+      <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:14px;margin:22px 0;padding:18px;">
+        <div style="font-size:13px;color:#475569;line-height:1.6;margin-bottom:14px;">
+          Para continuar, abre el enlace seguro. Por protección, dejará de funcionar dentro de 1 hora.
+        </div>
+        <div style="text-align:center;">
+          <a
+            href="${escapeHtml(resetUrl)}"
+            style="display:inline-block;background:#2563eb;color:#ffffff;text-decoration:none;padding:13px 22px;border-radius:10px;font-size:15px;font-weight:700;line-height:1.3;"
+          >
+            Restablecer contraseña
+          </a>
+        </div>
       </div>
-      <p style="margin:0 0 12px;font-size:14px;line-height:1.7;color:#475569;">
-        Si el boton no funciona, copia y pega este enlace en tu navegador:
+      <p style="margin:0 0 10px;font-size:14px;line-height:1.7;color:#475569;">
+        Si el botón no funciona, copia y pega este enlace en tu navegador:
       </p>
-      <p style="margin:0;font-size:13px;line-height:1.7;word-break:break-all;color:#0f172a;">
+      <div style="background:#f1f5f9;border:1px solid #e2e8f0;border-radius:10px;color:#0f172a;font-size:13px;line-height:1.6;margin:0;padding:12px;word-break:break-all;">
         ${escapeHtml(resetUrl)}
-      </p>
-      <p style="margin:16px 0 0;font-size:14px;line-height:1.7;color:#475569;">
-        Si no has solicitado este cambio, puedes ignorar este correo con tranquilidad.
-      </p>
+      </div>
+      <div style="border-top:1px solid #e2e8f0;margin-top:22px;padding-top:16px;">
+        <p style="margin:0;font-size:14px;line-height:1.7;color:#475569;">
+          Si no has solicitado este cambio, puedes ignorar este correo. Tu contraseña actual seguirá siendo válida.
+        </p>
+      </div>
     `,
   });
 }

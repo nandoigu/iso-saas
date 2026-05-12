@@ -16,6 +16,7 @@ import {
 export const runtime = "nodejs";
 
 const UPCOMING_DAYS = 7;
+const ACTIVE_USER_STATUS = "active";
 
 export async function GET(req: Request) {
   try {
@@ -23,8 +24,12 @@ export async function GET(req: Request) {
       return NextResponse.json({ success: false }, { status: 401 });
     }
 
+    const url = new URL(req.url);
+    const dryRun = url.searchParams.get("dryRun") === "1";
+
     const users = await prisma.user.findMany({
       where: {
+        status: ACTIVE_USER_STATUS,
         OR: [{ notifyAlerts: true }, { notifyReports: true }],
       },
       select: {
@@ -62,6 +67,10 @@ export async function GET(req: Request) {
     let emailFailures = 0;
     let alertEmailsSent = 0;
     let reportEmailsSent = 0;
+    let alertEmailsReady = 0;
+    let reportEmailsReady = 0;
+    let alertRequirementsReady = 0;
+    let reportRequirementsReady = 0;
 
     for (const user of users) {
       try {
@@ -98,37 +107,43 @@ export async function GET(req: Request) {
           shouldSendDailyEmail(user.lastAlertEmailAt) &&
           (overdueRequirements.length > 0 || upcomingRequirements.length > 0)
         ) {
-          await sendAlertDigestEmail({
-            to: user.email,
-            userName: user.name,
-            overdueRequirements,
-            upcomingRequirements,
-            deliveryMode: "cron",
-          });
+          alertEmailsReady += 1;
+          alertRequirementsReady +=
+            overdueRequirements.length + upcomingRequirements.length;
 
-          const requirementIds = [...overdueRequirements, ...upcomingRequirements].map(
-            (requirement) => requirement.id
-          );
+          if (!dryRun) {
+            await sendAlertDigestEmail({
+              to: user.email,
+              userName: user.name,
+              overdueRequirements,
+              upcomingRequirements,
+              deliveryMode: "cron",
+            });
 
-          await prisma.$transaction([
-            prisma.requirement.updateMany({
-              where: {
-                id: {
-                  in: requirementIds,
+            const requirementIds = [...overdueRequirements, ...upcomingRequirements].map(
+              (requirement) => requirement.id
+            );
+
+            await prisma.$transaction([
+              prisma.requirement.updateMany({
+                where: {
+                  id: {
+                    in: requirementIds,
+                  },
                 },
-              },
-              data: {
-                lastNotifiedAt: new Date(),
-              },
-            }),
-            prisma.user.update({
-              where: { id: user.id },
-              data: { lastAlertEmailAt: new Date() },
-            }),
-          ]);
+                data: {
+                  lastNotifiedAt: new Date(),
+                },
+              }),
+              prisma.user.update({
+                where: { id: user.id },
+                data: { lastAlertEmailAt: new Date() },
+              }),
+            ]);
 
-          emailsSent += 1;
-          alertEmailsSent += 1;
+            emailsSent += 1;
+            alertEmailsSent += 1;
+          }
         }
 
         if (
@@ -136,22 +151,26 @@ export async function GET(req: Request) {
           shouldSendReportEmail(user.reportFrequency, user.lastReportEmailAt)
         ) {
           const report = buildComplianceReport(allRequirements, UPCOMING_DAYS);
+          reportEmailsReady += 1;
+          reportRequirementsReady += report.metrics.totalRequirements;
 
-          await sendComplianceEmail({
-            to: user.email,
-            userName: user.name,
-            subject: getReportSubject(user.reportFrequency, report.metrics.compliance),
-            report,
-            deliveryMode: "cron",
-          });
+          if (!dryRun) {
+            await sendComplianceEmail({
+              to: user.email,
+              userName: user.name,
+              subject: getReportSubject(user.reportFrequency, report.metrics.compliance),
+              report,
+              deliveryMode: "cron",
+            });
 
-          await prisma.user.update({
-            where: { id: user.id },
-            data: { lastReportEmailAt: new Date() },
-          });
+            await prisma.user.update({
+              where: { id: user.id },
+              data: { lastReportEmailAt: new Date() },
+            });
 
-          emailsSent += 1;
-          reportEmailsSent += 1;
+            emailsSent += 1;
+            reportEmailsSent += 1;
+          }
         }
       } catch (error) {
         console.error(`ERROR /api/cron/alerts user ${user.id}:`, error);
@@ -161,10 +180,15 @@ export async function GET(req: Request) {
 
     return NextResponse.json({
       success: true,
+      dryRun,
       usersProcessed: users.length,
       emailsSent,
       alertEmailsSent,
       reportEmailsSent,
+      alertEmailsReady,
+      reportEmailsReady,
+      alertRequirementsReady,
+      reportRequirementsReady,
       emailFailures,
     });
   } catch (error) {
@@ -172,10 +196,15 @@ export async function GET(req: Request) {
     return NextResponse.json(
       {
         success: false,
+        dryRun: false,
         usersProcessed: 0,
         emailsSent: 0,
         alertEmailsSent: 0,
         reportEmailsSent: 0,
+        alertEmailsReady: 0,
+        reportEmailsReady: 0,
+        alertRequirementsReady: 0,
+        reportRequirementsReady: 0,
         emailFailures: 0,
       },
       { status: 500 }

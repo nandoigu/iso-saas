@@ -344,6 +344,8 @@ La aplicacion ya tiene una base SaaS funcional bastante avanzada.
 - La ultima pasada de prioridad alta esta documentada en `docs/high-priority-audit-2026-05-10.md`.
 - Por API, los flujos funcionales criticos revisados estan pasando.
 - Resend ya tiene dominio remitente verificado para produccion; queda probar alertas e informes reales.
+- La validacion real de alertas/informes esta documentada en `docs/email-alert-report-validation.md`.
+- `/api/cron/alerts?dryRun=1` permite diagnosticar usuarios, emails y requerimientos listos sin enviar ni mutar deduplicacion.
 - `npm audit --audit-level=moderate` paso limpio tras la mitigacion de `postcss`.
 - El plan actualizado queda alineado con el plan anterior: la vista de proyecto vuelve a prioridad alta, y las mejoras de productividad, alertas/informes, onboarding, branding, evolucion futura y quick wins quedan reflejadas sin duplicar tareas ya completadas.
 
