@@ -85,6 +85,7 @@ Invoke-RestMethod `
   - segunda ejecucion: 0 emails enviados y 0 requerimientos listos por deduplicacion diaria.
 - Hallazgo corregido: el cron incluia requerimientos `total` al calcular alertas; ahora se excluyen antes de clasificar vencidos o proximos.
 - Recepcion confirmada por el usuario en Outlook el 13 de mayo de 2026.
+- Segunda recepcion confirmada tras la correccion: el email muestra 1 vencido y 1 proximo, sin incluir el requerimiento `total`.
 - Nota: el email de prueba local puede aparecer desde `onboarding@resend.dev` si `.env.local` usa ese remitente; produccion debe usar `EMAIL_FROM` con el dominio verificado.
 
 ## Senales de fallo a revisar
