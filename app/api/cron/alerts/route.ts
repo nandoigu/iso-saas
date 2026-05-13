@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getAuthSession, unauthorized } from "@/app/lib/auth";
 import {
   buildComplianceReport,
+  normalizeStatus,
   shouldSendDailyEmail,
   shouldSendReportEmail,
   type AlertRequirement,
@@ -80,6 +81,10 @@ export async function GET(req: Request) {
 
         for (const requirement of allRequirements) {
           if (!requirement.deadline) {
+            continue;
+          }
+
+          if (normalizeStatus(requirement.status) === "total") {
             continue;
           }
 

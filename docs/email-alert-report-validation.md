@@ -70,6 +70,21 @@ Invoke-RestMethod `
 - El informe manual desde dashboard no altera `lastReportEmailAt`; sirve para envio bajo demanda.
 - `dryRun=1` no envia emails ni actualiza fechas de deduplicacion.
 
+## Resultado de validacion real - 2026-05-13
+
+- Prueba ejecutada contra endpoint local de Next con base Neon y Resend reales.
+- El intento directo contra Vercel con el `CRON_SECRET` local devolvio `401`; revisar/alinear secreto local si se quiere lanzar manualmente el cron de produccion desde consola.
+- Para aislar la prueba se desactivaron temporalmente las notificaciones de otros usuarios y se restauraron al finalizar.
+- Se creo un proyecto temporal con:
+  - un requerimiento vencido `no_conforme`
+  - un requerimiento proximo `parcial`
+  - un requerimiento vencido `total`
+- Resultado corregido:
+  - `dryRun`: 1 usuario procesado, 1 email de alerta preparado, 2 requerimientos alertables, 0 fallos.
+  - envio real: 1 email enviado, 1 alerta enviada, 2 requerimientos alertables, 0 fallos.
+  - segunda ejecucion: 0 emails enviados y 0 requerimientos listos por deduplicacion diaria.
+- Hallazgo corregido: el cron incluia requerimientos `total` al calcular alertas; ahora se excluyen antes de clasificar vencidos o proximos.
+
 ## Senales de fallo a revisar
 
 - `401`: falta o no coincide `Authorization: Bearer CRON_SECRET`.

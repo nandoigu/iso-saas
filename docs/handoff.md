@@ -295,7 +295,7 @@ La aplicacion ya tiene una base SaaS funcional bastante avanzada.
   - [x] separar flujo manual de informe completo y flujo cron de alertas/informes periódicos
   - [x] revisar frecuencia y duplicados con `lastAlertEmailAt`, `lastReportEmailAt` y `lastNotifiedAt`
   - [x] mejorar presentación de CSV para Excel y PDF con resumen filtrado
-  - [ ] verificar envíos de alertas en escenarios reales tras configurar Resend
+  - [x] verificar envíos de alertas en escenarios reales tras configurar Resend
 
 ### Prioridad baja / preparación futura
 
@@ -343,7 +343,7 @@ La aplicacion ya tiene una base SaaS funcional bastante avanzada.
 - La verificacion visual completa en navegador sigue limitada por el runtime al escribir en campos `type=email`.
 - La ultima pasada de prioridad alta esta documentada en `docs/high-priority-audit-2026-05-10.md`.
 - Por API, los flujos funcionales criticos revisados estan pasando.
-- Resend ya tiene dominio remitente verificado para produccion; queda probar alertas e informes reales.
+- Resend ya tiene dominio remitente verificado para produccion; informes manuales y alertas reales ya se han probado.
 - La validacion real de alertas/informes esta documentada en `docs/email-alert-report-validation.md`.
 - `/api/cron/alerts?dryRun=1` permite diagnosticar usuarios, emails y requerimientos listos sin enviar ni mutar deduplicacion.
 - `npm audit --audit-level=moderate` paso limpio tras la mitigacion de `postcss`.
@@ -365,6 +365,12 @@ La aplicacion ya tiene una base SaaS funcional bastante avanzada.
   - preferencias de notificacion guardan correctamente.
   - envio manual de informe correcto.
   - email real recibido: `Informe manual ISO 19650 - 0% cumplimiento`.
+- Alertas de vencimiento:
+  - prueba real ejecutada el 13 de mayo de 2026 contra endpoint local con Neon y Resend reales.
+  - `dryRun` aislado: 1 usuario procesado, 1 email de alerta preparado, 2 requerimientos alertables.
+  - envio real: 1 email enviado, 0 fallos.
+  - segunda ejecucion: 0 emails enviados, deduplicacion diaria correcta.
+  - corregido bug detectado: los requerimientos con estado `total` ya no disparan alertas aunque tengan fecha vencida o proxima.
 - Matriz:
   - vista global correcta.
   - matriz de `Hospital Norte 2` carga con 35 requerimientos.
