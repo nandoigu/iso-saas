@@ -397,6 +397,7 @@ La aplicacion ya tiene una base SaaS funcional bastante avanzada.
 - Listado de proyectos conectado a `components/EmptyState.tsx`.
 - Tarjetas de proyecto ahora enlazan tambien al dashboard filtrado por `projectId`.
 - Badges de estado/rol pendientes conectados a `appBadgeBaseStyle` donde aplicaba.
+- Ajuste posterior de layout: fichas de proyecto aprovechan todo el ancho disponible del panel, con mas padding y acciones en rejilla flexible.
 
 ## Auditoria UI produccion - 2026-05-12
 

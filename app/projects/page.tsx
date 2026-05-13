@@ -1306,16 +1306,14 @@ const projectCardStyle: React.CSSProperties = {
   border: "1px solid #e7edf5",
   borderRadius: 12,
   display: "grid",
-  gap: 14,
-  padding: 16,
+  gap: 18,
+  padding: 22,
 };
 
 const projectListGridStyle: React.CSSProperties = {
   display: "grid",
-  gap: 14,
-  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-  margin: "0 auto",
-  maxWidth: 1040,
+  gap: 20,
+  gridTemplateColumns: "repeat(2, minmax(420px, 1fr))",
   width: "100%",
 };
 
@@ -1382,7 +1380,7 @@ const progressLabelStyle: React.CSSProperties = {
 
 const metricRowStyle: React.CSSProperties = {
   display: "grid",
-  gap: 10,
+  gap: 12,
   gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
 };
 
@@ -1418,20 +1416,22 @@ const progressBarFillStyle: React.CSSProperties = {
 };
 
 const projectActionsStyle: React.CSSProperties = {
-  display: "flex",
-  flexWrap: "wrap",
-  gap: 10,
+  display: "grid",
+  gap: 12,
+  gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
 };
 
 const mobileProjectActionsStyle: React.CSSProperties = {
-  display: "grid",
+  gridTemplateColumns: "minmax(0, 1fr)",
 };
 
 const secondaryInlineActionStyle: React.CSSProperties = {
   ...appSecondaryButtonStyle,
   color: "#002a4e",
+  display: "inline-flex",
   fontSize: 13,
-  minHeight: 0,
+  justifyContent: "center",
+  minHeight: 40,
   padding: "8px 12px",
   textDecoration: "none",
 };
@@ -1439,7 +1439,8 @@ const secondaryInlineActionStyle: React.CSSProperties = {
 const dangerButtonStyle: React.CSSProperties = {
   ...appDangerButtonStyle,
   fontSize: 13,
-  minHeight: 0,
+  minHeight: 40,
   padding: "8px 12px",
   whiteSpace: "nowrap",
+  width: "100%",
 };
