@@ -369,6 +369,7 @@ La aplicacion ya tiene una base SaaS funcional bastante avanzada.
   - prueba real ejecutada el 13 de mayo de 2026 contra endpoint local con Neon y Resend reales.
   - `dryRun` aislado: 1 usuario procesado, 1 email de alerta preparado, 2 requerimientos alertables.
   - envio real: 1 email enviado, 0 fallos.
+  - recepcion del email confirmada por el usuario en Outlook.
   - segunda ejecucion: 0 emails enviados, deduplicacion diaria correcta.
   - corregido bug detectado: los requerimientos con estado `total` ya no disparan alertas aunque tengan fecha vencida o proxima.
 - Matriz:
