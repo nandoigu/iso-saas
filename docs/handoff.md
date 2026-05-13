@@ -354,6 +354,18 @@ La aplicacion ya tiene una base SaaS funcional bastante avanzada.
 - `npm audit --audit-level=moderate` paso limpio tras la mitigacion de `postcss`.
 - El plan actualizado queda alineado con el plan anterior: la vista de proyecto vuelve a prioridad alta, y las mejoras de productividad, alertas/informes, onboarding, branding, evolucion futura y quick wins quedan reflejadas sin duplicar tareas ya completadas.
 
+## Sesion de unificacion visual - 2026-05-13
+
+- Confirmaciones destructivas restantes sustituidas por un dialogo comun:
+  - borrado de usuarios en admin
+  - borrado de proyectos en admin
+  - borrado de proyectos en listado de proyectos
+  - borrado de requerimientos en detalle de proyecto
+  - importacion por proyecto en modo `replace`
+- Avisos locales restantes en listado de proyectos sustituidos por `components/Notice.tsx`.
+- `rg "window.confirm|function FeedbackBox|FeedbackBox" app components -n` queda sin resultados.
+- `cmd /c npm run lint` pasa limpio.
+
 ## Auditoria UI produccion - 2026-05-12
 
 - Entorno auditado: `https://iso-saas-gamma.vercel.app`

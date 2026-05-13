@@ -6,6 +6,10 @@ import {
   getProjectRoleBadgeStyle,
   getProjectRoleLabel,
 } from "@/app/lib/projectRoles";
+import {
+  DestructiveConfirmationDialog,
+  type DestructiveConfirmationState,
+} from "@/components/DestructiveConfirmationDialog";
 import { Notice } from "@/components/Notice";
 import {
   appFieldStyle,
@@ -82,6 +86,8 @@ export default function ProjectClient({ projectId }: ProjectClientProps) {
   const [importDetails, setImportDetails] = useState<string[]>([]);
   const [actionError, setActionError] = useState("");
   const [actionSuccess, setActionSuccess] = useState("");
+  const [confirmation, setConfirmation] =
+    useState<DestructiveConfirmationState | null>(null);
   const [generatingBaseRequirements, setGeneratingBaseRequirements] =
     useState(false);
 
@@ -235,7 +241,7 @@ export default function ProjectClient({ projectId }: ProjectClientProps) {
     }
   };
 
-  const importProjectRequirements = async () => {
+  const importProjectRequirements = () => {
     if (!projectId) {
       setImportError("No se ha detectado el proyecto.");
       setImportSuccess("");
@@ -250,15 +256,20 @@ export default function ProjectClient({ projectId }: ProjectClientProps) {
     }
 
     if (importMode === "replace") {
-      const confirmed = window.confirm(
-        "¿Quieres reemplazar todos los requerimientos actuales del proyecto por los del Excel?\n\nEsta acción eliminará los requerimientos existentes antes de importar los nuevos y no se puede deshacer."
-      );
-
-      if (!confirmed) {
-        return;
-      }
+      setConfirmation({
+        title: "Reemplazar requerimientos",
+        message:
+          "¿Quieres reemplazar todos los requerimientos actuales del proyecto por los del Excel?\n\nEsta acción eliminará los requerimientos existentes antes de importar los nuevos y no se puede deshacer.",
+        confirmLabel: "Reemplazar e importar",
+        onConfirm: () => void confirmProjectRequirementsImport(),
+      });
+      return;
     }
 
+    void confirmProjectRequirementsImport();
+  };
+
+  const confirmProjectRequirementsImport = async () => {
     setImportingRequirements(true);
     setImportError("");
     setImportSuccess("");
@@ -486,18 +497,19 @@ export default function ProjectClient({ projectId }: ProjectClientProps) {
     }
   };
 
-  const deleteRequirement = async (requirement: Requirement) => {
-    const confirmed = window.confirm(
-      `¿Seguro que quieres eliminar el requerimiento "${getDisplayValue(
+  const deleteRequirement = (requirement: Requirement) => {
+    setConfirmation({
+      title: "Eliminar requerimiento",
+      message: `¿Seguro que quieres eliminar el requerimiento "${getDisplayValue(
         requirement.name,
         "Sin descripción"
-      )}"?\n\nEsta acción no se puede deshacer.`
-    );
+      )}"?\n\nEsta acción no se puede deshacer.`,
+      confirmLabel: "Eliminar requerimiento",
+      onConfirm: () => void confirmDeleteRequirement(requirement),
+    });
+  };
 
-    if (!confirmed) {
-      return;
-    }
-
+  const confirmDeleteRequirement = async (requirement: Requirement) => {
     setDeletingRequirementId(requirement.id);
     setActionError("");
     setActionSuccess("");
@@ -660,6 +672,11 @@ export default function ProjectClient({ projectId }: ProjectClientProps) {
 
   return (
     <main style={{ ...pageStyle, ...(isMobile ? mobilePageStyle : {}) }}>
+      <DestructiveConfirmationDialog
+        confirmation={confirmation}
+        onCancel={() => setConfirmation(null)}
+      />
+
       <header
         style={{
           alignItems: "flex-start",

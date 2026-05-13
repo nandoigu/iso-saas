@@ -12,6 +12,11 @@ import {
   type ProjectRole,
 } from "@/app/lib/projectRoles";
 import {
+  DestructiveConfirmationDialog,
+  type DestructiveConfirmationState,
+} from "@/components/DestructiveConfirmationDialog";
+import { Notice } from "@/components/Notice";
+import {
   appDangerButtonStyle,
   appEmptyStateStyle,
   appFieldStyle,
@@ -69,6 +74,8 @@ export default function ProjectsPage() {
   const [deletingProjectId, setDeletingProjectId] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [confirmation, setConfirmation] =
+    useState<DestructiveConfirmationState | null>(null);
 
   const [importFile, setImportFile] = useState<File | null>(null);
   const [importing, setImporting] = useState(false);
@@ -313,15 +320,16 @@ export default function ProjectsPage() {
     }
   };
 
-  const deleteProject = async (project: Project) => {
-    const confirmed = window.confirm(
-      `¿Seguro que quieres eliminar el proyecto "${project.name}"?\n\nEsta acción eliminará también sus requerimientos y no se puede deshacer.`
-    );
+  const deleteProject = (project: Project) => {
+    setConfirmation({
+      title: "Eliminar proyecto",
+      message: `¿Seguro que quieres eliminar el proyecto "${project.name}"?\n\nEsta acción eliminará también sus requerimientos y no se puede deshacer.`,
+      confirmLabel: "Eliminar proyecto",
+      onConfirm: () => void confirmDeleteProject(project),
+    });
+  };
 
-    if (!confirmed) {
-      return;
-    }
-
+  const confirmDeleteProject = async (project: Project) => {
     setDeletingProjectId(project.id);
     setError("");
     setSuccess("");
@@ -415,6 +423,11 @@ export default function ProjectsPage() {
 
   return (
     <main style={{ ...pageStyle, ...(isMobile ? mobilePageStyle : {}) }}>
+      <DestructiveConfirmationDialog
+        confirmation={confirmation}
+        onCancel={() => setConfirmation(null)}
+      />
+
       <section
         style={{
           ...heroStyle,
@@ -471,8 +484,8 @@ export default function ProjectsPage() {
 
       {(error || success) && (
         <div style={feedbackStackStyle}>
-          {error && <FeedbackBox tone="error" message={error} />}
-          {success && <FeedbackBox tone="success" message={success} />}
+          {error && <Notice tone="error" message={error} compact />}
+          {success && <Notice tone="success" message={success} compact />}
         </div>
       )}
 
@@ -626,7 +639,14 @@ export default function ProjectsPage() {
               </p>
             </div>
 
-            {importError && <FeedbackBox tone="error" message={importError} />}
+            {importError && (
+              <Notice
+                tone="error"
+                message={importError}
+                compact
+                style={{ marginTop: 14 }}
+              />
+            )}
 
             {importDetails.length > 0 && (
               <ul style={detailsStyle}>
@@ -637,9 +657,11 @@ export default function ProjectsPage() {
             )}
 
             {importResult && (
-              <FeedbackBox
+              <Notice
                 tone="success"
                 message={`Importación completada: ${importResult.imported} nuevos, ${importResult.skippedDuplicates} duplicados omitidos, ${importResult.totalRows} filas válidas.`}
+                compact
+                style={{ marginTop: 14 }}
               />
             )}
           </section>
@@ -946,29 +968,6 @@ function MiniMetric({
       >
         {value}
       </strong>
-    </div>
-  );
-}
-
-function FeedbackBox({
-  tone,
-  message,
-}: {
-  tone: "error" | "success";
-  message: string;
-}) {
-  return (
-    <div
-      style={{
-        background: tone === "error" ? "#fef2f2" : "#ecfdf5",
-        border: `1px solid ${tone === "error" ? "#fecaca" : "#bbf7d0"}`,
-        borderRadius: 10,
-        color: tone === "error" ? "#991b1b" : "#166534",
-        marginTop: 14,
-        padding: 12,
-      }}
-    >
-      {message}
     </div>
   );
 }

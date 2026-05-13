@@ -1,6 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import {
+  DestructiveConfirmationDialog,
+  type DestructiveConfirmationState,
+} from "@/components/DestructiveConfirmationDialog";
 import { Notice } from "@/components/Notice";
 import {
   appDangerButtonStyle,
@@ -52,6 +56,8 @@ export default function AdminPanelClient({
   const [success, setSuccess] = useState("");
   const [savingUserId, setSavingUserId] = useState<string | null>(null);
   const [deletingProjectId, setDeletingProjectId] = useState<string | null>(null);
+  const [confirmation, setConfirmation] =
+    useState<DestructiveConfirmationState | null>(null);
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -131,15 +137,16 @@ export default function AdminPanelClient({
     }
   };
 
-  const deleteUser = async (user: AdminUser) => {
-    const confirmed = window.confirm(
-      `¿Seguro que quieres eliminar al usuario ${user.email}?\n\nSe eliminarán también todos sus proyectos y requerimientos. Esta acción no se puede deshacer.`
-    );
+  const deleteUser = (user: AdminUser) => {
+    setConfirmation({
+      title: "Eliminar usuario",
+      message: `¿Seguro que quieres eliminar al usuario ${user.email}?\n\nSe eliminarán también todos sus proyectos y requerimientos. Esta acción no se puede deshacer.`,
+      confirmLabel: "Eliminar usuario",
+      onConfirm: () => void confirmDeleteUser(user),
+    });
+  };
 
-    if (!confirmed) {
-      return;
-    }
-
+  const confirmDeleteUser = async (user: AdminUser) => {
     setSavingUserId(user.id);
     setError("");
     setSuccess("");
@@ -172,15 +179,16 @@ export default function AdminPanelClient({
     }
   };
 
-  const deleteProject = async (project: Project) => {
-    const confirmed = window.confirm(
-      `¿Seguro que quieres eliminar el proyecto "${project.name}"?\n\nSe eliminarán también sus requerimientos y esta acción no se puede deshacer.`
-    );
+  const deleteProject = (project: Project) => {
+    setConfirmation({
+      title: "Eliminar proyecto",
+      message: `¿Seguro que quieres eliminar el proyecto "${project.name}"?\n\nSe eliminarán también sus requerimientos y esta acción no se puede deshacer.`,
+      confirmLabel: "Eliminar proyecto",
+      onConfirm: () => void confirmDeleteProject(project),
+    });
+  };
 
-    if (!confirmed) {
-      return;
-    }
-
+  const confirmDeleteProject = async (project: Project) => {
     setDeletingProjectId(project.id);
     setError("");
     setSuccess("");
@@ -225,6 +233,11 @@ export default function AdminPanelClient({
         minWidth: 0,
       }}
     >
+      <DestructiveConfirmationDialog
+        confirmation={confirmation}
+        onCancel={() => setConfirmation(null)}
+      />
+
       <section
         style={{
           ...heroCardStyle,
