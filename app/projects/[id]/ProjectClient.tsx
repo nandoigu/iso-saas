@@ -17,6 +17,7 @@ import {
   appPanelStyle,
   appPrimaryButtonStyle,
   appSecondaryButtonStyle,
+  getActionStateStyle,
 } from "@/components/uiStyles";
 import {
   compareRequirementsNaturally,
@@ -1008,10 +1009,11 @@ export default function ProjectClient({ projectId }: ProjectClientProps) {
           <button
             onClick={createRequirement}
             disabled={savingNew}
+            aria-disabled={savingNew}
             style={{
               ...primaryButtonStyle,
+              ...getActionStateStyle(savingNew),
               marginTop: 14,
-              opacity: savingNew ? 0.7 : 1,
             }}
           >
             {savingNew ? "Guardando..." : "Añadir requerimiento"}
@@ -1066,12 +1068,13 @@ export default function ProjectClient({ projectId }: ProjectClientProps) {
               type="button"
               onClick={importProjectRequirements}
               disabled={importingRequirements}
+              aria-disabled={importingRequirements}
               style={{
                 ...primaryButtonStyle,
+                ...getActionStateStyle(importingRequirements),
                 gridColumn: isMobile ? undefined : "1 / -1",
                 justifySelf: isMobile ? "stretch" : "end",
                 minWidth: isMobile ? undefined : 180,
-                opacity: importingRequirements ? 0.7 : 1,
                 width: isMobile ? "100%" : undefined,
               }}
             >
@@ -1203,11 +1206,11 @@ export default function ProjectClient({ projectId }: ProjectClientProps) {
                   type="button"
                   onClick={generateBaseRequirements}
                   disabled={generatingBaseRequirements}
+                  aria-disabled={generatingBaseRequirements}
                   style={{
                     ...primaryButtonStyle,
+                    ...getActionStateStyle(generatingBaseRequirements),
                     marginTop: 14,
-                    opacity: generatingBaseRequirements ? 0.65 : 1,
-                    cursor: generatingBaseRequirements ? "wait" : "pointer",
                   }}
                 >
                   {generatingBaseRequirements
@@ -1352,8 +1355,10 @@ function RequirementCard({
               <button
                 onClick={() => onStartEditing(requirement)}
                 disabled={deletingRequirement}
+                aria-disabled={deletingRequirement}
                 style={{
                   ...compactActionButtonStyle,
+                  ...getActionStateStyle(deletingRequirement),
                   width: compactLayout ? "100%" : undefined,
                 }}
               >
@@ -1362,10 +1367,10 @@ function RequirementCard({
               <button
                 onClick={() => onDeleteRequirement(requirement)}
                 disabled={deletingRequirement}
+                aria-disabled={deletingRequirement}
                 style={{
                   ...compactDangerButtonStyle,
-                  opacity: deletingRequirement ? 0.6 : 1,
-                  cursor: deletingRequirement ? "not-allowed" : "pointer",
+                  ...getActionStateStyle(deletingRequirement),
                   width: compactLayout ? "100%" : undefined,
                 }}
               >
@@ -1679,10 +1684,10 @@ function FilterPanel({
           type="button"
           onClick={onReset}
           disabled={activeFilterCount === 0}
+          aria-disabled={activeFilterCount === 0}
           style={{
             ...secondaryButtonStyle,
-            cursor: activeFilterCount === 0 ? "not-allowed" : "pointer",
-            opacity: activeFilterCount === 0 ? 0.5 : 1,
+            ...getActionStateStyle(activeFilterCount === 0),
           }}
         >
           Limpiar filtros

@@ -14,6 +14,7 @@ import {
   appTableStyle,
   appPanelStyle,
   appPrimaryButtonStyle,
+  getActionStateStyle,
   getUserRoleBadgeStyle,
   getUserStatusBadgeStyle,
 } from "@/components/uiStyles";
@@ -353,10 +354,10 @@ export default function AdminPanelClient({
                           type="button"
                           onClick={() => deleteUser(user)}
                           disabled={savingUserId === user.id}
+                          aria-disabled={savingUserId === user.id}
                           style={{
                             ...dangerButtonStyle,
-                            opacity: savingUserId === user.id ? 0.6 : 1,
-                            cursor: savingUserId === user.id ? "not-allowed" : "pointer",
+                            ...getActionStateStyle(savingUserId === user.id),
                           }}
                         >
                           {savingUserId === user.id ? "Eliminando..." : "Eliminar usuario"}
@@ -420,11 +421,10 @@ export default function AdminPanelClient({
                       type="button"
                       onClick={() => deleteProject(project)}
                       disabled={deletingProjectId === project.id}
+                      aria-disabled={deletingProjectId === project.id}
                       style={{
                         ...dangerButtonStyle,
-                        opacity: deletingProjectId === project.id ? 0.6 : 1,
-                        cursor:
-                          deletingProjectId === project.id ? "not-allowed" : "pointer",
+                        ...getActionStateStyle(deletingProjectId === project.id),
                       }}
                     >
                       {deletingProjectId === project.id ? "Eliminando..." : "Eliminar proyecto"}

@@ -428,13 +428,12 @@ export default function DashboardPage() {
           <button
             onClick={downloadPDF}
             disabled={filteredRequirements.length === 0 || generatingPdf}
+            aria-disabled={filteredRequirements.length === 0 || generatingPdf}
             style={{
               ...secondaryButtonStyle,
-              opacity: filteredRequirements.length === 0 || generatingPdf ? 0.55 : 1,
-              cursor:
+              ...getActionStateStyle(
                 filteredRequirements.length === 0 || generatingPdf
-                  ? "not-allowed"
-                  : "pointer",
+              ),
             }}
           >
             {generatingPdf ? "Generando PDF..." : "Exportar a PDF"}
@@ -539,10 +538,10 @@ function FiltersPanel({
         <button
           onClick={onReset}
           disabled={activeFilterCount === 0}
+          aria-disabled={activeFilterCount === 0}
           style={{
             ...secondaryButtonStyle,
-            opacity: activeFilterCount === 0 ? 0.5 : 1,
-            cursor: activeFilterCount === 0 ? "not-allowed" : "pointer",
+            ...getActionStateStyle(activeFilterCount === 0),
           }}
         >
           Limpiar filtros

@@ -380,6 +380,18 @@ La aplicacion ya tiene una base SaaS funcional bastante avanzada.
 - Hotfix posterior: corregido el typecheck de Vercel en importacion de proyecto capturando el `File` validado antes de abrir la confirmacion `replace`.
 - `cmd /c npm run build` pasa limpio localmente tras el hotfix.
 
+## Sesion de accesibilidad visual basica - 2026-05-13
+
+- Botones deshabilitados/en curso restantes conectados a `getActionStateStyle` en:
+  - dashboard
+  - matriz de cumplimiento
+  - listado de proyectos
+  - detalle de proyecto
+  - admin
+- Anadido `aria-disabled` en acciones deshabilitables de exportacion, limpieza, importacion, guardado y borrado.
+- `rg "cursor: .*not-allowed|opacity: .*0\\.[0-9]" app components -n` solo devuelve el helper compartido.
+- `cmd /c npm run lint` y `cmd /c npm run build` pasan limpios.
+
 ## Auditoria UI produccion - 2026-05-12
 
 - Entorno auditado: `https://iso-saas-gamma.vercel.app`

@@ -24,6 +24,7 @@ import {
   appPanelStyle,
   appPrimaryButtonStyle,
   appSecondaryButtonStyle,
+  getActionStateStyle,
 } from "@/components/uiStyles";
 
 type RequirementStatus = "total" | "parcial" | "no_conforme";
@@ -559,10 +560,10 @@ export default function ProjectsPage() {
                 <button
                   type="submit"
                   disabled={creating}
+                  aria-disabled={creating}
                   style={{
                     ...primaryButtonStyle,
-                    cursor: creating ? "not-allowed" : "pointer",
-                    opacity: creating ? 0.72 : 1,
+                    ...getActionStateStyle(creating),
                   }}
                 >
                   {creating ? "Creando..." : "Crear proyecto"}
@@ -615,10 +616,10 @@ export default function ProjectsPage() {
                 <button
                   type="submit"
                   disabled={importing}
+                  aria-disabled={importing}
                   style={{
                     ...primaryButtonStyle,
-                    cursor: importing ? "not-allowed" : "pointer",
-                    opacity: importing ? 0.72 : 1,
+                    ...getActionStateStyle(importing),
                   }}
                 >
                   {importing ? "Importando..." : "Importar Excel"}
@@ -682,10 +683,10 @@ export default function ProjectsPage() {
               type="button"
               onClick={resetProjectListFilters}
               disabled={activeProjectFilterCount === 0}
+              aria-disabled={activeProjectFilterCount === 0}
               style={{
                 ...secondaryInlineActionStyle,
-                cursor: activeProjectFilterCount === 0 ? "not-allowed" : "pointer",
-                opacity: activeProjectFilterCount === 0 ? 0.5 : 1,
+                ...getActionStateStyle(activeProjectFilterCount === 0),
               }}
             >
               Limpiar filtros
@@ -891,13 +892,12 @@ export default function ProjectsPage() {
                         type="button"
                         onClick={() => deleteProject(project)}
                         disabled={deletingProjectId === project.id}
+                        aria-disabled={deletingProjectId === project.id}
                         style={{
                           ...dangerButtonStyle,
-                          cursor:
+                          ...getActionStateStyle(
                             deletingProjectId === project.id
-                              ? "not-allowed"
-                              : "pointer",
-                          opacity: deletingProjectId === project.id ? 0.6 : 1,
+                          ),
                         }}
                       >
                         {deletingProjectId === project.id

@@ -25,6 +25,7 @@ import {
   appSecondaryButtonStyle,
   appTableCellStyle,
   appTableHeaderStyle,
+  getActionStateStyle,
 } from "@/components/uiStyles";
 
 type ComplianceMatrixProps = {
@@ -167,6 +168,7 @@ export default function ComplianceMatrix({
     selectedStatuses.length +
     (dateFilter !== "all" ? 1 : 0) +
     (searchTerm.trim() ? 1 : 0);
+  const exportDisabled = filteredRequirements.length === 0 || exporting !== null;
 
   const updateQueryParams = (updates: Record<string, string | null>) => {
     const nextParams = new URLSearchParams(searchParams.toString());
@@ -262,15 +264,11 @@ export default function ComplianceMatrix({
             <button
               type="button"
               onClick={handleExportExcel}
-              disabled={filteredRequirements.length === 0 || exporting !== null}
+              disabled={exportDisabled}
+              aria-disabled={exportDisabled}
               style={{
                 ...secondaryButtonStyle,
-                cursor:
-                  filteredRequirements.length === 0 || exporting !== null
-                    ? "not-allowed"
-                    : "pointer",
-                opacity:
-                  filteredRequirements.length === 0 || exporting !== null ? 0.5 : 1,
+                ...getActionStateStyle(exportDisabled),
               }}
             >
               {exporting === "excel" ? "Exportando..." : "Exportar Excel"}
@@ -279,15 +277,11 @@ export default function ComplianceMatrix({
             <button
               type="button"
               onClick={handleExportPDF}
-              disabled={filteredRequirements.length === 0 || exporting !== null}
+              disabled={exportDisabled}
+              aria-disabled={exportDisabled}
               style={{
                 ...secondaryButtonStyle,
-                cursor:
-                  filteredRequirements.length === 0 || exporting !== null
-                    ? "not-allowed"
-                    : "pointer",
-                opacity:
-                  filteredRequirements.length === 0 || exporting !== null ? 0.5 : 1,
+                ...getActionStateStyle(exportDisabled),
               }}
             >
               {exporting === "pdf" ? "Exportando..." : "Exportar PDF"}
@@ -297,10 +291,10 @@ export default function ComplianceMatrix({
               type="button"
               onClick={resetFilters}
               disabled={activeFilterCount === 0}
+              aria-disabled={activeFilterCount === 0}
               style={{
                 ...secondaryButtonStyle,
-                cursor: activeFilterCount === 0 ? "not-allowed" : "pointer",
-                opacity: activeFilterCount === 0 ? 0.5 : 1,
+                ...getActionStateStyle(activeFilterCount === 0),
               }}
             >
               Limpiar filtros
