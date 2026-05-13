@@ -52,6 +52,13 @@ export const appDangerButtonStyle: CSSProperties = {
   padding: "9px 14px",
 };
 
+export function getActionStateStyle(disabled: boolean): CSSProperties {
+  return {
+    cursor: disabled ? "not-allowed" : "pointer",
+    opacity: disabled ? 0.6 : 1,
+  };
+}
+
 export const appEmptyStateStyle: CSSProperties = {
   background: "#f8fafc",
   border: "1px dashed #cbd5e1",

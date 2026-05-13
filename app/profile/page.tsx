@@ -7,6 +7,7 @@ import {
   appPanelStyle,
   appPrimaryButtonStyle,
   appSecondaryButtonStyle,
+  getActionStateStyle,
   getUserRoleBadgeStyle,
   getUserStatusBadgeStyle,
 } from "@/components/uiStyles";
@@ -241,6 +242,15 @@ export default function ProfilePage() {
       {success && <Notice tone="success" message={success} />}
       {passwordSuccess && <Notice tone="success" message={passwordSuccess} />}
       {recoverySuccess && <Notice tone="info" message={recoverySuccess} />}
+      {savingProfile && (
+        <Notice tone="info" message="Guardando cambios del perfil..." compact />
+      )}
+      {savingPassword && (
+        <Notice tone="info" message="Actualizando la contraseña..." compact />
+      )}
+      {sendingRecovery && (
+        <Notice tone="info" message="Enviando email de recuperación..." compact />
+      )}
 
       <div
         style={{
@@ -283,7 +293,14 @@ export default function ProfilePage() {
               />
             </label>
 
-            <button type="submit" disabled={savingProfile} style={primaryButtonStyle}>
+            <button
+              type="submit"
+              disabled={savingProfile}
+              style={{
+                ...primaryButtonStyle,
+                ...getActionStateStyle(savingProfile),
+              }}
+            >
               {savingProfile ? "Guardando..." : "Guardar perfil"}
             </button>
           </form>
@@ -328,7 +345,14 @@ export default function ProfilePage() {
               />
             </label>
 
-            <button type="submit" disabled={savingPassword} style={primaryButtonStyle}>
+            <button
+              type="submit"
+              disabled={savingPassword}
+              style={{
+                ...primaryButtonStyle,
+                ...getActionStateStyle(savingPassword),
+              }}
+            >
               {savingPassword ? "Actualizando..." : "Cambiar contraseña"}
             </button>
           </form>
@@ -338,7 +362,10 @@ export default function ProfilePage() {
               type="button"
               disabled={sendingRecovery}
               onClick={sendRecoveryEmail}
-              style={secondaryButtonStyle}
+              style={{
+                ...secondaryButtonStyle,
+                ...getActionStateStyle(sendingRecovery),
+              }}
             >
               {sendingRecovery ? "Enviando..." : "Enviar email de recuperación"}
             </button>

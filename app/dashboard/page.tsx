@@ -26,6 +26,7 @@ import {
   appPanelStyle,
   appPrimaryButtonStyle,
   appSecondaryButtonStyle,
+  getActionStateStyle,
 } from "@/components/uiStyles";
 
 type RequirementStatus = "total" | "parcial" | "no_conforme";
@@ -762,16 +763,22 @@ function AlertsPanel({
             disabled={sendingReport}
             style={{
               ...primaryButtonStyle,
+              ...getActionStateStyle(sendingReport),
               marginTop: 14,
-              opacity: sendingReport ? 0.6 : 1,
-              cursor: sendingReport ? "not-allowed" : "pointer",
               width: "100%",
             }}
           >
             {sendingReport ? "Enviando informe..." : "Enviar informe ahora"}
           </button>
 
-          {savingPreferences ? (
+          {sendingReport ? (
+            <Notice
+              tone="info"
+              message="Enviando informe al email configurado..."
+              compact
+              style={{ marginTop: 12 }}
+            />
+          ) : savingPreferences ? (
             <Notice
               tone="info"
               message="Guardando preferencias de notificación..."

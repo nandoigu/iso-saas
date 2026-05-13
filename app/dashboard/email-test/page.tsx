@@ -2,6 +2,12 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import { Notice } from "@/components/Notice";
+import {
+  appFieldStyle,
+  appPanelStyle,
+  appPrimaryButtonStyle,
+  getActionStateStyle,
+} from "@/components/uiStyles";
 
 type AuthMeResponse = {
   data?: {
@@ -73,11 +79,8 @@ export default function EmailTestPage() {
     <main style={{ display: "grid", gap: 24, padding: "20px 12px" }}>
       <section
         style={{
-          background: "white",
-          border: "1px solid #e2e8f0",
-          borderRadius: 16,
+          ...appPanelStyle,
           boxSizing: "border-box",
-          boxShadow: "0 10px 24px rgba(15,23,42,0.05)",
           margin: "0 auto",
           maxWidth: 640,
           padding: "clamp(20px, 4vw, 28px)",
@@ -111,14 +114,10 @@ export default function EmailTestPage() {
               autoComplete="email"
               disabled={loading || hydrating}
               style={{
-                border: "1px solid #cbd5e1",
-                borderRadius: 12,
-                boxSizing: "border-box",
+                ...appFieldStyle,
                 fontSize: 15,
                 minHeight: 46,
-                minWidth: 0,
                 padding: "10px 12px",
-                width: "100%",
               }}
             />
           </label>
@@ -127,16 +126,10 @@ export default function EmailTestPage() {
             type="submit"
             disabled={loading || hydrating || !email.trim()}
             style={{
-              background: "#2563eb",
-              border: "1px solid #2563eb",
-              borderRadius: 12,
-              color: "white",
-              cursor:
-                loading || hydrating || !email.trim() ? "not-allowed" : "pointer",
+              ...appPrimaryButtonStyle,
+              ...getActionStateStyle(loading || hydrating || !email.trim()),
               fontSize: 14,
-              fontWeight: 700,
               minHeight: 46,
-              opacity: loading || hydrating || !email.trim() ? 0.6 : 1,
               padding: "0 16px",
               width: "100%",
             }}
@@ -150,6 +143,15 @@ export default function EmailTestPage() {
         )}
 
         {error && <Notice tone="error" message={error} style={{ marginTop: 16 }} />}
+
+        {loading && (
+          <Notice
+            tone="info"
+            message="Enviando email de prueba..."
+            compact
+            style={{ marginTop: 16 }}
+          />
+        )}
 
         <div
           style={{

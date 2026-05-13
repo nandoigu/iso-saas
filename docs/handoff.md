@@ -366,6 +366,18 @@ La aplicacion ya tiene una base SaaS funcional bastante avanzada.
 - `rg "window.confirm|function FeedbackBox|FeedbackBox" app components -n` queda sin resultados.
 - `cmd /c npm run lint` pasa limpio.
 
+## Sesion de feedback operativo - 2026-05-13
+
+- Estados de botones en curso/deshabilitados centralizados con `getActionStateStyle`.
+- Feedback visible con `Notice` para operaciones que antes solo cambiaban el texto del boton:
+  - guardar perfil
+  - cambiar contrasena
+  - enviar email de recuperacion
+  - enviar email de prueba Resend
+  - enviar informe manual desde dashboard
+- `app/dashboard/email-test/page.tsx` conectado a estilos compartidos de panel, campo y boton principal.
+- `cmd /c npm run lint` pasa limpio.
+
 ## Auditoria UI produccion - 2026-05-12
 
 - Entorno auditado: `https://iso-saas-gamma.vercel.app`
