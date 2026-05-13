@@ -377,6 +377,8 @@ La aplicacion ya tiene una base SaaS funcional bastante avanzada.
   - enviar informe manual desde dashboard
 - `app/dashboard/email-test/page.tsx` conectado a estilos compartidos de panel, campo y boton principal.
 - `cmd /c npm run lint` pasa limpio.
+- Hotfix posterior: corregido el typecheck de Vercel en importacion de proyecto capturando el `File` validado antes de abrir la confirmacion `replace`.
+- `cmd /c npm run build` pasa limpio localmente tras el hotfix.
 
 ## Auditoria UI produccion - 2026-05-12
 

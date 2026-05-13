@@ -261,15 +261,15 @@ export default function ProjectClient({ projectId }: ProjectClientProps) {
         message:
           "¿Quieres reemplazar todos los requerimientos actuales del proyecto por los del Excel?\n\nEsta acción eliminará los requerimientos existentes antes de importar los nuevos y no se puede deshacer.",
         confirmLabel: "Reemplazar e importar",
-        onConfirm: () => void confirmProjectRequirementsImport(),
+        onConfirm: () => void confirmProjectRequirementsImport(importingFile),
       });
       return;
     }
 
-    void confirmProjectRequirementsImport();
+    void confirmProjectRequirementsImport(importingFile);
   };
 
-  const confirmProjectRequirementsImport = async () => {
+  const confirmProjectRequirementsImport = async (file: File) => {
     setImportingRequirements(true);
     setImportError("");
     setImportSuccess("");
@@ -277,7 +277,7 @@ export default function ProjectClient({ projectId }: ProjectClientProps) {
 
     try {
       const formData = new FormData();
-      formData.append("file", importingFile);
+      formData.append("file", file);
       formData.append("mode", importMode);
 
       const res = await fetch(
