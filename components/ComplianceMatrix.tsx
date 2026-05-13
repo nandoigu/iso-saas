@@ -19,6 +19,7 @@ import {
 } from "@/app/projects/[id]/project-requirements";
 import { exportMatrixToExcel } from "@/utils/exportExcel";
 import { exportMatrixToPDF } from "@/utils/exportPDF";
+import { EmptyState } from "@/components/EmptyState";
 import {
   appFieldStyle,
   appPanelStyle,
@@ -767,30 +768,6 @@ function DeadlineBadge({
       <span>{state.symbol}</span>
       {state.label}
     </span>
-  );
-}
-
-function EmptyState({
-  title,
-  description,
-}: {
-  title: string;
-  description: string;
-}) {
-  return (
-    <div
-      style={{
-        background: "white",
-        border: "1px dashed #d1d5db",
-        borderRadius: 12,
-        color: "#6b7280",
-        padding: 24,
-        textAlign: "center",
-      }}
-    >
-      <strong style={{ color: "#374151" }}>{title}</strong>
-      <p style={{ margin: "6px 0 0" }}>{description}</p>
-    </div>
   );
 }
 

@@ -2,6 +2,12 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { EmptyState } from "@/components/EmptyState";
+import {
+  appPanelStyle,
+  appPrimaryButtonStyle,
+  appSecondaryButtonStyle,
+} from "@/components/uiStyles";
 
 type Project = {
   id: string;
@@ -69,10 +75,7 @@ export default function MatrixIndexPage() {
             <article
               key={project.id}
               style={{
-                background: "white",
-                border: "1px solid #dbe3f1",
-                borderRadius: 12,
-                boxShadow: "0 6px 18px rgba(0, 42, 78, 0.05)",
+                ...appPanelStyle,
                 display: "grid",
                 gap: 14,
                 padding: 20,
@@ -122,50 +125,14 @@ export default function MatrixIndexPage() {
   );
 }
 
-function EmptyState({
-  title,
-  description,
-  tone = "default",
-}: {
-  title: string;
-  description: string;
-  tone?: "default" | "risk";
-}) {
-  return (
-    <div
-      style={{
-        background: tone === "risk" ? "#fef2f2" : "white",
-        border: `1px dashed ${tone === "risk" ? "#fca5a5" : "#dbe3f1"}`,
-        borderRadius: 12,
-        color: tone === "risk" ? "#991b1b" : "#5f7289",
-        padding: 24,
-        textAlign: "center",
-      }}
-    >
-      <strong style={{ color: tone === "risk" ? "#991b1b" : "#002a4e" }}>
-        {title}
-      </strong>
-      <p style={{ margin: "6px 0 0" }}>{description}</p>
-    </div>
-  );
-}
-
 const primaryLinkStyle: React.CSSProperties = {
-  background: "#0025df",
-  border: "1px solid #0025df",
-  borderRadius: 8,
-  color: "white",
-  fontWeight: 700,
+  ...appPrimaryButtonStyle,
   padding: "10px 14px",
   textDecoration: "none",
 };
 
 const secondaryLinkStyle: React.CSSProperties = {
-  background: "transparent",
-  border: "1px solid #dbe3f1",
-  borderRadius: 8,
-  color: "#002a4e",
-  fontWeight: 700,
+  ...appSecondaryButtonStyle,
   padding: "10px 14px",
   textDecoration: "none",
 };

@@ -13,8 +13,12 @@ export function Notice({
   compact?: boolean;
   style?: CSSProperties;
 }) {
+  const isError = tone === "error";
+
   return (
     <div
+      role={isError ? "alert" : "status"}
+      aria-live={isError ? "assertive" : "polite"}
       style={{
         ...getNoticeToneStyle(tone),
         borderRadius: compact ? 8 : 10,

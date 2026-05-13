@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import ComplianceMatrix from "@/components/ComplianceMatrix";
+import { EmptyState } from "@/components/EmptyState";
+import { appSecondaryButtonStyle } from "@/components/uiStyles";
 import { useProjectRequirements } from "@/app/projects/[id]/useProjectRequirements";
 
 type ProjectMatrixClientProps = {
@@ -82,40 +84,8 @@ function useMatrixPageBreakpoint() {
   return breakpoint;
 }
 
-function EmptyState({
-  title,
-  description,
-  tone = "default",
-}: {
-  title: string;
-  description: string;
-  tone?: "default" | "risk";
-}) {
-  return (
-    <div
-      style={{
-        background: tone === "risk" ? "#fef2f2" : "white",
-        border: `1px dashed ${tone === "risk" ? "#fca5a5" : "#d1d5db"}`,
-        borderRadius: 12,
-        color: tone === "risk" ? "#991b1b" : "#6b7280",
-        padding: 24,
-        textAlign: "center",
-      }}
-    >
-      <strong style={{ color: tone === "risk" ? "#991b1b" : "#374151" }}>
-        {title}
-      </strong>
-      <p style={{ margin: "6px 0 0" }}>{description}</p>
-    </div>
-  );
-}
-
 const secondaryLinkStyle: React.CSSProperties = {
-  background: "white",
-  border: "1px solid #d1d5db",
-  borderRadius: 8,
-  color: "#111827",
-  fontWeight: 700,
+  ...appSecondaryButtonStyle,
   minHeight: 40,
   padding: "9px 14px",
   textDecoration: "none",

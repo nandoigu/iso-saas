@@ -21,6 +21,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { EmptyState } from "@/components/EmptyState";
 import { Notice, type NoticeTone } from "@/components/Notice";
 import {
   appPanelStyle,
@@ -1089,35 +1090,6 @@ function ChartPanel({
       <h3 style={{ color: "#0f172a", fontSize: 16, margin: "0 0 18px" }}>{title}</h3>
       {children}
     </section>
-  );
-}
-
-function EmptyState({
-  title,
-  description,
-}: {
-  title: string;
-  description: string;
-}) {
-  return (
-    <div
-      style={{
-        alignItems: "center",
-        background: "white",
-        border: "1px dashed #cbd5e1",
-        borderRadius: 14,
-        color: "#64748b",
-        display: "flex",
-        flexDirection: "column",
-        justifyContent: "center",
-        minHeight: 220,
-        padding: 24,
-        textAlign: "center",
-      }}
-    >
-      <strong style={{ color: "#334155", marginBottom: 6 }}>{title}</strong>
-      <span>{description}</span>
-    </div>
   );
 }
 

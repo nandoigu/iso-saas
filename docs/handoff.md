@@ -391,6 +391,9 @@ La aplicacion ya tiene una base SaaS funcional bastante avanzada.
 - Anadido `aria-disabled` en acciones deshabilitables de exportacion, limpieza, importacion, guardado y borrado.
 - `rg "cursor: .*not-allowed|opacity: .*0\\.[0-9]" app components -n` solo devuelve el helper compartido.
 - `cmd /c npm run lint` y `cmd /c npm run build` pasan limpios.
+- Avisos `Notice` expuestos como regiones vivas: errores con `role="alert"` y resto con `role="status"`.
+- Foco visible global anadido para enlaces, botones y campos con `:focus-visible`.
+- Estados vacios de dashboard/matriz/detalle conectados a `components/EmptyState.tsx`.
 
 ## Auditoria UI produccion - 2026-05-12
 

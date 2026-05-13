@@ -10,6 +10,7 @@ import {
   DestructiveConfirmationDialog,
   type DestructiveConfirmationState,
 } from "@/components/DestructiveConfirmationDialog";
+import { EmptyState } from "@/components/EmptyState";
 import { Notice } from "@/components/Notice";
 import {
   appFieldStyle,
@@ -1970,37 +1971,6 @@ function OverdueBadge({ compact = false }: { compact?: boolean }) {
     >
       Vencido
     </span>
-  );
-}
-
-function EmptyState({
-  title,
-  description,
-  action,
-  tone = "default",
-}: {
-  title: string;
-  description: string;
-  action?: React.ReactNode;
-  tone?: "default" | "risk";
-}) {
-  return (
-    <div
-      style={{
-        background: tone === "risk" ? "#fef2f2" : "white",
-        border: `1px dashed ${tone === "risk" ? "#fca5a5" : "#d1d5db"}`,
-        borderRadius: 12,
-        color: tone === "risk" ? "#991b1b" : "#6b7280",
-        padding: 24,
-        textAlign: "center",
-      }}
-    >
-      <strong style={{ color: tone === "risk" ? "#991b1b" : "#374151" }}>
-        {title}
-      </strong>
-      <p style={{ margin: "6px 0 0" }}>{description}</p>
-      {action}
-    </div>
   );
 }
 
