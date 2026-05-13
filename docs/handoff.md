@@ -241,18 +241,19 @@ La aplicacion ya tiene una base SaaS funcional bastante avanzada.
 - [x] Revision de seguridad y produccion:
   - revisar logs de errores
   - revisar rotacion/gestion real de secretos en el entorno de despliegue
-- [ ] Auditoria visual completa en navegador cuando el runtime permita probar formularios con `type=email` sin bloqueo.
-- [ ] Repetir una pasada UI manual sobre dashboard:
+- [x] Auditoria visual completa en navegador:
+  - validada combinando navegador integrado, Chrome normal y capturas del usuario.
+- [x] Repetir una pasada UI manual sobre dashboard:
   - filtros desde interfaz
   - export CSV desde interfaz
   - export PDF desde interfaz
   - preferencias de notificacion desde interfaz
-- [ ] Repetir una pasada UI manual sobre matriz:
+- [x] Repetir una pasada UI manual sobre matriz:
   - filtros
   - agrupaciones
   - scroll horizontal en movil
   - lectura en tablet/escritorio
-- [ ] Repetir una pasada UI manual sobre admin con datos ajenos:
+- [x] Repetir una pasada UI manual sobre admin con datos ajenos:
   - cambio de rol desde interfaz
   - cambio de estado desde interfaz
   - borrado de usuario desde interfaz
@@ -290,7 +291,7 @@ La aplicacion ya tiene una base SaaS funcional bastante avanzada.
   - acciones en contexto
   - persistencia de algunos filtros
   - mejor navegación entre proyecto, matriz y dashboard
-- [ ] Alertas e informes:
+- [x] Alertas e informes:
   - [x] mejorar contenido de emails de alertas e informes con resumen, contexto manual/cron y llamadas de atención
   - [x] separar flujo manual de informe completo y flujo cron de alertas/informes periódicos
   - [x] revisar frecuencia y duplicados con `lastAlertEmailAt`, `lastReportEmailAt` y `lastNotifiedAt`
@@ -299,11 +300,12 @@ La aplicacion ya tiene una base SaaS funcional bastante avanzada.
 
 ### Prioridad baja / preparación futura
 
-- [ ] Preparar checklist de despliegue:
+- [x] Preparar checklist de despliegue:
   - variables de entorno
   - migraciones Prisma
   - build
   - smoke test post-deploy
+  - referencia: `docs/deployment-checklist.md`
 - [ ] Revisar accesibilidad básica:
   - labels
   - foco visible
@@ -336,15 +338,18 @@ La aplicacion ya tiene una base SaaS funcional bastante avanzada.
 - [x] Revisar mensajes de error/exito para que sean consistentes.
 - [ ] Homogeneizar botones, badges, paneles y tablas en toda la app.
 - [ ] Añadir mejor feedback al guardar, editar e importar donde aún falte.
-- [ ] Preparar un recorrido de prueba completo con un usuario demo.
+- [x] Preparar un recorrido de prueba completo con un usuario demo.
+  - referencia: `docs/demo-test-runbook.md`
 
 ### Riesgos y notas abiertas
 
-- La verificacion visual completa en navegador sigue limitada por el runtime al escribir en campos `type=email`.
+- La verificacion visual completa quedo cerrada con navegador integrado, Chrome normal y capturas del usuario.
 - La ultima pasada de prioridad alta esta documentada en `docs/high-priority-audit-2026-05-10.md`.
 - Por API, los flujos funcionales criticos revisados estan pasando.
 - Resend ya tiene dominio remitente verificado para produccion; informes manuales y alertas reales ya se han probado.
 - La validacion real de alertas/informes esta documentada en `docs/email-alert-report-validation.md`.
+- El checklist de despliegue esta documentado en `docs/deployment-checklist.md`.
+- El recorrido de prueba demo esta documentado en `docs/demo-test-runbook.md`.
 - `/api/cron/alerts?dryRun=1` permite diagnosticar usuarios, emails y requerimientos listos sin enviar ni mutar deduplicacion.
 - `npm audit --audit-level=moderate` paso limpio tras la mitigacion de `postcss`.
 - El plan actualizado queda alineado con el plan anterior: la vista de proyecto vuelve a prioridad alta, y las mejoras de productividad, alertas/informes, onboarding, branding, evolucion futura y quick wins quedan reflejadas sin duplicar tareas ya completadas.
