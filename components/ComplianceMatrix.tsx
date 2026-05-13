@@ -21,6 +21,7 @@ import { exportMatrixToExcel } from "@/utils/exportExcel";
 import { exportMatrixToPDF } from "@/utils/exportPDF";
 import { EmptyState } from "@/components/EmptyState";
 import {
+  appBadgeBaseStyle,
   appFieldStyle,
   appPanelStyle,
   appSecondaryButtonStyle,
@@ -728,15 +729,10 @@ function StatusBadge({
   return (
     <span
       style={{
+        ...appBadgeBaseStyle,
         background: meta.background,
         border: `1px solid ${meta.border}`,
-        borderRadius: 999,
         color: meta.color,
-        display: "inline-flex",
-        fontSize: 12,
-        fontWeight: 700,
-        padding: "5px 10px",
-        whiteSpace: "nowrap",
       }}
     >
       {label || meta.label}
@@ -752,17 +748,12 @@ function DeadlineBadge({
   return (
     <span
       style={{
+        ...appBadgeBaseStyle,
         alignItems: "center",
         background: state.background,
         border: `1px solid ${state.border}`,
-        borderRadius: 999,
         color: state.textColor,
-        display: "inline-flex",
-        fontSize: 12,
-        fontWeight: 700,
         gap: 6,
-        padding: "5px 10px",
-        whiteSpace: "nowrap",
       }}
     >
       <span>{state.symbol}</span>

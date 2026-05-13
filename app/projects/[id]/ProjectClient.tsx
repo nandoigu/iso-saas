@@ -13,6 +13,7 @@ import {
 import { EmptyState } from "@/components/EmptyState";
 import { Notice } from "@/components/Notice";
 import {
+  appBadgeBaseStyle,
   appFieldStyle,
   appHelpPanelStyle,
   appPanelStyle,
@@ -1938,15 +1939,12 @@ function StatusBadge({
   return (
     <span
       style={{
+        ...appBadgeBaseStyle,
         background: meta.background,
         border: `1px solid ${meta.border}`,
-        borderRadius: 999,
         color: meta.color,
-        display: "inline-flex",
         fontSize: compact ? 11 : 12,
-        fontWeight: 700,
         padding: compact ? "4px 8px" : "5px 10px",
-        whiteSpace: "nowrap",
       }}
     >
       {label || meta.label}
@@ -1958,15 +1956,12 @@ function OverdueBadge({ compact = false }: { compact?: boolean }) {
   return (
     <span
       style={{
+        ...appBadgeBaseStyle,
         background: "#fee2e2",
         border: "1px solid #fca5a5",
-        borderRadius: 999,
         color: "#991b1b",
-        display: "inline-flex",
         fontSize: compact ? 11 : 12,
-        fontWeight: 700,
         padding: compact ? "4px 8px" : "5px 10px",
-        whiteSpace: "nowrap",
       }}
     >
       Vencido
@@ -2040,11 +2035,7 @@ const importHelpStyle: React.CSSProperties = {
 };
 
 const projectRoleBadgeBaseStyle: React.CSSProperties = {
-  borderRadius: 999,
-  display: "inline-flex",
-  fontSize: 12,
-  fontWeight: 800,
-  padding: "6px 10px",
+  ...appBadgeBaseStyle,
 };
 
 const projectMetaStyle: React.CSSProperties = {

@@ -15,10 +15,11 @@ import {
   DestructiveConfirmationDialog,
   type DestructiveConfirmationState,
 } from "@/components/DestructiveConfirmationDialog";
+import { EmptyState } from "@/components/EmptyState";
 import { Notice } from "@/components/Notice";
 import {
+  appBadgeBaseStyle,
   appDangerButtonStyle,
-  appEmptyStateStyle,
   appFieldStyle,
   appHelpPanelStyle,
   appPanelStyle,
@@ -773,15 +774,20 @@ export default function ProjectsPage() {
           </p>
 
           {loading ? (
-            <div style={emptyStateStyle}>Cargando proyectos...</div>
+            <EmptyState
+              title="Cargando proyectos"
+              description="Preparando la cartera y sus métricas."
+            />
           ) : projects.length === 0 ? (
-            <div style={emptyStateStyle}>
-              Aún no hay proyectos creados en este espacio de trabajo.
-            </div>
+            <EmptyState
+              title="Sin proyectos"
+              description="Aún no hay proyectos creados en este espacio de trabajo."
+            />
           ) : projectCards.length === 0 ? (
-            <div style={emptyStateStyle}>
-              No hay proyectos que coincidan con los filtros actuales.
-            </div>
+            <EmptyState
+              title="Sin resultados"
+              description="No hay proyectos que coincidan con los filtros actuales."
+            />
           ) : (
             <div
               style={{
@@ -887,6 +893,12 @@ export default function ProjectsPage() {
                         style={secondaryInlineActionStyle}
                       >
                         Ver matriz
+                      </Link>
+                      <Link
+                        href={`/dashboard?projectId=${encodeURIComponent(project.id)}`}
+                        style={secondaryInlineActionStyle}
+                      >
+                        Ver dashboard
                       </Link>
                       <button
                         type="button"
@@ -1290,10 +1302,6 @@ const kpiValueStyle: React.CSSProperties = {
   marginTop: 10,
 };
 
-const emptyStateStyle: React.CSSProperties = {
-  ...appEmptyStateStyle,
-};
-
 const projectCardStyle: React.CSSProperties = {
   border: "1px solid #e7edf5",
   borderRadius: 12,
@@ -1344,11 +1352,7 @@ const projectMetaStyle: React.CSSProperties = {
 };
 
 const projectRoleBadgeBaseStyle: React.CSSProperties = {
-  borderRadius: 999,
-  display: "inline-flex",
-  fontSize: 12,
-  fontWeight: 800,
-  padding: "6px 10px",
+  ...appBadgeBaseStyle,
 };
 
 const progressSummaryStyle: React.CSSProperties = {

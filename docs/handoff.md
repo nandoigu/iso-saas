@@ -394,6 +394,9 @@ La aplicacion ya tiene una base SaaS funcional bastante avanzada.
 - Avisos `Notice` expuestos como regiones vivas: errores con `role="alert"` y resto con `role="status"`.
 - Foco visible global anadido para enlaces, botones y campos con `:focus-visible`.
 - Estados vacios de dashboard/matriz/detalle conectados a `components/EmptyState.tsx`.
+- Listado de proyectos conectado a `components/EmptyState.tsx`.
+- Tarjetas de proyecto ahora enlazan tambien al dashboard filtrado por `projectId`.
+- Badges de estado/rol pendientes conectados a `appBadgeBaseStyle` donde aplicaba.
 
 ## Auditoria UI produccion - 2026-05-12
 
