@@ -857,22 +857,22 @@ function ChartsSection({
   onDateClick: (date: DateFilter) => void;
 }) {
   return (
-    <section style={{ display: "grid", gap: 20 }}>
+    <section style={{ display: "grid", gap: 16 }}>
       <div
         style={{
           display: "grid",
-          gap: 20,
-          gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 360px), 1fr))",
+          gap: 16,
+          gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 340px), 1fr))",
         }}
       >
         <ChartPanel title="Distribucion de cumplimiento">
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={data.statusData}>
-              <CartesianGrid strokeDasharray="3 3" stroke={GRID} />
-              <XAxis dataKey="label" tick={{ fill: CHART_TEXT, fontSize: 12 }} />
-              <YAxis allowDecimals={false} tick={{ fill: CHART_TEXT, fontSize: 12 }} />
+          <ResponsiveContainer width="100%" height={compactChartHeight}>
+            <BarChart data={data.statusData} margin={{ top: 8, right: 8, left: -12, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke={GRID} vertical={false} />
+              <XAxis dataKey="label" tick={{ fill: CHART_TEXT, fontSize: 11 }} tickLine={false} />
+              <YAxis allowDecimals={false} tick={{ fill: CHART_TEXT, fontSize: 11 }} axisLine={false} tickLine={false} />
               <Tooltip />
-              <Bar dataKey="value" name="Requerimientos" radius={[8, 8, 0, 0]}>
+              <Bar dataKey="value" name="Requerimientos" radius={[6, 6, 0, 0]} maxBarSize={64}>
                 {data.statusData.map((entry) => (
                   <Cell
                     key={entry.status}
@@ -888,14 +888,14 @@ function ChartsSection({
         </ChartPanel>
 
         <ChartPanel title="Requerimientos por estado">
-          <ResponsiveContainer width="100%" height={300}>
+          <ResponsiveContainer width="100%" height={compactChartHeight}>
             <PieChart>
               <Pie
                 data={data.statusData}
                 dataKey="value"
                 nameKey="label"
-                innerRadius={68}
-                outerRadius={110}
+                innerRadius={46}
+                outerRadius={78}
                 paddingAngle={4}
               >
                 {data.statusData.map((entry) => (
@@ -909,7 +909,7 @@ function ChartsSection({
                 ))}
               </Pie>
               <Tooltip />
-              <Legend />
+              <Legend iconSize={10} wrapperStyle={{ fontSize: 12 }} />
             </PieChart>
           </ResponsiveContainer>
         </ChartPanel>
@@ -918,18 +918,18 @@ function ChartsSection({
       <div
         style={{
           display: "grid",
-          gap: 20,
-          gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 360px), 1fr))",
+          gap: 16,
+          gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 340px), 1fr))",
         }}
       >
         <ChartPanel title="Cumplimiento por norma">
-          <ResponsiveContainer width="100%" height={340}>
-            <BarChart data={data.normaComplianceData} margin={{ left: 10, right: 20 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke={GRID} />
-              <XAxis dataKey="norma" tick={{ fill: CHART_TEXT, fontSize: 12 }} />
-              <YAxis domain={[0, 100]} tick={{ fill: CHART_TEXT, fontSize: 12 }} />
+          <ResponsiveContainer width="100%" height={mediumChartHeight}>
+            <BarChart data={data.normaComplianceData} margin={{ top: 8, left: -8, right: 12, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke={GRID} vertical={false} />
+              <XAxis dataKey="norma" tick={{ fill: CHART_TEXT, fontSize: 11 }} tickLine={false} />
+              <YAxis domain={[0, 100]} tick={{ fill: CHART_TEXT, fontSize: 11 }} axisLine={false} tickLine={false} />
               <Tooltip formatter={(value) => `${value}%`} />
-              <Bar dataKey="compliance" name="% cumplimiento" fill="#2563eb" radius={[8, 8, 0, 0]}>
+              <Bar dataKey="compliance" name="% cumplimiento" fill="#2563eb" radius={[6, 6, 0, 0]} maxBarSize={56}>
                 {data.normaComplianceData.map((entry) => (
                   <Cell
                     key={entry.norma}
@@ -945,13 +945,13 @@ function ChartsSection({
         </ChartPanel>
 
         <ChartPanel title="Vencimientos">
-          <ResponsiveContainer width="100%" height={340}>
-            <LineChart data={data.deadlineData}>
-              <CartesianGrid strokeDasharray="3 3" stroke={GRID} />
-              <XAxis dataKey="label" tick={{ fill: CHART_TEXT, fontSize: 12 }} />
-              <YAxis allowDecimals={false} tick={{ fill: CHART_TEXT, fontSize: 12 }} />
+          <ResponsiveContainer width="100%" height={mediumChartHeight}>
+            <LineChart data={data.deadlineData} margin={{ top: 8, right: 12, left: -12, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke={GRID} vertical={false} />
+              <XAxis dataKey="label" tick={{ fill: CHART_TEXT, fontSize: 11 }} tickLine={false} />
+              <YAxis allowDecimals={false} tick={{ fill: CHART_TEXT, fontSize: 11 }} axisLine={false} tickLine={false} />
               <Tooltip />
-              <Legend />
+              <Legend iconSize={10} wrapperStyle={{ fontSize: 12 }} />
               <Line
                 type="monotone"
                 dataKey="value"
@@ -977,22 +977,23 @@ function ChartsSection({
       </div>
 
       <ChartPanel title="Proyectos por cumplimiento">
-        <ResponsiveContainer width="100%" height={360}>
+        <ResponsiveContainer width="100%" height={wideChartHeight}>
           <BarChart
             data={data.projectComplianceData}
             layout="vertical"
-            margin={{ left: 30, right: 30 }}
+            margin={{ top: 8, left: 8, right: 20, bottom: 0 }}
           >
-            <CartesianGrid strokeDasharray="3 3" stroke={GRID} />
-            <XAxis type="number" domain={[0, 100]} tick={{ fill: CHART_TEXT, fontSize: 12 }} />
+            <CartesianGrid strokeDasharray="3 3" stroke={GRID} horizontal={false} />
+            <XAxis type="number" domain={[0, 100]} tick={{ fill: CHART_TEXT, fontSize: 11 }} axisLine={false} tickLine={false} />
             <YAxis
               type="category"
               dataKey="name"
-              width={160}
-              tick={{ fill: CHART_TEXT, fontSize: 12 }}
+              width={140}
+              tick={{ fill: CHART_TEXT, fontSize: 11 }}
+              tickLine={false}
             />
             <Tooltip formatter={(value) => `${value}%`} />
-            <Bar dataKey="compliance" name="% cumplimiento" radius={[0, 8, 8, 0]}>
+            <Bar dataKey="compliance" name="% cumplimiento" radius={[0, 6, 6, 0]} maxBarSize={34}>
               {data.projectComplianceData.map((entry) => (
                 <Cell
                   key={entry.projectId}
@@ -1078,8 +1079,8 @@ function ChartPanel({
   children: React.ReactNode;
 }) {
   return (
-    <section style={panelStyle}>
-      <h3 style={{ color: "#0f172a", fontSize: 16, margin: "0 0 18px" }}>{title}</h3>
+    <section style={chartPanelStyle}>
+      <h3 style={chartTitleStyle}>{title}</h3>
       {children}
     </section>
   );
@@ -1602,6 +1603,22 @@ const panelStyle: React.CSSProperties = {
   ...appPanelStyle,
   padding: 20,
 };
+
+const chartPanelStyle: React.CSSProperties = {
+  ...appPanelStyle,
+  padding: 16,
+};
+
+const chartTitleStyle: React.CSSProperties = {
+  color: "#0f172a",
+  fontSize: 15,
+  fontWeight: 800,
+  margin: "0 0 10px",
+};
+
+const compactChartHeight = 220;
+const mediumChartHeight = 240;
+const wideChartHeight = 250;
 
 const primaryLinkStyle: React.CSSProperties = {
   ...appPrimaryButtonStyle,
