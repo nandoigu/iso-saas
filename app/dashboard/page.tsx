@@ -406,7 +406,7 @@ export default function DashboardPage() {
   return (
     <main style={pageStyle}>
       <section style={heroStyle}>
-        <div style={{ display: "grid", gap: 10 }}>
+        <div style={heroCopyStyle}>
           <span style={eyebrowStyle}>Workspace ISO 19650</span>
           <h1 style={heroTitleStyle}>Dashboard BI</h1>
           <p style={heroDescriptionStyle}>
@@ -1552,12 +1552,18 @@ const pageStyle: React.CSSProperties = {
 
 const heroStyle: React.CSSProperties = {
   alignItems: "flex-start",
-  display: "flex",
-  flexWrap: "wrap",
-  gap: 20,
-  justifyContent: "space-between",
+  display: "grid",
+  gap: 28,
+  gridTemplateColumns: "repeat(auto-fit, minmax(min(360px, 100%), 1fr))",
   margin: "0 auto 24px",
   maxWidth: 1360,
+};
+
+const heroCopyStyle: React.CSSProperties = {
+  alignSelf: "center",
+  display: "grid",
+  gap: 10,
+  minWidth: 0,
 };
 
 const eyebrowStyle: React.CSSProperties = {
@@ -1584,9 +1590,12 @@ const heroDescriptionStyle: React.CSSProperties = {
 };
 
 const heroActionsStyle: React.CSSProperties = {
-  display: "flex",
-  flexWrap: "wrap",
+  alignSelf: "center",
+  display: "grid",
   gap: 12,
+  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+  justifySelf: "end",
+  width: "100%",
 };
 
 const panelStyle: React.CSSProperties = {
@@ -1597,6 +1606,8 @@ const panelStyle: React.CSSProperties = {
 const primaryLinkStyle: React.CSSProperties = {
   ...appPrimaryButtonStyle,
   display: "inline-flex",
+  justifyContent: "center",
+  minHeight: 58,
   padding: "12px 16px",
   textDecoration: "none",
 };
@@ -1604,17 +1615,23 @@ const primaryLinkStyle: React.CSSProperties = {
 const secondaryLinkStyle: React.CSSProperties = {
   ...appSecondaryButtonStyle,
   display: "inline-flex",
+  justifyContent: "center",
+  minHeight: 58,
   padding: "12px 16px",
   textDecoration: "none",
 };
 
 const primaryButtonStyle: React.CSSProperties = {
   ...appPrimaryButtonStyle,
+  justifyContent: "center",
+  minHeight: 58,
   padding: "12px 16px",
 };
 
 const secondaryButtonStyle: React.CSSProperties = {
   ...appSecondaryButtonStyle,
+  justifyContent: "center",
+  minHeight: 58,
   padding: "12px 16px",
 };
 
