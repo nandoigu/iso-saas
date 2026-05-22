@@ -404,25 +404,17 @@ export default function DashboardPage() {
   };
 
   return (
-    <main>
-      <header
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "flex-start",
-          gap: 20,
-          marginBottom: 24,
-          flexWrap: "wrap",
-        }}
-      >
-        <div>
-          <h1 style={{ margin: 0 }}>Dashboard BI</h1>
-          <p style={{ margin: "8px 0 0", color: "#64748b" }}>
+    <main style={pageStyle}>
+      <section style={heroStyle}>
+        <div style={{ display: "grid", gap: 10 }}>
+          <span style={eyebrowStyle}>Workspace ISO 19650</span>
+          <h1 style={heroTitleStyle}>Dashboard BI</h1>
+          <p style={heroDescriptionStyle}>
             Análisis interactivo de cumplimiento ISO 19650 por proyecto, norma y estado.
           </p>
         </div>
 
-        <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+        <div style={heroActionsStyle}>
           <Link href="/dashboard/email-test" style={secondaryLinkStyle}>
             Probar email
           </Link>
@@ -446,7 +438,7 @@ export default function DashboardPage() {
             Gestionar proyectos
           </Link>
         </div>
-      </header>
+      </section>
 
       {error && <Notice tone="error" message={error} style={{ marginBottom: 20 }} />}
       {loading && <EmptyState title="Cargando dashboard" description="Preparando metricas y graficos." />}
@@ -1552,6 +1544,51 @@ function naturalCompare(a: string, b: string) {
   return naturalCollator.compare(a, b);
 }
 
+const pageStyle: React.CSSProperties = {
+  background: "#f4f6fc",
+  minHeight: "calc(100vh - 65px)",
+  padding: "28px clamp(20px, 3vw, 36px) 40px",
+};
+
+const heroStyle: React.CSSProperties = {
+  alignItems: "flex-start",
+  display: "flex",
+  flexWrap: "wrap",
+  gap: 20,
+  justifyContent: "space-between",
+  margin: "0 auto 24px",
+  maxWidth: 1360,
+};
+
+const eyebrowStyle: React.CSSProperties = {
+  color: "#0025df",
+  fontSize: 12,
+  fontWeight: 800,
+  letterSpacing: 0.4,
+  textTransform: "uppercase",
+};
+
+const heroTitleStyle: React.CSSProperties = {
+  color: "#002a4e",
+  fontSize: 34,
+  lineHeight: 1.1,
+  margin: 0,
+};
+
+const heroDescriptionStyle: React.CSSProperties = {
+  color: "#5b6b82",
+  fontSize: 16,
+  lineHeight: 1.55,
+  margin: 0,
+  maxWidth: 720,
+};
+
+const heroActionsStyle: React.CSSProperties = {
+  display: "flex",
+  flexWrap: "wrap",
+  gap: 12,
+};
+
 const panelStyle: React.CSSProperties = {
   ...appPanelStyle,
   padding: 20,
@@ -1560,25 +1597,25 @@ const panelStyle: React.CSSProperties = {
 const primaryLinkStyle: React.CSSProperties = {
   ...appPrimaryButtonStyle,
   display: "inline-flex",
-  padding: "10px 14px",
+  padding: "12px 16px",
   textDecoration: "none",
 };
 
 const secondaryLinkStyle: React.CSSProperties = {
   ...appSecondaryButtonStyle,
   display: "inline-flex",
-  padding: "10px 14px",
+  padding: "12px 16px",
   textDecoration: "none",
 };
 
 const primaryButtonStyle: React.CSSProperties = {
   ...appPrimaryButtonStyle,
-  padding: "10px 14px",
+  padding: "12px 16px",
 };
 
 const secondaryButtonStyle: React.CSSProperties = {
   ...appSecondaryButtonStyle,
-  padding: "10px 14px",
+  padding: "12px 16px",
 };
 
 const checkboxLabelStyle: React.CSSProperties = {
