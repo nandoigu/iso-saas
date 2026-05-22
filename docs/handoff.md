@@ -99,6 +99,14 @@ La aplicacion ya tiene una base SaaS funcional bastante avanzada.
 
 ## Ultimos commits relevantes
 
+- `74dac6a` Restyle dashboard charts
+- `198bdf4` Improve dashboard header layout
+- `2cf5986` Unify dashboard header style
+- `aa2f859` Highlight active project identity
+- `79fda3b` Expand project card layout
+- `56fb10c` Improve project navigation and badges
+- `dd87254` Improve accessible feedback states
+- `07ee5dd` Normalize disabled action states
 - `0417402` Unify app notice messages
 - `967e8a2` Improve responsive compliance views and notices
 - `f6f8607` Replace vulnerable xlsx dependency
@@ -266,6 +274,10 @@ La aplicacion ya tiene una base SaaS funcional bastante avanzada.
   - [x] badges de usuario/estado centralizados en `components/uiStyles.ts`
   - [x] tablas principales conectadas a estilos compartidos en admin y matriz
   - [x] confirmaciones destructivas homogeneizadas en proyectos, detalle y admin
+  - [x] cabecera de dashboard alineada con Inicio/Proyectos y redistribuida para aprovechar mejor el ancho
+  - [x] graficos del dashboard compactados y restilizados para lectura operativa
+  - [x] identificacion del proyecto abierto resaltada en detalle de proyecto
+  - [x] fichas de proyecto ampliadas y con acciones en rejilla flexible
   - botones
   - badges
   - paneles
@@ -337,6 +349,7 @@ La aplicacion ya tiene una base SaaS funcional bastante avanzada.
 - [x] Terminar el pulido de la vista de detalle del proyecto.
 - [x] Revisar mensajes de error/exito para que sean consistentes.
 - [ ] Homogeneizar botones, badges, paneles y tablas en toda la app.
+  - avance fuerte en dashboard, proyectos, detalle, matriz y admin; queda una pasada final transversal.
 - [ ] Añadir mejor feedback al guardar, editar e importar donde aún falte.
 - [x] Preparar un recorrido de prueba completo con un usuario demo.
   - referencia: `docs/demo-test-runbook.md`
@@ -353,6 +366,38 @@ La aplicacion ya tiene una base SaaS funcional bastante avanzada.
 - `/api/cron/alerts?dryRun=1` permite diagnosticar usuarios, emails y requerimientos listos sin enviar ni mutar deduplicacion.
 - `npm audit --audit-level=moderate` paso limpio tras la mitigacion de `postcss`.
 - El plan actualizado queda alineado con el plan anterior: la vista de proyecto vuelve a prioridad alta, y las mejoras de productividad, alertas/informes, onboarding, branding, evolucion futura y quick wins quedan reflejadas sin duplicar tareas ya completadas.
+
+## Sesion de cierre visual - 2026-05-22
+
+- Accesos comprobados:
+  - GitHub remoto `https://github.com/nandoigu/iso-saas.git` accesible en lectura y con `push --dry-run`.
+  - Vercel CLI autenticado como `figual-1626`.
+  - Proyecto Vercel `iso-saas` visible en `figual-eficaxcoms-projects`.
+  - Produccion responde en `https://iso-saas-gamma.vercel.app`.
+- Detalle de proyecto:
+  - resaltada la identificacion del proyecto abierto con etiqueta `Proyecto abierto`, nombre destacado, rol y codigo.
+  - commit: `aa2f859 Highlight active project identity`.
+- Listado/detalle de proyectos:
+  - fichas de proyecto ampliadas para usar todo el ancho disponible.
+  - acciones reorganizadas en rejilla flexible.
+  - commit: `79fda3b Expand project card layout`.
+- Dashboard:
+  - cabecera unificada con el patron visual de Inicio y Proyectos.
+  - cabecera redistribuida para evitar espacio muerto a la derecha.
+  - acciones del dashboard organizadas en una rejilla 2x2.
+  - graficos reducidos y restilizados: menos altura, menos padding, ejes mas discretos, donut mas contenido y barras con ancho maximo.
+  - commits:
+    - `2cf5986 Unify dashboard header style`
+    - `198bdf4 Improve dashboard header layout`
+    - `74dac6a Restyle dashboard charts`
+- Validacion de la sesion:
+  - `cmd /c npm run lint` pasa.
+  - `cmd /c npm run build` pasa.
+  - despliegues de Vercel posteriores a cada cambio quedaron `Ready`.
+- Estado al cierre:
+  - rama `main` actualizada.
+  - arbol de trabajo limpio antes de actualizar este handoff.
+  - queda recomendado retomar con una pasada final transversal de UI/UX antes de abrir funcionalidad nueva.
 
 ## Sesion de unificacion visual - 2026-05-13
 
