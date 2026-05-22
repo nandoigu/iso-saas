@@ -692,27 +692,6 @@ export default function ProjectClient({ projectId }: ProjectClientProps) {
       >
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={eyebrowStyle}>Workspace de requerimientos</div>
-          <div
-            style={{
-              alignItems: "center",
-              display: "flex",
-              flexWrap: "wrap",
-              gap: 10,
-              marginBottom: 8,
-            }}
-          >
-            <span
-              style={{
-                ...projectRoleBadgeBaseStyle,
-                ...getProjectRoleBadgeStyle(projectMeta?.role),
-              }}
-            >
-              {getProjectRoleLabel(projectMeta?.role)}
-            </span>
-            {projectMeta?.code ? (
-              <span style={projectMetaStyle}>{projectMeta.code}</span>
-            ) : null}
-          </div>
           {editingProjectMeta ? (
             <div
               style={{
@@ -792,27 +771,37 @@ export default function ProjectClient({ projectId }: ProjectClientProps) {
             </div>
           ) : (
             <>
-              <div
-                style={{
-                  alignItems: "center",
-                  display: "flex",
-                  flexWrap: "wrap",
-                  gap: 12,
-                  justifyContent: "space-between",
-                }}
-              >
-                <h2 style={{ margin: 0 }}>
-                  {projectMeta?.name || "Gestion de requerimientos"}
-                </h2>
-                <button
-                  type="button"
-                  onClick={startProjectMetaEditing}
-                  style={secondaryButtonStyle}
-                >
-                  Editar proyecto
-                </button>
-              </div>
-              <p style={{ color: "#6b7280", margin: "8px 0 0" }}>
+              <section style={projectIdentityStyle} aria-labelledby="project-open-title">
+                <div style={projectIdentityHeaderStyle}>
+                  <div style={{ minWidth: 0 }}>
+                    <div style={projectIdentityLabelStyle}>Proyecto abierto</div>
+                    <h1 id="project-open-title" style={projectIdentityTitleStyle}>
+                      {projectMeta?.name || "Gestion de requerimientos"}
+                    </h1>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={startProjectMetaEditing}
+                    style={secondaryButtonStyle}
+                  >
+                    Editar proyecto
+                  </button>
+                </div>
+                <div style={projectIdentityMetaRowStyle}>
+                  <span
+                    style={{
+                      ...projectRoleBadgeBaseStyle,
+                      ...getProjectRoleBadgeStyle(projectMeta?.role),
+                    }}
+                  >
+                    {getProjectRoleLabel(projectMeta?.role)}
+                  </span>
+                  {projectMeta?.code ? (
+                    <span style={projectCodeBadgeStyle}>{projectMeta.code}</span>
+                  ) : null}
+                </div>
+              </section>
+              <p style={{ color: "#6b7280", margin: "12px 0 0" }}>
                 Alta, edición y seguimiento de requerimientos, evidencias, estados y
                 fechas límite del proyecto.
               </p>
@@ -2038,11 +2027,60 @@ const projectRoleBadgeBaseStyle: React.CSSProperties = {
   ...appBadgeBaseStyle,
 };
 
-const projectMetaStyle: React.CSSProperties = {
-  color: "#64748b",
+const projectIdentityStyle: React.CSSProperties = {
+  background: "#ffffff",
+  border: "1px solid #bfdbfe",
+  borderLeft: "6px solid #1d4ed8",
+  borderRadius: 8,
+  boxShadow: "0 10px 24px rgba(29, 78, 216, 0.08)",
+  maxWidth: 920,
+  padding: "18px 20px",
+};
+
+const projectIdentityHeaderStyle: React.CSSProperties = {
+  alignItems: "flex-start",
+  display: "flex",
+  flexWrap: "wrap",
+  gap: 14,
+  justifyContent: "space-between",
+};
+
+const projectIdentityLabelStyle: React.CSSProperties = {
+  color: "#1d4ed8",
   fontSize: 12,
-  fontWeight: 700,
+  fontWeight: 900,
   letterSpacing: "0.04em",
+  marginBottom: 6,
+  textTransform: "uppercase",
+};
+
+const projectIdentityTitleStyle: React.CSSProperties = {
+  color: "#061a3a",
+  fontSize: 34,
+  fontWeight: 900,
+  lineHeight: 1.08,
+  margin: 0,
+  overflowWrap: "anywhere",
+};
+
+const projectIdentityMetaRowStyle: React.CSSProperties = {
+  alignItems: "center",
+  display: "flex",
+  flexWrap: "wrap",
+  gap: 10,
+  marginTop: 14,
+};
+
+const projectCodeBadgeStyle: React.CSSProperties = {
+  background: "#eff6ff",
+  border: "1px solid #bfdbfe",
+  borderRadius: 999,
+  color: "#1e3a8a",
+  display: "inline-flex",
+  fontSize: 13,
+  fontWeight: 900,
+  letterSpacing: "0.04em",
+  padding: "7px 12px",
   textTransform: "uppercase",
 };
 
