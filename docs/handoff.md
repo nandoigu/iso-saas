@@ -99,6 +99,7 @@ La aplicacion ya tiene una base SaaS funcional bastante avanzada.
 
 ## Ultimos commits relevantes
 
+- `b70d3c1` Unify secondary page hero styles
 - `74dac6a` Restyle dashboard charts
 - `198bdf4` Improve dashboard header layout
 - `2cf5986` Unify dashboard header style
@@ -278,6 +279,8 @@ La aplicacion ya tiene una base SaaS funcional bastante avanzada.
   - [x] graficos del dashboard compactados y restilizados para lectura operativa
   - [x] identificacion del proyecto abierto resaltada en detalle de proyecto
   - [x] fichas de proyecto ampliadas y con acciones en rejilla flexible
+  - [x] estilos compartidos de pagina/cabecera creados en `components/uiStyles.ts`
+  - [x] matriz global, matriz de proyecto y prueba de email conectadas a cabecera visual comun
   - botones
   - badges
   - paneles
@@ -366,6 +369,31 @@ La aplicacion ya tiene una base SaaS funcional bastante avanzada.
 - `/api/cron/alerts?dryRun=1` permite diagnosticar usuarios, emails y requerimientos listos sin enviar ni mutar deduplicacion.
 - `npm audit --audit-level=moderate` paso limpio tras la mitigacion de `postcss`.
 - El plan actualizado queda alineado con el plan anterior: la vista de proyecto vuelve a prioridad alta, y las mejoras de productividad, alertas/informes, onboarding, branding, evolucion futura y quick wins quedan reflejadas sin duplicar tareas ya completadas.
+
+## Sesion UI/UX transversal - 2026-05-23
+
+- Recuperado el handoff actualizado y retomada la recomendacion de pasada final transversal UI/UX.
+- Primer lote aplicado:
+  - creados estilos compartidos de pagina y cabecera en `components/uiStyles.ts`:
+    - `appPageStyle`
+    - `appHeroStyle`
+    - `appHeroCopyStyle`
+    - `appHeroEyebrowStyle`
+    - `appHeroTitleStyle`
+    - `appHeroDescriptionStyle`
+    - `appHeroActionsStyle`
+  - `app/matrix/page.tsx` usa ahora la cabecera comun y acciones hacia proyectos/dashboard.
+  - `app/projects/[id]/ProjectMatrixClient.tsx` usa ahora la cabecera comun y pagina consistente.
+  - `app/dashboard/email-test/page.tsx` separa cabecera de pagina y panel de formulario.
+- Validacion:
+  - `cmd /c npm run lint` pasa.
+  - `cmd /c npm run build` pasa.
+  - rutas locales `/matrix` y `/dashboard/email-test` responden HTTP 200.
+  - el navegador integrado redirige a login por falta de sesion local; la verificacion visual autenticada queda pendiente de Chrome normal o sesion valida.
+- Commit:
+  - `b70d3c1 Unify secondary page hero styles`.
+- Siguiente paso recomendado:
+  - continuar la misma pasada con Perfil, Admin y Auth para decidir si conviene conectarlas al mismo sistema de cabecera o mantener un patron especifico de formularios.
 
 ## Sesion de cierre visual - 2026-05-22
 
