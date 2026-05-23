@@ -99,6 +99,7 @@ La aplicacion ya tiene una base SaaS funcional bastante avanzada.
 
 ## Ultimos commits relevantes
 
+- `d468f1b` Align profile admin and auth UI
 - `14b2e22` Improve import operation feedback
 - `d5f4920` Update handoff for UI UX pass
 - `b70d3c1` Unify secondary page hero styles
@@ -284,6 +285,7 @@ La aplicacion ya tiene una base SaaS funcional bastante avanzada.
   - [x] estilos compartidos de pagina/cabecera creados en `components/uiStyles.ts`
   - [x] matriz global, matriz de proyecto y prueba de email conectadas a cabecera visual comun
   - botones
+  - [x] Perfil, Admin y Auth conectados a patrones compartidos de cabecera/formulario.
   - badges
   - paneles
   - tablas
@@ -417,6 +419,32 @@ La aplicacion ya tiene una base SaaS funcional bastante avanzada.
   - `14b2e22 Improve import operation feedback`.
 - Siguiente paso recomendado:
   - continuar con Perfil, Admin y Auth para cerrar la pasada transversal UI/UX, priorizando consistencia de cabecera, feedback de guardado y foco/teclado.
+
+## Sesion Perfil/Admin/Auth - 2026-05-23
+
+- Retomado el siguiente paso recomendado de UI/UX transversal.
+- Cambios aplicados:
+  - `components/uiStyles.ts` incorpora estilos compartidos para pantallas Auth:
+    - pagina centrada
+    - tarjeta de formulario
+    - titulos/subtitulos
+    - labels
+    - boton primario full-width
+    - enlaces de accion
+  - `app/login/page.tsx`, `app/register/page.tsx`, `app/forgot-password/page.tsx` y `app/reset-password/page.tsx` usan el sistema compartido.
+  - botones Auth tienen `aria-disabled` y estado visual deshabilitado centralizado.
+  - `app/profile/page.tsx` usa cabecera comun de aplicacion y limita el grid de contenido a ancho operativo.
+  - `app/admin/AdminPanelClient.tsx` usa pagina/cabecera comun, paneles con ancho estable y boton de recarga con estado deshabilitado accesible.
+- Validacion:
+  - `cmd /c npm run lint` pasa.
+  - `cmd /c npm run build` pasa.
+  - rutas locales `/login`, `/register` y `/forgot-password` responden HTTP 200.
+  - `/profile` redirige correctamente a `/login?next=%2Fprofile` sin sesion local.
+  - navegador integrado valida `/login` y `/register` sin overflow horizontal.
+- Commit:
+  - `d468f1b Align profile admin and auth UI`.
+- Siguiente paso recomendado:
+  - realizar una pasada autenticada en produccion o Chrome normal sobre Perfil y Admin para confirmar visualmente cabeceras, tablas y estados de foco con sesion real.
 
 ## Sesion de cierre visual - 2026-05-22
 
