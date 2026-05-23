@@ -244,6 +244,22 @@ export default function ProjectClient({ projectId }: ProjectClientProps) {
     }
   };
 
+  const clearProjectImportFeedback = () => {
+    setImportError("");
+    setImportSuccess("");
+    setImportDetails([]);
+  };
+
+  const handleProjectImportFileChange = (file: File | null) => {
+    setImportingFile(file);
+    clearProjectImportFeedback();
+  };
+
+  const handleProjectImportModeChange = (mode: ImportMode) => {
+    setImportMode(mode);
+    clearProjectImportFeedback();
+  };
+
   const importProjectRequirements = () => {
     if (!projectId) {
       setImportError("No se ha detectado el proyecto.");
@@ -1035,7 +1051,7 @@ export default function ProjectClient({ projectId }: ProjectClientProps) {
                 type="file"
                 accept=".xlsx"
                 onChange={(event) =>
-                  setImportingFile(event.target.files?.[0] || null)
+                  handleProjectImportFileChange(event.target.files?.[0] || null)
                 }
                 style={controlStyle}
               />
@@ -1046,7 +1062,7 @@ export default function ProjectClient({ projectId }: ProjectClientProps) {
               <select
                 value={importMode}
                 onChange={(event) =>
-                  setImportMode(event.target.value as ImportMode)
+                  handleProjectImportModeChange(event.target.value as ImportMode)
                 }
                 style={controlStyle}
               >
@@ -1087,6 +1103,15 @@ export default function ProjectClient({ projectId }: ProjectClientProps) {
               formato <code>YYYY-MM-DD</code>.
             </p>
           </div>
+
+          {importingRequirements ? (
+            <Notice
+              tone="info"
+              message="Importando requisitos del proyecto. Mantén esta página abierta hasta que termine."
+              compact
+              style={{ marginTop: 14 }}
+            />
+          ) : null}
 
           {importError ? (
             <Notice

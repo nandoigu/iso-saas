@@ -49,6 +49,7 @@ type ImportResult = {
   imported: number;
   skippedDuplicates: number;
   totalRows: number;
+  replaced?: boolean;
 };
 
 type ProjectSortMode = "recent" | "name" | "compliance" | "overdue";
@@ -366,11 +367,25 @@ export default function ProjectsPage() {
     }
   };
 
-  const importRequirements = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
+  const clearImportFeedback = () => {
     setImportError("");
     setImportDetails([]);
     setImportResult(null);
+  };
+
+  const handleImportFileChange = (file: File | null) => {
+    setImportFile(file);
+    clearImportFeedback();
+  };
+
+  const handleReplaceTemplatesChange = (checked: boolean) => {
+    setReplaceTemplates(checked);
+    clearImportFeedback();
+  };
+
+  const importRequirements = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    clearImportFeedback();
 
     if (!importFile) {
       setImportError("Selecciona un archivo .xlsx.");
@@ -599,7 +614,9 @@ export default function ProjectsPage() {
                   id="requirements-import-file"
                   type="file"
                   accept=".xlsx"
-                  onChange={(event) => setImportFile(event.target.files?.[0] || null)}
+                  onChange={(event) =>
+                    handleImportFileChange(event.target.files?.[0] || null)
+                  }
                   style={fileInputStyle}
                 />
               </label>
@@ -608,7 +625,9 @@ export default function ProjectsPage() {
                 <input
                   type="checkbox"
                   checked={replaceTemplates}
-                  onChange={(event) => setReplaceTemplates(event.target.checked)}
+                  onChange={(event) =>
+                    handleReplaceTemplatesChange(event.target.checked)
+                  }
                 />
                 Reemplazar plantilla actual
               </label>
@@ -641,6 +660,15 @@ export default function ProjectsPage() {
               </p>
             </div>
 
+            {importing && (
+              <Notice
+                tone="info"
+                message="Importando plantilla global. Mantén esta página abierta hasta que termine."
+                compact
+                style={{ marginTop: 14 }}
+              />
+            )}
+
             {importError && (
               <Notice
                 tone="error"
@@ -661,7 +689,13 @@ export default function ProjectsPage() {
             {importResult && (
               <Notice
                 tone="success"
-                message={`Importación completada: ${importResult.imported} nuevos, ${importResult.skippedDuplicates} duplicados omitidos, ${importResult.totalRows} filas válidas.`}
+                message={`${
+                  importResult.replaced
+                    ? "Plantilla reemplazada"
+                    : "Importación completada"
+                }: ${importResult.imported} nuevos, ${
+                  importResult.skippedDuplicates
+                } duplicados omitidos, ${importResult.totalRows} filas válidas.`}
                 compact
                 style={{ marginTop: 14 }}
               />
