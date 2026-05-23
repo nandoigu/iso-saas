@@ -4,6 +4,12 @@ import { FormEvent, useEffect, useState } from "react";
 import { Notice } from "@/components/Notice";
 import {
   appFieldStyle,
+  appHeroCopyStyle,
+  appHeroDescriptionStyle,
+  appHeroEyebrowStyle,
+  appHeroStyle,
+  appHeroTitleStyle,
+  appPageStyle,
   appPanelStyle,
   appPrimaryButtonStyle,
   getActionStateStyle,
@@ -76,7 +82,18 @@ export default function EmailTestPage() {
   };
 
   return (
-    <main style={{ display: "grid", gap: 24, padding: "20px 12px" }}>
+    <main style={appPageStyle}>
+      <section style={appHeroStyle}>
+        <div style={appHeroCopyStyle}>
+          <span style={appHeroEyebrowStyle}>Herramientas de produccion</span>
+          <h1 style={appHeroTitleStyle}>Prueba de email con Resend</h1>
+          <p style={appHeroDescriptionStyle}>
+            Envia un correo HTML real desde el servidor usando la configuracion
+            actual de Resend.
+          </p>
+        </div>
+      </section>
+
       <section
         style={{
           ...appPanelStyle,
@@ -88,10 +105,11 @@ export default function EmailTestPage() {
         }}
       >
         <div style={{ marginBottom: 20 }}>
-          <h1 style={{ fontSize: 28, margin: 0 }}>Prueba de email con Resend</h1>
-          <p style={{ color: "#64748b", lineHeight: 1.7, margin: "10px 0 0" }}>
-            Este formulario envia un correo HTML real desde el servidor usando la
-            configuracion actual de Resend.
+          <h2 style={{ color: "#0f172a", fontSize: 20, margin: 0 }}>
+            Destinatario de prueba
+          </h2>
+          <p style={{ color: "#64748b", lineHeight: 1.7, margin: "8px 0 0" }}>
+            Usa tu email para verificar remitente, plantilla HTML y proveedor.
           </p>
         </div>
 

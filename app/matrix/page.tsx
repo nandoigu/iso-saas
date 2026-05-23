@@ -4,6 +4,13 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { EmptyState } from "@/components/EmptyState";
 import {
+  appHeroActionsStyle,
+  appHeroCopyStyle,
+  appHeroDescriptionStyle,
+  appHeroEyebrowStyle,
+  appHeroStyle,
+  appHeroTitleStyle,
+  appPageStyle,
   appPanelStyle,
   appPrimaryButtonStyle,
   appSecondaryButtonStyle,
@@ -43,13 +50,25 @@ export default function MatrixIndexPage() {
   }, []);
 
   return (
-    <main style={{ padding: 40 }}>
-      <header style={{ marginBottom: 24 }}>
-        <h1 style={{ margin: 0 }}>Matriz de cumplimiento</h1>
-        <p style={{ color: "#5f7289", margin: "8px 0 0" }}>
-          Selecciona un proyecto para abrir su matriz de cumplimiento.
-        </p>
-      </header>
+    <main style={appPageStyle}>
+      <section style={appHeroStyle}>
+        <div style={appHeroCopyStyle}>
+          <span style={appHeroEyebrowStyle}>Workspace ISO 19650</span>
+          <h1 style={appHeroTitleStyle}>Matriz de cumplimiento</h1>
+          <p style={appHeroDescriptionStyle}>
+            Selecciona un proyecto para abrir su matriz de cumplimiento.
+          </p>
+        </div>
+
+        <div style={appHeroActionsStyle}>
+          <Link href="/projects" style={secondaryLinkStyle}>
+            Gestionar proyectos
+          </Link>
+          <Link href="/dashboard" style={primaryLinkStyle}>
+            Ver dashboard
+          </Link>
+        </div>
+      </section>
 
       {loading && <EmptyState title="Cargando" description="Obteniendo proyectos." />}
       {!loading && error && (
@@ -69,6 +88,8 @@ export default function MatrixIndexPage() {
             display: "grid",
             gap: 16,
             gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
+            margin: "0 auto",
+            maxWidth: 1360,
           }}
         >
           {projects.map((project) => (
@@ -127,12 +148,16 @@ export default function MatrixIndexPage() {
 
 const primaryLinkStyle: React.CSSProperties = {
   ...appPrimaryButtonStyle,
+  display: "inline-flex",
+  justifyContent: "center",
   padding: "10px 14px",
   textDecoration: "none",
 };
 
 const secondaryLinkStyle: React.CSSProperties = {
   ...appSecondaryButtonStyle,
+  display: "inline-flex",
+  justifyContent: "center",
   padding: "10px 14px",
   textDecoration: "none",
 };

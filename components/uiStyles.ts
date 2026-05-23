@@ -8,6 +8,57 @@ export const appPanelStyle: CSSProperties = {
   minWidth: 0,
 };
 
+export const appPageStyle: CSSProperties = {
+  background: "#f4f6fc",
+  minHeight: "calc(100vh - 65px)",
+  padding: "28px clamp(20px, 3vw, 36px) 40px",
+};
+
+export const appHeroStyle: CSSProperties = {
+  alignItems: "flex-start",
+  display: "flex",
+  flexWrap: "wrap",
+  gap: 20,
+  justifyContent: "space-between",
+  margin: "0 auto 24px",
+  maxWidth: 1360,
+};
+
+export const appHeroCopyStyle: CSSProperties = {
+  display: "grid",
+  gap: 10,
+  minWidth: 0,
+};
+
+export const appHeroEyebrowStyle: CSSProperties = {
+  color: "#0025df",
+  fontSize: 12,
+  fontWeight: 800,
+  letterSpacing: 0.4,
+  textTransform: "uppercase",
+};
+
+export const appHeroTitleStyle: CSSProperties = {
+  color: "#002a4e",
+  fontSize: 34,
+  lineHeight: 1.1,
+  margin: 0,
+};
+
+export const appHeroDescriptionStyle: CSSProperties = {
+  color: "#5b6b82",
+  fontSize: 16,
+  lineHeight: 1.55,
+  margin: 0,
+  maxWidth: 720,
+};
+
+export const appHeroActionsStyle: CSSProperties = {
+  display: "flex",
+  flexWrap: "wrap",
+  gap: 12,
+};
+
 export const appFieldStyle: CSSProperties = {
   background: "#ffffff",
   border: "1px solid #cbd5e1",

@@ -4,7 +4,15 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import ComplianceMatrix from "@/components/ComplianceMatrix";
 import { EmptyState } from "@/components/EmptyState";
-import { appSecondaryButtonStyle } from "@/components/uiStyles";
+import {
+  appHeroCopyStyle,
+  appHeroDescriptionStyle,
+  appHeroEyebrowStyle,
+  appHeroStyle,
+  appHeroTitleStyle,
+  appPageStyle,
+  appSecondaryButtonStyle,
+} from "@/components/uiStyles";
 import { useProjectRequirements } from "@/app/projects/[id]/useProjectRequirements";
 
 type ProjectMatrixClientProps = {
@@ -18,20 +26,18 @@ export default function ProjectMatrixClient({
   const { requirements, loading, loadError } = useProjectRequirements(projectId);
 
   return (
-    <main style={{ padding: isMobile ? "20px 12px 32px" : 40 }}>
-      <header
+    <main style={{ ...appPageStyle, ...(isMobile ? mobilePageStyle : {}) }}>
+      <section
         style={{
+          ...appHeroStyle,
           alignItems: "flex-start",
           display: isMobile ? "grid" : "flex",
-          flexWrap: "wrap",
-          gap: 16,
-          justifyContent: "space-between",
-          marginBottom: 24,
         }}
       >
-        <div>
-          <h1 style={{ margin: 0 }}>Matriz de cumplimiento</h1>
-          <p style={{ color: "#6b7280", margin: "8px 0 0" }}>
+        <div style={appHeroCopyStyle}>
+          <span style={appHeroEyebrowStyle}>Workspace de requerimientos</span>
+          <h1 style={appHeroTitleStyle}>Matriz de cumplimiento</h1>
+          <p style={appHeroDescriptionStyle}>
             Vista agrupada por norma e item para analizar el estado de cumplimiento
             del proyecto.
           </p>
@@ -47,7 +53,7 @@ export default function ProjectMatrixClient({
         >
           Volver al proyecto
         </Link>
-      </header>
+      </section>
 
       {loading && (
         <EmptyState
@@ -86,7 +92,12 @@ function useMatrixPageBreakpoint() {
 
 const secondaryLinkStyle: React.CSSProperties = {
   ...appSecondaryButtonStyle,
+  display: "inline-flex",
   minHeight: 40,
   padding: "9px 14px",
   textDecoration: "none",
+};
+
+const mobilePageStyle: React.CSSProperties = {
+  padding: "20px 12px 32px",
 };
