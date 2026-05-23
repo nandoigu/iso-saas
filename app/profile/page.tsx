@@ -4,6 +4,13 @@ import { FormEvent, useEffect, useState } from "react";
 import { Notice } from "@/components/Notice";
 import {
   appFieldStyle,
+  appHeroActionsStyle,
+  appHeroCopyStyle,
+  appHeroDescriptionStyle,
+  appHeroEyebrowStyle,
+  appHeroStyle,
+  appHeroTitleStyle,
+  appPageStyle,
   appPanelStyle,
   appPrimaryButtonStyle,
   appSecondaryButtonStyle,
@@ -201,26 +208,31 @@ export default function ProfilePage() {
   };
 
   if (loading) {
-    return <main style={{ ...pageStyle, ...(isCompact ? compactPageStyle : {}) }}>Cargando perfil...</main>;
+    return (
+      <main style={{ ...pageStyle, ...(isCompact ? compactPageStyle : {}) }}>
+        Cargando perfil...
+      </main>
+    );
   }
 
   return (
     <main style={{ ...pageStyle, ...(isCompact ? compactPageStyle : {}) }}>
       <section
         style={{
-          ...heroCardStyle,
-          ...(isCompact ? compactHeroCardStyle : {}),
+          ...heroStyle,
+          ...(isCompact ? compactHeroStyle : {}),
         }}
       >
-        <div>
-          <h1 style={{ margin: 0 }}>Perfil de usuario</h1>
-          <p style={{ color: "#64748b", margin: "8px 0 0" }}>
+        <div style={appHeroCopyStyle}>
+          <span style={appHeroEyebrowStyle}>Cuenta y seguridad</span>
+          <h1 style={appHeroTitleStyle}>Perfil de usuario</h1>
+          <p style={appHeroDescriptionStyle}>
             Gestiona tus datos de cuenta, tu rol visible y la seguridad de acceso.
           </p>
         </div>
 
         {user && (
-          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+          <div style={appHeroActionsStyle}>
             <span style={profileBadgeStyle(getUserRoleBadgeStyle(user.role))}>
               {user.role.toUpperCase()}
             </span>
@@ -296,6 +308,7 @@ export default function ProfilePage() {
             <button
               type="submit"
               disabled={savingProfile}
+              aria-disabled={savingProfile}
               style={{
                 ...primaryButtonStyle,
                 ...getActionStateStyle(savingProfile),
@@ -348,6 +361,7 @@ export default function ProfilePage() {
             <button
               type="submit"
               disabled={savingPassword}
+              aria-disabled={savingPassword}
               style={{
                 ...primaryButtonStyle,
                 ...getActionStateStyle(savingPassword),
@@ -361,6 +375,7 @@ export default function ProfilePage() {
             <button
               type="button"
               disabled={sendingRecovery}
+              aria-disabled={sendingRecovery}
               onClick={sendRecoveryEmail}
               style={{
                 ...secondaryButtonStyle,
@@ -385,7 +400,7 @@ function getStatusLabel(status: string) {
 function profileBadgeStyle(style: React.CSSProperties): React.CSSProperties {
   return {
     ...style,
-    letterSpacing: "0.04em",
+    letterSpacing: 0,
     padding: "8px 12px",
   };
 }
@@ -410,33 +425,30 @@ function useProfileBreakpoint() {
 }
 
 const pageStyle: React.CSSProperties = {
+  ...appPageStyle,
   display: "grid",
   gap: 24,
-  padding: 32,
 };
 
 const compactPageStyle: React.CSSProperties = {
   padding: "20px 12px 32px",
 };
 
-const heroCardStyle: React.CSSProperties = {
-  ...appPanelStyle,
-  alignItems: "center",
-  display: "flex",
-  justifyContent: "space-between",
-  gap: 16,
-  padding: 24,
+const heroStyle: React.CSSProperties = {
+  ...appHeroStyle,
+  marginBottom: 0,
 };
 
-const compactHeroCardStyle: React.CSSProperties = {
+const compactHeroStyle: React.CSSProperties = {
   alignItems: "flex-start",
-  display: "grid",
-  padding: 18,
 };
 
 const contentGridStyle: React.CSSProperties = {
   display: "grid",
   gap: 24,
+  margin: "0 auto",
+  maxWidth: 1360,
+  width: "100%",
 };
 
 const cardStyle: React.CSSProperties = {

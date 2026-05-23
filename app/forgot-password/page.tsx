@@ -3,6 +3,17 @@
 import Link from "next/link";
 import { FormEvent, useState } from "react";
 import { Notice } from "@/components/Notice";
+import {
+  appAuthCardStyle,
+  appAuthPageStyle,
+  appAuthSubtitleStyle,
+  appAuthTitleStyle,
+  appFieldStyle,
+  appFormLabelStyle,
+  appFullWidthPrimaryButtonStyle,
+  appLinkStyle,
+  getActionStateStyle,
+} from "@/components/uiStyles";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
@@ -49,7 +60,7 @@ export default function ForgotPasswordPage() {
   return (
     <main style={pageStyle}>
       <section style={cardStyle}>
-        <h1 style={{ margin: 0 }}>Recuperar contraseña</h1>
+        <h1 style={appAuthTitleStyle}>Recuperar contraseña</h1>
         <p style={subtitleStyle}>
           Introduce tu email y te enviaremos un enlace seguro para restablecerla.
         </p>
@@ -70,13 +81,18 @@ export default function ForgotPasswordPage() {
           {success && <Notice tone="success" message={success} compact />}
           {deliveryHint && <Notice tone="info" message={deliveryHint} compact />}
 
-          <button type="submit" disabled={loading} style={buttonStyle}>
+          <button
+            type="submit"
+            disabled={loading}
+            aria-disabled={loading}
+            style={{ ...buttonStyle, ...getActionStateStyle(loading) }}
+          >
             {loading ? "Enviando..." : "Enviar enlace"}
           </button>
         </form>
 
         <p style={{ color: "#6b7280", marginTop: 18 }}>
-          <Link href="/login" style={{ color: "#2563eb", fontWeight: 700 }}>
+          <Link href="/login" style={appLinkStyle}>
             Volver al login
           </Link>
         </p>
@@ -86,53 +102,25 @@ export default function ForgotPasswordPage() {
 }
 
 const pageStyle: React.CSSProperties = {
-  display: "grid",
-  minHeight: "calc(100vh - 70px)",
-  placeItems: "center",
-  padding: "20px 12px",
+  ...appAuthPageStyle,
 };
 
 const cardStyle: React.CSSProperties = {
-  background: "white",
-  border: "1px solid #e5e7eb",
-  borderRadius: 14,
-  boxSizing: "border-box",
-  boxShadow: "0 10px 30px rgba(15,23,42,0.08)",
-  maxWidth: 460,
-  padding: "clamp(20px, 4vw, 28px)",
-  width: "100%",
+  ...appAuthCardStyle,
 };
 
 const subtitleStyle: React.CSSProperties = {
-  color: "#6b7280",
-  margin: "8px 0 24px",
+  ...appAuthSubtitleStyle,
 };
 
 const labelStyle: React.CSSProperties = {
-  color: "#374151",
-  display: "grid",
-  fontSize: 14,
-  fontWeight: 700,
-  gap: 6,
+  ...appFormLabelStyle,
 };
 
 const inputStyle: React.CSSProperties = {
-  border: "1px solid #d1d5db",
-  borderRadius: 8,
-  boxSizing: "border-box",
-  minHeight: 42,
-  minWidth: 0,
-  padding: "8px 10px",
-  width: "100%",
+  ...appFieldStyle,
 };
 
 const buttonStyle: React.CSSProperties = {
-  background: "#2563eb",
-  border: "1px solid #2563eb",
-  borderRadius: 8,
-  color: "white",
-  cursor: "pointer",
-  fontWeight: 700,
-  minHeight: 42,
-  width: "100%",
+  ...appFullWidthPrimaryButtonStyle,
 };

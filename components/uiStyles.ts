@@ -34,7 +34,7 @@ export const appHeroEyebrowStyle: CSSProperties = {
   color: "#0025df",
   fontSize: 12,
   fontWeight: 800,
-  letterSpacing: 0.4,
+  letterSpacing: 0,
   textTransform: "uppercase",
 };
 
@@ -59,6 +59,44 @@ export const appHeroActionsStyle: CSSProperties = {
   gap: 12,
 };
 
+export const appAuthPageStyle: CSSProperties = {
+  alignItems: "center",
+  background: "#f4f6fc",
+  display: "grid",
+  minHeight: "calc(100vh - 70px)",
+  padding: "28px 12px",
+};
+
+export const appAuthCardStyle: CSSProperties = {
+  ...appPanelStyle,
+  boxSizing: "border-box",
+  margin: "0 auto",
+  maxWidth: 460,
+  padding: "clamp(20px, 4vw, 28px)",
+  width: "100%",
+};
+
+export const appAuthTitleStyle: CSSProperties = {
+  color: "#002a4e",
+  fontSize: 28,
+  lineHeight: 1.15,
+  margin: 0,
+};
+
+export const appAuthSubtitleStyle: CSSProperties = {
+  color: "#5b6b82",
+  lineHeight: 1.5,
+  margin: "8px 0 24px",
+};
+
+export const appFormLabelStyle: CSSProperties = {
+  color: "#1e293b",
+  display: "grid",
+  fontSize: 14,
+  fontWeight: 700,
+  gap: 6,
+};
+
 export const appFieldStyle: CSSProperties = {
   background: "#ffffff",
   border: "1px solid #cbd5e1",
@@ -81,6 +119,13 @@ export const appPrimaryButtonStyle: CSSProperties = {
   padding: "9px 14px",
 };
 
+export const appFullWidthPrimaryButtonStyle: CSSProperties = {
+  ...appPrimaryButtonStyle,
+  minHeight: 42,
+  padding: "0 14px",
+  width: "100%",
+};
+
 export const appSecondaryButtonStyle: CSSProperties = {
   background: "#ffffff",
   border: "1px solid #cbd5e1",
@@ -90,6 +135,12 @@ export const appSecondaryButtonStyle: CSSProperties = {
   fontWeight: 700,
   minHeight: 40,
   padding: "9px 14px",
+};
+
+export const appLinkStyle: CSSProperties = {
+  color: "#0025df",
+  fontWeight: 700,
+  textDecoration: "none",
 };
 
 export const appDangerButtonStyle: CSSProperties = {

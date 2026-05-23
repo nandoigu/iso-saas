@@ -4,6 +4,17 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useState } from "react";
 import { Notice } from "@/components/Notice";
+import {
+  appAuthCardStyle,
+  appAuthPageStyle,
+  appAuthSubtitleStyle,
+  appAuthTitleStyle,
+  appFieldStyle,
+  appFormLabelStyle,
+  appFullWidthPrimaryButtonStyle,
+  appLinkStyle,
+  getActionStateStyle,
+} from "@/components/uiStyles";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -65,8 +76,8 @@ export default function LoginPage() {
   return (
     <main style={pageStyle}>
       <section style={cardStyle}>
-        <h1 style={{ margin: 0 }}>Iniciar sesión</h1>
-        <p style={{ color: "#6b7280", margin: "8px 0 24px" }}>
+        <h1 style={appAuthTitleStyle}>Iniciar sesión</h1>
+        <p style={appAuthSubtitleStyle}>
           Accede a tus proyectos y requerimientos ISO 19650.
         </p>
 
@@ -100,7 +111,7 @@ export default function LoginPage() {
                 style={{
                   ...passwordToggleStyle,
                   background: isPasswordToggleHovered ? "#eff6ff" : "transparent",
-                  color: isPasswordToggleHovered ? "#1d4ed8" : "#2563eb",
+                  color: isPasswordToggleHovered ? "#1d4ed8" : "#0025df",
                 }}
                 aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
                 aria-pressed={showPassword}
@@ -113,20 +124,25 @@ export default function LoginPage() {
 
           {error && <Notice tone="error" message={error} compact />}
 
-          <button type="submit" disabled={loading} style={buttonStyle}>
+          <button
+            type="submit"
+            disabled={loading}
+            aria-disabled={loading}
+            style={{ ...buttonStyle, ...getActionStateStyle(loading) }}
+          >
             {loading ? "Entrando..." : "Entrar"}
           </button>
         </form>
 
         <p style={{ margin: "14px 0 0" }}>
-          <Link href="/forgot-password" style={{ color: "#2563eb", fontWeight: 700 }}>
+          <Link href="/forgot-password" style={appLinkStyle}>
             He olvidado mi contraseña
           </Link>
         </p>
 
         <p style={{ color: "#6b7280", marginTop: 18 }}>
           ¿No tienes cuenta?{" "}
-          <Link href="/register" style={{ color: "#2563eb", fontWeight: 700 }}>
+          <Link href="/register" style={appLinkStyle}>
             Crear cuenta
           </Link>
         </p>
@@ -136,39 +152,20 @@ export default function LoginPage() {
 }
 
 const pageStyle: React.CSSProperties = {
-  display: "grid",
-  minHeight: "calc(100vh - 65px)",
-  placeItems: "center",
-  padding: "20px 12px",
+  ...appAuthPageStyle,
 };
 
 const cardStyle: React.CSSProperties = {
-  background: "white",
-  border: "1px solid #e5e7eb",
-  borderRadius: 14,
-  boxSizing: "border-box",
-  boxShadow: "0 10px 30px rgba(15,23,42,0.08)",
+  ...appAuthCardStyle,
   maxWidth: 440,
-  padding: "clamp(20px, 4vw, 28px)",
-  width: "100%",
 };
 
 const labelStyle: React.CSSProperties = {
-  color: "#374151",
-  display: "grid",
-  fontSize: 14,
-  fontWeight: 700,
-  gap: 6,
+  ...appFormLabelStyle,
 };
 
 const inputStyle: React.CSSProperties = {
-  border: "1px solid #d1d5db",
-  borderRadius: 8,
-  boxSizing: "border-box",
-  minHeight: 42,
-  minWidth: 0,
-  padding: "8px 10px",
-  width: "100%",
+  ...appFieldStyle,
 };
 
 const passwordFieldStyle: React.CSSProperties = {
@@ -193,14 +190,14 @@ const passwordToggleStyle: React.CSSProperties = {
   alignItems: "center",
   background: "transparent",
   border: "none",
-  color: "#2563eb",
+  color: "#0025df",
   cursor: "pointer",
   display: "inline-flex",
   fontSize: 13,
   fontWeight: 700,
   justifyContent: "center",
   minHeight: 42,
-  outlineColor: "#2563eb",
+  outlineColor: "#0025df",
   outlineOffset: -2,
   padding: "0 12px",
   transition: "background 140ms ease, color 140ms ease",
@@ -208,14 +205,7 @@ const passwordToggleStyle: React.CSSProperties = {
 };
 
 const buttonStyle: React.CSSProperties = {
-  background: "#2563eb",
-  border: "1px solid #2563eb",
-  borderRadius: 8,
-  color: "white",
-  cursor: "pointer",
-  fontWeight: 700,
-  minHeight: 42,
-  width: "100%",
+  ...appFullWidthPrimaryButtonStyle,
 };
 
 function EyeIcon() {

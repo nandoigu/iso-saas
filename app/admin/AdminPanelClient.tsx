@@ -9,6 +9,13 @@ import { Notice } from "@/components/Notice";
 import {
   appDangerButtonStyle,
   appFieldStyle,
+  appHeroActionsStyle,
+  appHeroCopyStyle,
+  appHeroDescriptionStyle,
+  appHeroEyebrowStyle,
+  appHeroStyle,
+  appHeroTitleStyle,
+  appPageStyle,
   appTableCellStyle,
   appTableHeaderStyle,
   appTableStyle,
@@ -229,9 +236,11 @@ export default function AdminPanelClient({
   return (
     <main
       style={{
+        ...appPageStyle,
         display: "grid",
         gap: isCompact ? 18 : 24,
         minWidth: 0,
+        padding: isCompact ? "20px 12px 32px" : appPageStyle.padding,
       }}
     >
       <DestructiveConfirmationDialog
@@ -241,17 +250,20 @@ export default function AdminPanelClient({
 
       <section
         style={{
-          ...heroCardStyle,
-          ...(isCompact ? compactHeroCardStyle : {}),
+          ...heroStyle,
+          ...(isCompact ? compactHeroStyle : {}),
         }}
       >
-        <div>
-          <h1 style={{ margin: 0, color: "#0f172a" }}>Panel de administración</h1>
-          <p style={{ color: "#64748b", margin: "8px 0 0" }}>
+        <div style={appHeroCopyStyle}>
+          <span style={appHeroEyebrowStyle}>Administración</span>
+          <h1 style={appHeroTitleStyle}>Panel de administración</h1>
+          <p style={appHeroDescriptionStyle}>
             Gestión centralizada de usuarios, roles y visibilidad global de proyectos.
           </p>
         </div>
-        <div style={pillStyle}>{currentUserEmail}</div>
+        <div style={appHeroActionsStyle}>
+          <div style={pillStyle}>{currentUserEmail}</div>
+        </div>
       </section>
 
       {error && <Notice tone="error" message={error} />}
@@ -276,9 +288,11 @@ export default function AdminPanelClient({
               onClick={loadData}
               style={{
                 ...buttonStyle,
+                ...getActionStateStyle(loading),
                 width: isCompact ? "100%" : undefined,
               }}
               disabled={loading}
+              aria-disabled={loading}
             >
               {loading ? "Actualizando..." : "Recargar"}
             </button>
@@ -478,24 +492,22 @@ function useAdminBreakpoint() {
   return breakpoint;
 }
 
-const heroCardStyle: React.CSSProperties = {
-  ...appPanelStyle,
-  alignItems: "center",
-  display: "flex",
-  justifyContent: "space-between",
-  gap: 16,
-  padding: 24,
+const heroStyle: React.CSSProperties = {
+  ...appHeroStyle,
+  marginBottom: 0,
 };
 
-const compactHeroCardStyle: React.CSSProperties = {
+const compactHeroStyle: React.CSSProperties = {
   alignItems: "flex-start",
-  display: "grid",
-  padding: 18,
 };
 
 const sectionStyle: React.CSSProperties = {
   ...appPanelStyle,
+  boxSizing: "border-box",
+  margin: "0 auto",
+  maxWidth: 1360,
   padding: 24,
+  width: "100%",
 };
 
 const compactSectionStyle: React.CSSProperties = {
@@ -521,11 +533,11 @@ const compactSectionHeaderStyle: React.CSSProperties = {
 };
 
 const sectionEyebrowStyle: React.CSSProperties = {
-  color: "#2563eb",
+  color: "#0025df",
   display: "inline-flex",
   fontSize: 12,
   fontWeight: 800,
-  letterSpacing: "0.04em",
+  letterSpacing: 0,
   marginBottom: 10,
   textTransform: "uppercase",
 };

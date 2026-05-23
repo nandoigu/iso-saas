@@ -4,6 +4,17 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 import { Notice } from "@/components/Notice";
+import {
+  appAuthCardStyle,
+  appAuthPageStyle,
+  appAuthSubtitleStyle,
+  appAuthTitleStyle,
+  appFieldStyle,
+  appFormLabelStyle,
+  appFullWidthPrimaryButtonStyle,
+  appLinkStyle,
+  getActionStateStyle,
+} from "@/components/uiStyles";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -45,8 +56,8 @@ export default function RegisterPage() {
   return (
     <main style={pageStyle}>
       <section style={cardStyle}>
-        <h1 style={{ margin: 0 }}>Crear cuenta</h1>
-        <p style={{ color: "#6b7280", margin: "8px 0 24px" }}>
+        <h1 style={appAuthTitleStyle}>Crear cuenta</h1>
+        <p style={appAuthSubtitleStyle}>
           Crea tu espacio privado para gestionar cumplimiento ISO 19650.
         </p>
 
@@ -72,7 +83,7 @@ export default function RegisterPage() {
           </label>
 
           <label style={labelStyle}>
-            Contrasena
+            Contraseña
             <input
               type="password"
               value={password}
@@ -85,14 +96,19 @@ export default function RegisterPage() {
 
           {error && <Notice tone="error" message={error} compact />}
 
-          <button type="submit" disabled={loading} style={buttonStyle}>
+          <button
+            type="submit"
+            disabled={loading}
+            aria-disabled={loading}
+            style={{ ...buttonStyle, ...getActionStateStyle(loading) }}
+          >
             {loading ? "Creando..." : "Crear cuenta"}
           </button>
         </form>
 
         <p style={{ color: "#6b7280", marginTop: 18 }}>
-          Ya tienes cuenta?{" "}
-          <Link href="/login" style={{ color: "#2563eb", fontWeight: 700 }}>
+          ¿Ya tienes cuenta?{" "}
+          <Link href="/login" style={appLinkStyle}>
             Entrar
           </Link>
         </p>
@@ -102,48 +118,22 @@ export default function RegisterPage() {
 }
 
 const pageStyle: React.CSSProperties = {
-  display: "grid",
-  minHeight: "calc(100vh - 65px)",
-  placeItems: "center",
-  padding: "20px 12px",
+  ...appAuthPageStyle,
 };
 
 const cardStyle: React.CSSProperties = {
-  background: "white",
-  border: "1px solid #e5e7eb",
-  borderRadius: 14,
-  boxSizing: "border-box",
-  boxShadow: "0 10px 30px rgba(15,23,42,0.08)",
+  ...appAuthCardStyle,
   maxWidth: 440,
-  padding: "clamp(20px, 4vw, 28px)",
-  width: "100%",
 };
 
 const labelStyle: React.CSSProperties = {
-  color: "#374151",
-  display: "grid",
-  fontSize: 14,
-  fontWeight: 700,
-  gap: 6,
+  ...appFormLabelStyle,
 };
 
 const inputStyle: React.CSSProperties = {
-  border: "1px solid #d1d5db",
-  borderRadius: 8,
-  boxSizing: "border-box",
-  minHeight: 42,
-  minWidth: 0,
-  padding: "8px 10px",
-  width: "100%",
+  ...appFieldStyle,
 };
 
 const buttonStyle: React.CSSProperties = {
-  background: "#2563eb",
-  border: "1px solid #2563eb",
-  borderRadius: 8,
-  color: "white",
-  cursor: "pointer",
-  fontWeight: 700,
-  minHeight: 42,
-  width: "100%",
+  ...appFullWidthPrimaryButtonStyle,
 };
