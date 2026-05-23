@@ -99,6 +99,8 @@ La aplicacion ya tiene una base SaaS funcional bastante avanzada.
 
 ## Ultimos commits relevantes
 
+- `14b2e22` Improve import operation feedback
+- `d5f4920` Update handoff for UI UX pass
 - `b70d3c1` Unify secondary page hero styles
 - `74dac6a` Restyle dashboard charts
 - `198bdf4` Improve dashboard header layout
@@ -354,6 +356,7 @@ La aplicacion ya tiene una base SaaS funcional bastante avanzada.
 - [ ] Homogeneizar botones, badges, paneles y tablas en toda la app.
   - avance fuerte en dashboard, proyectos, detalle, matriz y admin; queda una pasada final transversal.
 - [ ] Añadir mejor feedback al guardar, editar e importar donde aún falte.
+  - avance: importacion global y por proyecto limpian feedback obsoleto al cambiar archivo/modo y muestran aviso de progreso durante la operacion.
 - [x] Preparar un recorrido de prueba completo con un usuario demo.
   - referencia: `docs/demo-test-runbook.md`
 
@@ -394,6 +397,26 @@ La aplicacion ya tiene una base SaaS funcional bastante avanzada.
   - `b70d3c1 Unify secondary page hero styles`.
 - Siguiente paso recomendado:
   - continuar la misma pasada con Perfil, Admin y Auth para decidir si conviene conectarlas al mismo sistema de cabecera o mantener un patron especifico de formularios.
+
+## Sesion feedback operativo - 2026-05-23
+
+- Retomado el siguiente paso recomendado: revisar feedback operativo en acciones de usuario.
+- Cambios aplicados:
+  - `app/projects/page.tsx`:
+    - la importacion global limpia errores, detalles y exito anterior al cambiar archivo o alternar reemplazo.
+    - muestra aviso informativo mientras importa la plantilla global.
+    - el exito distingue entre importacion normal y reemplazo de plantilla.
+  - `app/projects/[id]/ProjectClient.tsx`:
+    - la importacion por proyecto limpia feedback anterior al cambiar archivo o modo `append`/`replace`.
+    - muestra aviso informativo mientras importa requisitos del proyecto.
+- Validacion:
+  - `cmd /c npm run lint` pasa.
+  - `cmd /c npm run build` pasa.
+  - rutas locales `/projects`, `/projects/cmp3ygyir00016ye5ctjra1r9` y `/dashboard` responden HTTP 200.
+- Commit:
+  - `14b2e22 Improve import operation feedback`.
+- Siguiente paso recomendado:
+  - continuar con Perfil, Admin y Auth para cerrar la pasada transversal UI/UX, priorizando consistencia de cabecera, feedback de guardado y foco/teclado.
 
 ## Sesion de cierre visual - 2026-05-22
 
