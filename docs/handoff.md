@@ -446,6 +446,24 @@ La aplicacion ya tiene una base SaaS funcional bastante avanzada.
 - Siguiente paso recomendado:
   - realizar una pasada autenticada en produccion o Chrome normal sobre Perfil y Admin para confirmar visualmente cabeceras, tablas y estados de foco con sesion real.
 
+## Cierre autenticado Perfil/Admin - 2026-05-23
+
+- Retomado el ultimo paso recomendado para cerrar la jornada.
+- Produccion:
+  - `/profile` redirige correctamente a `/login?next=%2Fprofile` sin sesion.
+- Local:
+  - intento de login UI con la credencial historica documentada no accede; no se ha cambiado la contrasena ni mutado la cuenta.
+  - validacion autenticada alternativa con cookie temporal local firmada y cabecera HTTP, sin exponer ni persistir sesion:
+    - `/api/profile` responde `200` con contenido esperado.
+    - `/api/admin/users` responde `200` con contenido esperado.
+    - `/admin` responde `200` y contiene `Panel de administración`.
+  - servidor local parado al terminar.
+- Resultado:
+  - no se detectan cambios de codigo necesarios tras esta comprobacion.
+  - arbol de trabajo limpio antes de documentar este cierre.
+- Siguiente paso recomendado:
+  - cuando se retome, si se desea una validacion visual completamente interactiva de Perfil/Admin, iniciar sesion con la contrasena vigente del admin en Chrome normal o actualizar la credencial de prueba de forma acordada.
+
 ## Sesion de cierre visual - 2026-05-22
 
 - Accesos comprobados:
