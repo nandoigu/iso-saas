@@ -713,7 +713,7 @@ export default function ProjectClient({ projectId }: ProjectClientProps) {
               style={{
                 background: "#ffffff",
                 border: "1px solid #dbe5f1",
-                borderRadius: 12,
+                borderRadius: 8,
                 marginTop: 8,
                 maxWidth: 760,
                 padding: 16,
@@ -1173,7 +1173,7 @@ export default function ProjectClient({ projectId }: ProjectClientProps) {
           }}
         >
           <div>
-            <h3 style={{ margin: 0 }}>Requerimientos</h3>
+            <h3 style={listTitleStyle}>Requerimientos</h3>
             <span style={{ color: "#6b7280", fontSize: 13 }}>
               {filteredRequirements.length} de {summary.total} registros
             </span>
@@ -1298,13 +1298,13 @@ function RequirementCard({
     <article
       style={{
         background: "white",
-        border: `1px solid ${overdue ? "#fecaca" : "#e5e7eb"}`,
-        borderLeft: `5px solid ${
+        border: `1px solid ${overdue ? "#fecaca" : "#dbe3f1"}`,
+        borderLeft: `3px solid ${
           overdue ? "#dc2626" : STATUS_META[currentStatus].color
         }`,
-        borderRadius: 12,
-        boxShadow: "0 2px 6px rgba(0,0,0,0.04)",
-        padding: compactLayout ? 14 : 18,
+        borderRadius: 8,
+        boxShadow: "none",
+        padding: compactLayout ? 14 : 16,
       }}
     >
       {editing ? (
@@ -1335,9 +1335,9 @@ function RequirementCard({
                   display: "flex",
                   flexWrap: "wrap",
                   fontSize: 12,
-                  fontWeight: 700,
+                  fontWeight: 600,
                   gap: 8,
-                  letterSpacing: "0.04em",
+                  letterSpacing: 0,
                   textTransform: "uppercase",
                 }}
               >
@@ -1352,6 +1352,7 @@ function RequirementCard({
               <h4
                 style={{
                   fontSize: 16,
+                  fontWeight: 500,
                   lineHeight: 1.35,
                   margin: "6px 0 0",
                   maxWidth: compactLayout ? "100%" : "92%",
@@ -1459,7 +1460,7 @@ function EditRequirementForm({
           alignItems: "center",
           background: "#f8fafc",
           border: "1px solid #e2e8f0",
-          borderRadius: 10,
+          borderRadius: 8,
           display: "flex",
           flexWrap: "wrap",
           gap: 12,
@@ -1469,10 +1470,10 @@ function EditRequirementForm({
         }}
       >
         <div>
-          <div style={{ color: "#64748b", fontSize: 12, fontWeight: 700 }}>
+          <div style={{ color: "#64748b", fontSize: 12, fontWeight: 600 }}>
             Modo edición
           </div>
-          <div style={{ color: "#0f172a", fontSize: 14, fontWeight: 700, marginTop: 4 }}>
+          <div style={{ color: "#0f172a", fontSize: 14, fontWeight: 500, marginTop: 4 }}>
             Ajusta el requerimiento directamente en contexto y guarda los cambios.
           </div>
         </div>
@@ -1486,7 +1487,7 @@ function EditRequirementForm({
               color: editStatusMeta.color,
               display: "inline-flex",
               fontSize: 12,
-              fontWeight: 800,
+              fontWeight: 600,
               padding: "5px 10px",
             }}
           >
@@ -1669,11 +1670,11 @@ function FilterPanel({
       id="filtros-requerimientos"
       style={{
         background: "white",
-        border: "1px solid #e5e7eb",
-        borderRadius: 12,
-        boxShadow: "0 2px 6px rgba(0,0,0,0.04)",
+        border: "1px solid #dbe3f1",
+        borderRadius: 8,
+        boxShadow: "none",
         marginBottom: 20,
-        padding: 18,
+        padding: 16,
       }}
     >
       <div
@@ -1687,7 +1688,7 @@ function FilterPanel({
         }}
       >
         <div>
-          <h3 style={{ margin: 0 }}>Filtros y ordenación</h3>
+          <h3 style={listTitleStyle}>Filtros y ordenación</h3>
           <p style={{ color: "#6b7280", fontSize: 13, margin: "6px 0 0" }}>
             {filteredCount} de {totalCount} requerimientos visibles
             {activeFilterCount > 0
@@ -1765,7 +1766,7 @@ function FilterPanel({
                     cursor: "pointer",
                     display: "inline-flex",
                     fontSize: 13,
-                    fontWeight: 700,
+                    fontWeight: 600,
                     gap: 6,
                     padding: "7px 10px",
                   }}
@@ -1905,7 +1906,7 @@ function InfoBlock({
     <div
       style={{
         background: "#f9fafb",
-        borderRadius: 10,
+        borderRadius: 8,
         minWidth: 0,
         padding: compact ? "10px 12px" : 12,
       }}
@@ -2152,6 +2153,13 @@ const quickNavTitleStyle: React.CSSProperties = {
   fontSize: 17,
   fontWeight: 600,
   marginBottom: 6,
+};
+
+const listTitleStyle: React.CSSProperties = {
+  color: "#002a4e",
+  fontSize: 18,
+  fontWeight: 500,
+  margin: 0,
 };
 
 const quickNavLinkStyle: React.CSSProperties = {
