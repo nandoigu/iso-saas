@@ -833,7 +833,7 @@ export default function ProjectClient({ projectId }: ProjectClientProps) {
             alignItems: "center",
             display: "flex",
             flexWrap: "wrap",
-            gap: 12,
+            gap: 10,
             width: isMobile ? "100%" : undefined,
           }}
         >
@@ -856,8 +856,8 @@ export default function ProjectClient({ projectId }: ProjectClientProps) {
         style={{
           display: "grid",
           gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-          gap: 16,
-          marginBottom: 24,
+          gap: 14,
+          marginBottom: 20,
         }}
       >
         <MetricCard label="Requerimientos" value={summary.total} />
@@ -868,7 +868,7 @@ export default function ProjectClient({ projectId }: ProjectClientProps) {
 
       <section style={quickNavStyle}>
         <div style={{ minWidth: 0 }}>
-          <strong style={{ display: "block" }}>Flujo de trabajo</strong>
+          <strong style={quickNavTitleStyle}>Flujo de trabajo</strong>
           <span style={{ color: "#64748b", fontSize: 13 }}>
             Alta, importación, revisión filtrada y matriz quedan conectadas desde aquí.
             Los filtros se conservan al volver a este proyecto.
@@ -1865,12 +1865,12 @@ function MetricCard({
     <div
       style={{
         background: "white",
-        border: "1px solid #e5e7eb",
-        borderRadius: 12,
-        padding: 18,
+        border: "1px solid #dbe3f1",
+        borderRadius: 8,
+        padding: 16,
       }}
     >
-      <div style={{ color: "#6b7280", fontSize: 12 }}>{label}</div>
+      <div style={{ color: "#5b6b82", fontSize: 12 }}>{label}</div>
       <div
         style={{
           color:
@@ -1879,8 +1879,8 @@ function MetricCard({
               : tone === "warning"
                 ? "#b45309"
                 : "#111827",
-          fontSize: 26,
-          fontWeight: 700,
+          fontSize: 24,
+          fontWeight: 600,
           marginTop: 6,
         }}
       >
@@ -2011,7 +2011,7 @@ const filterLabelStyle: React.CSSProperties = {
   color: "#374151",
   display: "grid",
   fontSize: 13,
-  fontWeight: 700,
+  fontWeight: 600,
   gap: 8,
 };
 
@@ -2025,7 +2025,10 @@ const secondaryButtonStyle: React.CSSProperties = {
 
 const linkButtonStyle: React.CSSProperties = {
   ...appSecondaryButtonStyle,
+  alignItems: "center",
   display: "inline-flex",
+  fontSize: 14,
+  justifyContent: "center",
   textDecoration: "none",
 };
 
@@ -2054,12 +2057,12 @@ const projectRoleBadgeBaseStyle: React.CSSProperties = {
 
 const projectIdentityStyle: React.CSSProperties = {
   background: "#ffffff",
-  border: "1px solid #bfdbfe",
-  borderLeft: "6px solid #1d4ed8",
+  border: "1px solid #dbe3f1",
+  borderLeft: "3px solid #0025df",
   borderRadius: 8,
-  boxShadow: "0 10px 24px rgba(29, 78, 216, 0.08)",
-  maxWidth: 920,
-  padding: "18px 20px",
+  boxShadow: "none",
+  maxWidth: 760,
+  padding: "16px 18px",
 };
 
 const projectIdentityHeaderStyle: React.CSSProperties = {
@@ -2071,19 +2074,19 @@ const projectIdentityHeaderStyle: React.CSSProperties = {
 };
 
 const projectIdentityLabelStyle: React.CSSProperties = {
-  color: "#1d4ed8",
+  color: "#0025df",
   fontSize: 12,
-  fontWeight: 900,
-  letterSpacing: "0.04em",
-  marginBottom: 6,
+  fontWeight: 600,
+  letterSpacing: 0,
+  marginBottom: 8,
   textTransform: "uppercase",
 };
 
 const projectIdentityTitleStyle: React.CSSProperties = {
-  color: "#061a3a",
-  fontSize: 34,
-  fontWeight: 900,
-  lineHeight: 1.08,
+  color: "#002a4e",
+  fontSize: 28,
+  fontWeight: 500,
+  lineHeight: 1.16,
   margin: 0,
   overflowWrap: "anywhere",
 };
@@ -2103,9 +2106,9 @@ const projectCodeBadgeStyle: React.CSSProperties = {
   color: "#1e3a8a",
   display: "inline-flex",
   fontSize: 13,
-  fontWeight: 900,
-  letterSpacing: "0.04em",
-  padding: "7px 12px",
+  fontWeight: 600,
+  letterSpacing: 0,
+  padding: "6px 11px",
   textTransform: "uppercase",
 };
 
@@ -2113,7 +2116,7 @@ const inlineFieldStyle: React.CSSProperties = {
   color: "#334155",
   display: "grid",
   fontSize: 12,
-  fontWeight: 700,
+  fontWeight: 600,
   gap: 8,
 };
 
@@ -2129,7 +2132,7 @@ const mobilePageStyle: React.CSSProperties = {
 
 const panelStyle: React.CSSProperties = {
   ...appPanelStyle,
-  padding: 20,
+  padding: 18,
 };
 
 const quickNavStyle: React.CSSProperties = {
@@ -2140,7 +2143,15 @@ const quickNavStyle: React.CSSProperties = {
   gap: 14,
   justifyContent: "space-between",
   marginBottom: 20,
-  padding: 14,
+  padding: 16,
+};
+
+const quickNavTitleStyle: React.CSSProperties = {
+  color: "#002a4e",
+  display: "block",
+  fontSize: 17,
+  fontWeight: 600,
+  marginBottom: 6,
 };
 
 const quickNavLinkStyle: React.CSSProperties = {
@@ -2150,7 +2161,7 @@ const quickNavLinkStyle: React.CSSProperties = {
   color: "#1d4ed8",
   display: "inline-flex",
   fontSize: 13,
-  fontWeight: 800,
+  fontWeight: 600,
   justifyContent: "center",
   minHeight: 36,
   padding: "8px 12px",
@@ -2160,8 +2171,8 @@ const quickNavLinkStyle: React.CSSProperties = {
 const eyebrowStyle: React.CSSProperties = {
   color: "#0025df",
   fontSize: 12,
-  fontWeight: 800,
-  letterSpacing: "0.04em",
+  fontWeight: 600,
+  letterSpacing: 0,
   marginBottom: 10,
   textTransform: "uppercase",
 };
@@ -2169,8 +2180,8 @@ const eyebrowStyle: React.CSSProperties = {
 const sectionEyebrowStyle: React.CSSProperties = {
   color: "#2563eb",
   fontSize: 11,
-  fontWeight: 900,
-  letterSpacing: "0.06em",
+  fontWeight: 600,
+  letterSpacing: 0,
   marginBottom: 8,
   textTransform: "uppercase",
 };
@@ -2189,7 +2200,7 @@ const compactActionButtonStyle: React.CSSProperties = {
   color: "#111827",
   cursor: "pointer",
   fontSize: 13,
-  fontWeight: 700,
+  fontWeight: 600,
   minHeight: 36,
   padding: "7px 12px",
   whiteSpace: "nowrap",
@@ -2202,7 +2213,7 @@ const compactDangerButtonStyle: React.CSSProperties = {
   color: "#b91c1c",
   cursor: "pointer",
   fontSize: 13,
-  fontWeight: 700,
+  fontWeight: 600,
   minHeight: 36,
   padding: "7px 12px",
   whiteSpace: "nowrap",
