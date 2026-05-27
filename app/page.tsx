@@ -688,8 +688,9 @@ const eyebrowStyle: React.CSSProperties = {
 
 const heroTitleStyle: React.CSSProperties = {
   color: "#002a4e",
-  fontSize: 34,
-  lineHeight: 1.1,
+  fontSize: 30,
+  fontWeight: 500,
+  lineHeight: 1.16,
   margin: 0,
 };
 

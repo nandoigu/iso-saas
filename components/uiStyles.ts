@@ -40,8 +40,9 @@ export const appHeroEyebrowStyle: CSSProperties = {
 
 export const appHeroTitleStyle: CSSProperties = {
   color: "#002a4e",
-  fontSize: 34,
-  lineHeight: 1.1,
+  fontSize: 28,
+  fontWeight: 500,
+  lineHeight: 1.16,
   margin: 0,
 };
 

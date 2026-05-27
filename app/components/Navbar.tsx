@@ -27,15 +27,15 @@ const navigationGroups = [
   {
     label: "Principal",
     items: [
-      { href: "/", label: "Inicio", token: "IN" },
-      { href: "/projects", label: "Proyectos", token: "PR" },
-      { href: "/dashboard", label: "Dashboard", token: "DB" },
-      { href: "/matrix", label: "Matriz", token: "MX" },
+      { href: "/", label: "Inicio" },
+      { href: "/projects", label: "Proyectos" },
+      { href: "/dashboard", label: "Dashboard" },
+      { href: "/matrix", label: "Matriz" },
     ],
   },
   {
     label: "Cuenta",
-    items: [{ href: "/profile", label: "Perfil", token: "PF" }],
+    items: [{ href: "/profile", label: "Perfil" }],
   },
 ];
 
@@ -101,7 +101,7 @@ export default function Navbar() {
     }));
 
     if (authenticatedUser.role === "admin") {
-      groups[1].items.push({ href: "/admin", label: "Admin", token: "AD" });
+      groups[1].items.push({ href: "/admin", label: "Admin" });
     }
 
     return groups.map((group) => ({
@@ -166,7 +166,6 @@ export default function Navbar() {
                     key={item.href}
                     href={item.href}
                     active={item.active}
-                    token={item.token}
                   >
                     {item.label}
                   </SideNavLink>
@@ -178,9 +177,6 @@ export default function Navbar() {
 
         <div style={sidebarFooterStyle}>
           <Link href="/profile" style={userCardStyle}>
-            <span style={avatarStyle}>
-              {getInitials(authenticatedUser.name || authenticatedUser.email)}
-            </span>
             <span style={userInfoStyle}>
               <span style={userNameStyle}>
                 {authenticatedUser.name || authenticatedUser.email}
@@ -249,12 +245,10 @@ function BrandMark({
 function SideNavLink({
   href,
   active,
-  token,
   children,
 }: {
   href: string;
   active: boolean;
-  token: string;
   children: React.ReactNode;
 }) {
   const [hovered, setHovered] = useState(false);
@@ -272,17 +266,6 @@ function SideNavLink({
         color: active ? "#ffffff" : BRAND,
       }}
     >
-      <span
-        aria-hidden="true"
-        style={{
-          ...navTokenStyle,
-          background: active ? "rgba(255,255,255,0.16)" : "#ffffff",
-          borderColor: active ? "rgba(255,255,255,0.22)" : BORDER,
-          color: active ? "#ffffff" : ACTION,
-        }}
-      >
-        {token}
-      </span>
       <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>{children}</span>
     </Link>
   );
@@ -306,16 +289,6 @@ function isRouteActive(pathname: string, href: string) {
   }
 
   return pathname === href || pathname.startsWith(`${href}/`);
-}
-
-function getInitials(value: string) {
-  const parts = value
-    .trim()
-    .split(/\s+|@/)
-    .filter(Boolean)
-    .slice(0, 2);
-
-  return parts.map((part) => part[0]?.toUpperCase()).join("") || "BM";
 }
 
 function navbarBadgeStyle(style: React.CSSProperties): React.CSSProperties {
@@ -391,7 +364,7 @@ const brandIconStyle: React.CSSProperties = {
   display: "inline-flex",
   flexShrink: 0,
   fontSize: 12,
-  fontWeight: 900,
+  fontWeight: 700,
   height: 38,
   justifyContent: "center",
   width: 38,
@@ -400,7 +373,7 @@ const brandIconStyle: React.CSSProperties = {
 const brandNameStyle: React.CSSProperties = {
   color: BRAND,
   display: "block",
-  fontWeight: 850,
+  fontWeight: 700,
   lineHeight: 1.1,
   whiteSpace: "nowrap",
 };
@@ -429,7 +402,7 @@ const navGroupStyle: React.CSSProperties = {
 const navLabelStyle: React.CSSProperties = {
   color: MUTED,
   fontSize: 11,
-  fontWeight: 800,
+  fontWeight: 700,
   letterSpacing: 0,
   padding: "0 10px",
   textTransform: "uppercase",
@@ -447,26 +420,13 @@ const navItemStyle: React.CSSProperties = {
   display: "flex",
   gap: 10,
   fontSize: 14,
-  fontWeight: 800,
+  fontWeight: 600,
   minHeight: 42,
   overflow: "hidden",
-  padding: "7px 10px",
+  padding: "7px 12px",
   textDecoration: "none",
   transition: "background-color 160ms ease, border-color 160ms ease, color 160ms ease",
   whiteSpace: "nowrap",
-};
-
-const navTokenStyle: React.CSSProperties = {
-  alignItems: "center",
-  border: `1px solid ${BORDER}`,
-  borderRadius: 7,
-  display: "inline-flex",
-  flexShrink: 0,
-  fontSize: 10,
-  fontWeight: 900,
-  height: 26,
-  justifyContent: "center",
-  width: 30,
 };
 
 const sidebarFooterStyle: React.CSSProperties = {
@@ -482,25 +442,9 @@ const userCardStyle: React.CSSProperties = {
   borderRadius: 8,
   color: BRAND,
   display: "flex",
-  gap: 10,
   minWidth: 0,
-  padding: 8,
+  padding: "8px 10px",
   textDecoration: "none",
-};
-
-const avatarStyle: React.CSSProperties = {
-  alignItems: "center",
-  background: "#eef2ff",
-  border: "1px solid #c7d2fe",
-  borderRadius: "50%",
-  color: "#4338ca",
-  display: "inline-flex",
-  flexShrink: 0,
-  fontSize: 11,
-  fontWeight: 900,
-  height: 32,
-  justifyContent: "center",
-  width: 32,
 };
 
 const userInfoStyle: React.CSSProperties = {
@@ -511,7 +455,7 @@ const userInfoStyle: React.CSSProperties = {
 const userNameStyle: React.CSSProperties = {
   color: BRAND,
   fontSize: 13,
-  fontWeight: 800,
+  fontWeight: 650,
   overflow: "hidden",
   textOverflow: "ellipsis",
   whiteSpace: "nowrap",
@@ -539,7 +483,7 @@ const logoutButtonStyle: React.CSSProperties = {
   color: BRAND,
   cursor: "pointer",
   fontSize: 13,
-  fontWeight: 800,
+  fontWeight: 650,
   minHeight: 38,
   padding: "8px 12px",
   textAlign: "left",
@@ -570,15 +514,15 @@ const topbarTitleStyle: React.CSSProperties = {
 const topbarEyebrowStyle: React.CSSProperties = {
   color: MUTED,
   fontSize: 11,
-  fontWeight: 800,
+  fontWeight: 650,
   letterSpacing: 0,
   textTransform: "uppercase",
 };
 
 const topbarPageStyle: React.CSSProperties = {
   color: BRAND,
-  fontSize: 18,
-  fontWeight: 850,
+  fontSize: 17,
+  fontWeight: 650,
   overflow: "hidden",
   textOverflow: "ellipsis",
   whiteSpace: "nowrap",
@@ -597,7 +541,7 @@ const compactUserStyle: React.CSSProperties = {
   borderRadius: 8,
   color: BRAND,
   fontSize: 13,
-  fontWeight: 800,
+  fontWeight: 650,
   maxWidth: 180,
   overflow: "hidden",
   padding: "8px 11px",
@@ -616,7 +560,7 @@ const ghostLinkStyle: React.CSSProperties = {
   borderRadius: 8,
   color: BRAND,
   fontSize: 14,
-  fontWeight: 700,
+  fontWeight: 650,
   minHeight: 40,
   padding: "10px 14px",
   textDecoration: "none",
@@ -628,7 +572,7 @@ const primaryLinkStyle: React.CSSProperties = {
   borderRadius: 8,
   color: "white",
   fontSize: 14,
-  fontWeight: 700,
+  fontWeight: 650,
   minHeight: 40,
   padding: "10px 14px",
   textDecoration: "none",
