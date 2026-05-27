@@ -390,28 +390,34 @@ const brandTagStyle: React.CSSProperties = {
 
 const navStyle: React.CSSProperties = {
   display: "grid",
-  gap: 14,
+  gap: 16,
   overflowY: "auto",
-  padding: "16px 10px",
+  padding: "16px 12px",
 };
 
 const navGroupStyle: React.CSSProperties = {
   display: "grid",
-  gap: 7,
+  gap: 8,
 };
 
 const navLabelStyle: React.CSSProperties = {
-  color: MUTED,
+  background: "#f8fafc",
+  border: `1px solid ${BORDER}`,
+  borderLeft: `3px solid ${ACTION}`,
+  borderRadius: 8,
+  color: BRAND,
   fontSize: 10,
   fontWeight: 600,
   letterSpacing: 0,
-  padding: "0 10px",
+  lineHeight: 1,
+  padding: "8px 10px",
   textTransform: "uppercase",
 };
 
 const navItemsStyle: React.CSSProperties = {
   display: "grid",
-  gap: 3,
+  gap: 4,
+  paddingLeft: 6,
 };
 
 const navItemStyle: React.CSSProperties = {
@@ -424,7 +430,7 @@ const navItemStyle: React.CSSProperties = {
   fontWeight: 500,
   minHeight: 38,
   overflow: "hidden",
-  padding: "7px 12px 7px 14px",
+  padding: "7px 12px",
   textDecoration: "none",
   transition: "background-color 160ms ease, border-color 160ms ease, color 160ms ease",
   whiteSpace: "nowrap",
