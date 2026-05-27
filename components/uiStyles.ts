@@ -4,7 +4,7 @@ export const appPanelStyle: CSSProperties = {
   background: "#ffffff",
   border: "1px solid #dbe3f1",
   borderRadius: 8,
-  boxShadow: "0 10px 24px rgba(15, 23, 42, 0.04)",
+  boxShadow: "none",
   minWidth: 0,
 };
 
@@ -18,9 +18,9 @@ export const appHeroStyle: CSSProperties = {
   alignItems: "flex-start",
   display: "flex",
   flexWrap: "wrap",
-  gap: 20,
+  gap: 16,
   justifyContent: "space-between",
-  margin: "0 auto 24px",
+  margin: "0 auto 20px",
   maxWidth: 1360,
 };
 
@@ -33,7 +33,7 @@ export const appHeroCopyStyle: CSSProperties = {
 export const appHeroEyebrowStyle: CSSProperties = {
   color: "#0025df",
   fontSize: 12,
-  fontWeight: 800,
+  fontWeight: 650,
   letterSpacing: 0,
   textTransform: "uppercase",
 };
@@ -48,8 +48,8 @@ export const appHeroTitleStyle: CSSProperties = {
 
 export const appHeroDescriptionStyle: CSSProperties = {
   color: "#5b6b82",
-  fontSize: 16,
-  lineHeight: 1.55,
+  fontSize: 15,
+  lineHeight: 1.5,
   margin: 0,
   maxWidth: 720,
 };
@@ -115,7 +115,7 @@ export const appPrimaryButtonStyle: CSSProperties = {
   borderRadius: 8,
   color: "#ffffff",
   cursor: "pointer",
-  fontWeight: 700,
+  fontWeight: 650,
   minHeight: 40,
   padding: "9px 14px",
 };
@@ -133,14 +133,14 @@ export const appSecondaryButtonStyle: CSSProperties = {
   borderRadius: 8,
   color: "#0f172a",
   cursor: "pointer",
-  fontWeight: 700,
+  fontWeight: 600,
   minHeight: 40,
   padding: "9px 14px",
 };
 
 export const appLinkStyle: CSSProperties = {
   color: "#0025df",
-  fontWeight: 700,
+  fontWeight: 600,
   textDecoration: "none",
 };
 
@@ -150,7 +150,7 @@ export const appDangerButtonStyle: CSSProperties = {
   borderRadius: 8,
   color: "#b91c1c",
   cursor: "pointer",
-  fontWeight: 700,
+  fontWeight: 600,
   minHeight: 40,
   padding: "9px 14px",
 };
@@ -182,7 +182,7 @@ export const appBadgeBaseStyle: CSSProperties = {
   borderRadius: 999,
   display: "inline-flex",
   fontSize: 12,
-  fontWeight: 800,
+  fontWeight: 650,
   padding: "6px 10px",
   whiteSpace: "nowrap",
 };
@@ -197,7 +197,7 @@ export const appTableHeaderStyle: CSSProperties = {
   borderBottom: "1px solid #e2e8f0",
   color: "#475569",
   fontSize: 13,
-  fontWeight: 700,
+  fontWeight: 650,
   padding: "12px 14px",
   textAlign: "left",
 };

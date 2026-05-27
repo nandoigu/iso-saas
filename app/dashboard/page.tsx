@@ -1060,8 +1060,8 @@ function KpiCard({
       <div
         style={{
           color: tone === "risk" ? "#dc2626" : "#0f172a",
-          fontSize: 30,
-          fontWeight: 800,
+          fontSize: 26,
+          fontWeight: 600,
           marginTop: 8,
         }}
       >
@@ -1554,9 +1554,9 @@ const pageStyle: React.CSSProperties = {
 const heroStyle: React.CSSProperties = {
   alignItems: "flex-start",
   display: "grid",
-  gap: 28,
+  gap: 20,
   gridTemplateColumns: "repeat(auto-fit, minmax(min(360px, 100%), 1fr))",
-  margin: "0 auto 24px",
+  margin: "0 auto 20px",
   maxWidth: 1360,
 };
 
@@ -1570,14 +1570,14 @@ const heroCopyStyle: React.CSSProperties = {
 const eyebrowStyle: React.CSSProperties = {
   color: "#0025df",
   fontSize: 12,
-  fontWeight: 800,
-  letterSpacing: 0.4,
+  fontWeight: 650,
+  letterSpacing: 0,
   textTransform: "uppercase",
 };
 
 const heroTitleStyle: React.CSSProperties = {
   color: "#002a4e",
-  fontSize: 30,
+  fontSize: 28,
   fontWeight: 500,
   lineHeight: 1.16,
   margin: 0,
@@ -1585,8 +1585,8 @@ const heroTitleStyle: React.CSSProperties = {
 
 const heroDescriptionStyle: React.CSSProperties = {
   color: "#5b6b82",
-  fontSize: 16,
-  lineHeight: 1.55,
+  fontSize: 15,
+  lineHeight: 1.5,
   margin: 0,
   maxWidth: 720,
 };
@@ -1602,18 +1602,18 @@ const heroActionsStyle: React.CSSProperties = {
 
 const panelStyle: React.CSSProperties = {
   ...appPanelStyle,
-  padding: 20,
+  padding: 18,
 };
 
 const chartPanelStyle: React.CSSProperties = {
   ...appPanelStyle,
-  padding: 16,
+  padding: 14,
 };
 
 const chartTitleStyle: React.CSSProperties = {
   color: "#0f172a",
   fontSize: 15,
-  fontWeight: 800,
+  fontWeight: 600,
   margin: "0 0 10px",
 };
 
@@ -1625,8 +1625,8 @@ const primaryLinkStyle: React.CSSProperties = {
   ...appPrimaryButtonStyle,
   display: "inline-flex",
   justifyContent: "center",
-  minHeight: 58,
-  padding: "12px 16px",
+  minHeight: 48,
+  padding: "10px 14px",
   textDecoration: "none",
 };
 
@@ -1634,23 +1634,23 @@ const secondaryLinkStyle: React.CSSProperties = {
   ...appSecondaryButtonStyle,
   display: "inline-flex",
   justifyContent: "center",
-  minHeight: 58,
-  padding: "12px 16px",
+  minHeight: 48,
+  padding: "10px 14px",
   textDecoration: "none",
 };
 
 const primaryButtonStyle: React.CSSProperties = {
   ...appPrimaryButtonStyle,
   justifyContent: "center",
-  minHeight: 58,
-  padding: "12px 16px",
+  minHeight: 48,
+  padding: "10px 14px",
 };
 
 const secondaryButtonStyle: React.CSSProperties = {
   ...appSecondaryButtonStyle,
   justifyContent: "center",
-  minHeight: 58,
-  padding: "12px 16px",
+  minHeight: 48,
+  padding: "10px 14px",
 };
 
 const checkboxLabelStyle: React.CSSProperties = {
@@ -1658,7 +1658,7 @@ const checkboxLabelStyle: React.CSSProperties = {
   color: "#334155",
   display: "flex",
   fontSize: 14,
-  fontWeight: 700,
+  fontWeight: 600,
   gap: 8,
   marginTop: 10,
 };

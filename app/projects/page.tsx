@@ -1152,9 +1152,9 @@ const heroStyle: React.CSSProperties = {
   alignItems: "flex-start",
   display: "flex",
   flexWrap: "wrap",
-  gap: 20,
+  gap: 16,
   justifyContent: "space-between",
-  margin: "0 auto 24px",
+  margin: "0 auto 20px",
   maxWidth: 1360,
 };
 
@@ -1165,27 +1165,27 @@ const mobileHeroStyle: React.CSSProperties = {
 const eyebrowStyle: React.CSSProperties = {
   color: "#0025df",
   fontSize: 12,
-  fontWeight: 800,
-  letterSpacing: 0.4,
+  fontWeight: 650,
+  letterSpacing: 0,
   textTransform: "uppercase",
 };
 
 const heroTitleStyle: React.CSSProperties = {
   color: "#002a4e",
-  fontSize: 30,
+  fontSize: 28,
   fontWeight: 500,
   lineHeight: 1.16,
   margin: 0,
 };
 
 const mobileHeroTitleStyle: React.CSSProperties = {
-  fontSize: 26,
+  fontSize: 24,
 };
 
 const heroDescriptionStyle: React.CSSProperties = {
   color: "#5b6b82",
-  fontSize: 16,
-  lineHeight: 1.55,
+  fontSize: 15,
+  lineHeight: 1.5,
   margin: 0,
   maxWidth: 720,
 };
@@ -1203,10 +1203,10 @@ const mobileHeroActionsStyle: React.CSSProperties = {
 const secondaryActionStyle: React.CSSProperties = {
   background: "#ffffff",
   border: "1px solid #c9d4e5",
-  borderRadius: 10,
+  borderRadius: 8,
   color: "#002a4e",
-  fontWeight: 700,
-  padding: "12px 16px",
+  fontWeight: 600,
+  padding: "10px 14px",
   textDecoration: "none",
 };
 
@@ -1233,7 +1233,7 @@ const feedbackStackStyle: React.CSSProperties = {
 
 const panelStyle: React.CSSProperties = {
   ...appPanelStyle,
-  padding: 20,
+  padding: 18,
 };
 
 const panelHeaderStyle: React.CSSProperties = {
@@ -1247,7 +1247,8 @@ const panelHeaderStyle: React.CSSProperties = {
 
 const panelTitleStyle: React.CSSProperties = {
   color: "#002a4e",
-  fontSize: 20,
+  fontSize: 18,
+  fontWeight: 500,
   margin: 0,
 };
 
@@ -1267,7 +1268,7 @@ const fieldStyle: React.CSSProperties = {
   color: "#334155",
   display: "grid",
   fontSize: 14,
-  fontWeight: 700,
+  fontWeight: 600,
   gap: 8,
 };
 
@@ -1276,7 +1277,7 @@ const checkboxFieldStyle: React.CSSProperties = {
   color: "#334155",
   display: "flex",
   fontSize: 14,
-  fontWeight: 700,
+  fontWeight: 600,
   gap: 8,
   minHeight: 44,
 };
@@ -1300,8 +1301,8 @@ const fileInputStyle: React.CSSProperties = {
 
 const primaryButtonStyle: React.CSSProperties = {
   ...appPrimaryButtonStyle,
-  minHeight: 44,
-  padding: "10px 16px",
+  minHeight: 42,
+  padding: "9px 14px",
 };
 
 const detailsStyle: React.CSSProperties = {
@@ -1327,22 +1328,23 @@ const kpiLabelStyle: React.CSSProperties = {
   color: "#64748b",
   display: "block",
   fontSize: 13,
-  fontWeight: 700,
+  fontWeight: 600,
 };
 
 const kpiValueStyle: React.CSSProperties = {
   display: "block",
-  fontSize: 34,
+  fontSize: 28,
+  fontWeight: 600,
   lineHeight: 1.1,
-  marginTop: 10,
+  marginTop: 8,
 };
 
 const projectCardStyle: React.CSSProperties = {
   border: "1px solid #e7edf5",
-  borderRadius: 12,
+  borderRadius: 8,
   display: "grid",
-  gap: 18,
-  padding: 22,
+  gap: 16,
+  padding: 18,
 };
 
 const projectListGridStyle: React.CSSProperties = {
@@ -1372,8 +1374,8 @@ const projectNameRowStyle: React.CSSProperties = {
 
 const projectLinkStyle: React.CSSProperties = {
   color: "#0f172a",
-  fontSize: 22,
-  fontWeight: 800,
+  fontSize: 20,
+  fontWeight: 600,
   lineHeight: 1.2,
   textDecoration: "none",
 };
@@ -1402,8 +1404,8 @@ const mobileProgressSummaryStyle: React.CSSProperties = {
 
 const progressValueStyle: React.CSSProperties = {
   color: "#002a4e",
-  fontSize: 26,
-  fontWeight: 800,
+  fontSize: 22,
+  fontWeight: 600,
   lineHeight: 1,
 };
 
@@ -1430,12 +1432,12 @@ const miniMetricStyle: React.CSSProperties = {
 const miniMetricLabelStyle: React.CSSProperties = {
   color: "#64748b",
   fontSize: 12,
-  fontWeight: 700,
+  fontWeight: 600,
 };
 
 const miniMetricValueStyle: React.CSSProperties = {
   fontSize: 16,
-  fontWeight: 800,
+  fontWeight: 600,
 };
 
 const progressBarTrackStyle: React.CSSProperties = {
