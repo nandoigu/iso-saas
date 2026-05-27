@@ -10,6 +10,64 @@
 
 La aplicacion ya tiene una base SaaS funcional bastante avanzada.
 
+## Ultima sesion de estilo y navegacion - 2026-05-28
+
+- Repo correcto de trabajo confirmado: `C:\Users\ferna\prueba-app`.
+- Produccion principal: `https://iso-saas-gamma.vercel.app`.
+- Rama activa: `main`.
+- Ultimo commit desplegado y verificado en Vercel:
+  - `2c5d9bc Refine project requirement surfaces`
+- La referencia anterior solicitada por el usuario sigue en el historial:
+  - `bf91f1b Document final authenticated UI check`
+
+### Cambios esteticos realizados
+
+- Navegacion autenticada cambiada a sidebar lateral.
+- Eliminados los botones/acronimos de navegacion (`IN`, `PR`, `DB`, `MX`, `PF`, `AD`, `F`).
+- Sidebar afinada:
+  - ancho mas compacto
+  - estado activo mas suave
+  - topbar mas baja
+  - pesos tipograficos reducidos
+  - macrosecciones `Principal` y `Cuenta` diferenciadas visualmente de sus subsecciones.
+- Superficies principales suavizadas:
+  - botones, labels, badges y tablas con menos peso visual
+  - radios alineados a 8px
+  - menos sombras y menos uso de bold/semibold.
+- Detalle de proyecto revisado:
+  - tarjeta de proyecto menos protagonista
+  - titulo del proyecto reducido y con peso 500
+  - metricas mas sobrias
+  - filtros, listado y tarjetas de requerimientos sin sombra y con borde/padding alineado al resto de la app
+  - modo edicion y chips de estado menos pesados.
+
+### Commits de esta tanda
+
+- `7822807 Introduce sidebar app navigation`
+- `e2a7c12 Refine sidebar navigation styling`
+- `7233650 Soften primary app surfaces`
+- `0ffeff1 Refine app navigation density`
+- `45ff64b Clarify sidebar section hierarchy`
+- `25641fc Lighten project detail styling`
+- `2c5d9bc Refine project requirement surfaces`
+
+### Validacion realizada
+
+- `cmd /c npm run lint` OK en las tandas finales.
+- `cmd /c npm run build` OK en las tandas finales.
+- Vercel Production `Ready` tras el ultimo push.
+- `git status --short` limpio antes de crear este handoff.
+
+### Recomendacion para retomar
+
+La app ya se siente bastante mas ligera. El siguiente paso recomendado, si se continua con estetica, es hacer una pasada transversal por:
+
+- `Dashboard BI`
+- `Matriz de cumplimiento`
+- `Panel de Administracion`
+
+Objetivo: aplicar el mismo criterio visual ya usado en `Proyecto`: menos sombras, radios 8px, pesos 500/600, cabeceras mas sobrias y paneles menos protagonistas. Mantener la funcionalidad intacta.
+
 ### Funcionalidades principales ya operativas
 
 - registro, login, logout y sesion
