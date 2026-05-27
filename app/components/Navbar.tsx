@@ -21,7 +21,7 @@ const ACTION = "#0025df";
 const SURFACE = "#f4f6fc";
 const BORDER = "#dbe3f1";
 const MUTED = "#5f7289";
-const SIDEBAR_WIDTH = 244;
+const SIDEBAR_WIDTH = 224;
 
 const navigationGroups = [
   {
@@ -261,9 +261,10 @@ function SideNavLink({
       onMouseLeave={() => setHovered(false)}
       style={{
         ...navItemStyle,
-        background: active ? BRAND : hovered ? SURFACE : "transparent",
-        borderColor: active ? BRAND : hovered ? BORDER : "transparent",
-        color: active ? "#ffffff" : BRAND,
+        background: active ? "#eef4ff" : hovered ? SURFACE : "transparent",
+        borderColor: active ? "#bfdbfe" : hovered ? BORDER : "transparent",
+        boxShadow: active ? `inset 3px 0 0 ${ACTION}` : "none",
+        color: BRAND,
       }}
     >
       <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>{children}</span>
@@ -365,15 +366,15 @@ const brandIconStyle: React.CSSProperties = {
   flexShrink: 0,
   fontSize: 12,
   fontWeight: 700,
-  height: 38,
+  height: 36,
   justifyContent: "center",
-  width: 38,
+  width: 36,
 };
 
 const brandNameStyle: React.CSSProperties = {
   color: BRAND,
   display: "block",
-  fontWeight: 700,
+  fontWeight: 650,
   lineHeight: 1.1,
   whiteSpace: "nowrap",
 };
@@ -389,9 +390,9 @@ const brandTagStyle: React.CSSProperties = {
 
 const navStyle: React.CSSProperties = {
   display: "grid",
-  gap: 16,
+  gap: 14,
   overflowY: "auto",
-  padding: "18px 12px",
+  padding: "16px 10px",
 };
 
 const navGroupStyle: React.CSSProperties = {
@@ -401,8 +402,8 @@ const navGroupStyle: React.CSSProperties = {
 
 const navLabelStyle: React.CSSProperties = {
   color: MUTED,
-  fontSize: 11,
-  fontWeight: 700,
+  fontSize: 10,
+  fontWeight: 600,
   letterSpacing: 0,
   padding: "0 10px",
   textTransform: "uppercase",
@@ -419,11 +420,11 @@ const navItemStyle: React.CSSProperties = {
   borderRadius: 8,
   display: "flex",
   gap: 10,
-  fontSize: 14,
-  fontWeight: 600,
-  minHeight: 42,
+  fontSize: 13,
+  fontWeight: 500,
+  minHeight: 38,
   overflow: "hidden",
-  padding: "7px 12px",
+  padding: "7px 12px 7px 14px",
   textDecoration: "none",
   transition: "background-color 160ms ease, border-color 160ms ease, color 160ms ease",
   whiteSpace: "nowrap",
@@ -434,7 +435,7 @@ const sidebarFooterStyle: React.CSSProperties = {
   display: "grid",
   gap: 10,
   marginTop: "auto",
-  padding: 12,
+  padding: 10,
 };
 
 const userCardStyle: React.CSSProperties = {
@@ -455,7 +456,7 @@ const userInfoStyle: React.CSSProperties = {
 const userNameStyle: React.CSSProperties = {
   color: BRAND,
   fontSize: 13,
-  fontWeight: 650,
+  fontWeight: 600,
   overflow: "hidden",
   textOverflow: "ellipsis",
   whiteSpace: "nowrap",
@@ -483,7 +484,7 @@ const logoutButtonStyle: React.CSSProperties = {
   color: BRAND,
   cursor: "pointer",
   fontSize: 13,
-  fontWeight: 650,
+  fontWeight: 600,
   minHeight: 38,
   padding: "8px 12px",
   textAlign: "left",
@@ -495,7 +496,7 @@ const topbarStyle: React.CSSProperties = {
   borderBottom: `1px solid ${BORDER}`,
   display: "flex",
   gap: 16,
-  height: 64,
+  height: 56,
   justifyContent: "space-between",
   left: SIDEBAR_WIDTH,
   padding: "0 clamp(18px, 2.6vw, 34px)",
@@ -513,16 +514,16 @@ const topbarTitleStyle: React.CSSProperties = {
 
 const topbarEyebrowStyle: React.CSSProperties = {
   color: MUTED,
-  fontSize: 11,
-  fontWeight: 650,
+  fontSize: 10,
+  fontWeight: 600,
   letterSpacing: 0,
   textTransform: "uppercase",
 };
 
 const topbarPageStyle: React.CSSProperties = {
   color: BRAND,
-  fontSize: 17,
-  fontWeight: 650,
+  fontSize: 16,
+  fontWeight: 600,
   overflow: "hidden",
   textOverflow: "ellipsis",
   whiteSpace: "nowrap",
@@ -541,18 +542,18 @@ const compactUserStyle: React.CSSProperties = {
   borderRadius: 8,
   color: BRAND,
   fontSize: 13,
-  fontWeight: 650,
+  fontWeight: 600,
   maxWidth: 180,
   overflow: "hidden",
-  padding: "8px 11px",
+  padding: "7px 10px",
   textOverflow: "ellipsis",
   whiteSpace: "nowrap",
 };
 
 const compactLogoutStyle: React.CSSProperties = {
   ...logoutButtonStyle,
-  minHeight: 36,
-  padding: "7px 11px",
+  minHeight: 34,
+  padding: "6px 10px",
 };
 
 const ghostLinkStyle: React.CSSProperties = {
@@ -560,7 +561,7 @@ const ghostLinkStyle: React.CSSProperties = {
   borderRadius: 8,
   color: BRAND,
   fontSize: 14,
-  fontWeight: 650,
+  fontWeight: 600,
   minHeight: 40,
   padding: "10px 14px",
   textDecoration: "none",
@@ -572,7 +573,7 @@ const primaryLinkStyle: React.CSSProperties = {
   borderRadius: 8,
   color: "white",
   fontSize: 14,
-  fontWeight: 650,
+  fontWeight: 600,
   minHeight: 40,
   padding: "10px 14px",
   textDecoration: "none",

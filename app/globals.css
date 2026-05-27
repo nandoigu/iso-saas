@@ -35,15 +35,15 @@ body.bmo-authenticated-shell {
 }
 
 body.bmo-authenticated-shell .bmo-app-content {
-  margin-left: 244px;
+  margin-left: 224px;
   min-height: 100vh;
-  padding-top: 64px;
+  padding-top: 56px;
 }
 
 @media (max-width: 919px) {
   body.bmo-authenticated-shell .bmo-app-content {
     margin-left: 0;
-    padding-top: 138px;
+    padding-top: 130px;
   }
 
   body.bmo-authenticated-shell aside[aria-label="Navegacion principal"] {
