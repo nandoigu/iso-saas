@@ -19,12 +19,24 @@ type CurrentUser = {
 const BRAND = "#002a4e";
 const ACTION = "#0025df";
 const SURFACE = "#f4f6fc";
+const BORDER = "#dbe3f1";
+const MUTED = "#5f7289";
+const SIDEBAR_WIDTH = 244;
 
-const navigationItems = [
-  { href: "/", label: "Inicio" },
-  { href: "/projects", label: "Proyectos" },
-  { href: "/dashboard", label: "Dashboard" },
-  { href: "/profile", label: "Perfil" },
+const navigationGroups = [
+  {
+    label: "Principal",
+    items: [
+      { href: "/", label: "Inicio", token: "IN" },
+      { href: "/projects", label: "Proyectos", token: "PR" },
+      { href: "/dashboard", label: "Dashboard", token: "DB" },
+      { href: "/matrix", label: "Matriz", token: "MX" },
+    ],
+  },
+  {
+    label: "Cuenta",
+    items: [{ href: "/profile", label: "Perfil", token: "PF" }],
+  },
 ];
 
 export default function Navbar() {
@@ -32,7 +44,6 @@ export default function Navbar() {
   const router = useRouter();
   const [user, setUser] = useState<CurrentUser | null>(null);
   const [loadingUser, setLoadingUser] = useState(true);
-  const [isCompact, setIsCompact] = useState(false);
 
   useEffect(() => {
     const loadUser = () => {
@@ -66,19 +77,6 @@ export default function Navbar() {
     };
   }, [pathname]);
 
-  useEffect(() => {
-    const updateLayout = () => {
-      setIsCompact(window.innerWidth < 920);
-    };
-
-    updateLayout();
-    window.addEventListener("resize", updateLayout);
-
-    return () => {
-      window.removeEventListener("resize", updateLayout);
-    };
-  }, []);
-
   const isAuthPage =
     pathname === "/login" ||
     pathname === "/register" ||
@@ -86,205 +84,177 @@ export default function Navbar() {
     pathname === "/reset-password";
   const authenticatedUser = isAuthPage ? null : user;
 
+  useEffect(() => {
+    document.body.classList.toggle("bmo-authenticated-shell", Boolean(authenticatedUser));
+
+    return () => {
+      document.body.classList.remove("bmo-authenticated-shell");
+    };
+  }, [authenticatedUser]);
+
   const visibleNavigation = useMemo(() => {
     if (!authenticatedUser) return [];
 
-    const items = [...navigationItems];
+    const groups = navigationGroups.map((group) => ({
+      ...group,
+      items: [...group.items],
+    }));
 
     if (authenticatedUser.role === "admin") {
-      items.push({ href: "/admin", label: "Admin" });
+      groups[1].items.push({ href: "/admin", label: "Admin", token: "AD" });
     }
 
-    return items.map((item) => ({
-      ...item,
-      active: isRouteActive(pathname, item.href),
+    return groups.map((group) => ({
+      ...group,
+      items: group.items.map((item) => ({
+        ...item,
+        active: isRouteActive(pathname, item.href),
+      })),
     }));
   }, [authenticatedUser, pathname]);
+
+  const currentPageLabel =
+    visibleNavigation
+      .flatMap((group) => group.items)
+      .find((item) => item.active)?.label || "BMO ISO 19650";
 
   const logout = async () => {
     await fetch("/api/auth/logout", { method: "POST" });
     setUser(null);
+    document.body.classList.remove("bmo-authenticated-shell");
     router.push("/login");
     router.refresh();
   };
 
-  return (
-    <header
-      style={{
-        background: "white",
-        borderBottom: "1px solid #dbe3f1",
-        boxShadow: "0 4px 16px rgba(0, 42, 78, 0.04)",
-        minHeight: 70,
-        position: "sticky",
-        top: 0,
-        zIndex: 40,
-      }}
-    >
-      <div
-        style={{
-          alignItems: "center",
-          display: "grid",
-          gap: 16,
-          gridTemplateColumns:
-            authenticatedUser && !isCompact
-              ? "minmax(180px, auto) minmax(0, 1fr) auto"
-              : "minmax(0, 1fr) auto",
-          margin: "0 auto",
-          maxWidth: 1440,
-          minHeight: isCompact ? 86 : 70,
-          padding: isCompact ? "10px 16px" : "0 28px",
-        }}
-      >
-        <Link
-          href={authenticatedUser ? "/dashboard" : "/login"}
-          style={{
-            alignItems: "center",
-            color: BRAND,
-            display: "inline-flex",
-            gap: 12,
-            minWidth: 0,
-            textDecoration: "none",
-          }}
-        >
-          <div
-            aria-hidden="true"
-            style={{
-              alignItems: "center",
-              background: SURFACE,
-              border: `1px solid ${ACTION}22`,
-              borderRadius: 10,
-              color: ACTION,
-              display: "inline-flex",
-              fontSize: 13,
-              fontWeight: 800,
-              height: 40,
-              justifyContent: "center",
-              minWidth: 40,
-            }}
-          >
-            BMO
+  if (!authenticatedUser) {
+    return (
+      <header style={authHeaderStyle}>
+        <div style={authHeaderInnerStyle}>
+          <BrandMark href="/login" />
+
+          <div style={authActionsStyle}>
+            {!isAuthPage && !loadingUser && (
+              <>
+                <Link href="/login" style={ghostLinkStyle}>
+                  Login
+                </Link>
+                <Link href="/register" style={primaryLinkStyle}>
+                  Registro
+                </Link>
+              </>
+            )}
           </div>
-
-          <div style={{ minWidth: 0 }}>
-            <div
-              style={{
-                color: BRAND,
-                fontSize: isCompact ? 15 : 17,
-                fontWeight: 800,
-                lineHeight: 1.2,
-                whiteSpace: "nowrap",
-              }}
-            >
-              BMO ISO 19650
-            </div>
-            <div
-              style={{
-                color: "#5f7289",
-                fontSize: 12,
-                lineHeight: 1.3,
-                marginTop: 2,
-                whiteSpace: "nowrap",
-              }}
-            >
-              Compliance SaaS
-            </div>
-          </div>
-        </Link>
-
-        {authenticatedUser ? (
-          <nav
-            aria-label="Navegacion principal"
-            style={{
-              alignItems: "center",
-              background: "#f8fafc",
-              border: "1px solid #dbe3f1",
-              borderRadius: 12,
-              display: "flex",
-              gap: 8,
-              gridColumn: isCompact ? "1 / -1" : undefined,
-              justifyContent: isCompact ? "flex-start" : "center",
-              minWidth: 0,
-              overflowX: "auto",
-              padding: 6,
-            }}
-          >
-            {visibleNavigation.map((item) => (
-              <TopNavLink
-                key={item.href}
-                href={item.href}
-                active={item.active}
-              >
-                {item.label}
-              </TopNavLink>
-            ))}
-          </nav>
-        ) : (
-          <div />
-        )}
-
-        <div
-          style={{
-            alignItems: "center",
-            display: "flex",
-            gap: 10,
-            justifyContent: "flex-end",
-            minWidth: 0,
-          }}
-        >
-          {!authenticatedUser && !isAuthPage && !loadingUser && (
-            <>
-              <Link href="/login" style={ghostLinkStyle}>
-                Login
-              </Link>
-              <Link href="/register" style={primaryLinkStyle}>
-                Registro
-              </Link>
-            </>
-          )}
-
-          {authenticatedUser && (
-            <>
-              <div style={userPillStyle}>
-                <span
-                  style={{
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  {authenticatedUser.name || authenticatedUser.email}
-                </span>
-              </div>
-
-              <span style={navbarBadgeStyle(getUserRoleBadgeStyle(authenticatedUser.role))}>
-                {authenticatedUser.role === "admin" ? "ADMIN" : "USER"}
-              </span>
-
-              {authenticatedUser.status !== "active" && (
-                <span style={navbarBadgeStyle(getUserStatusBadgeStyle(authenticatedUser.status))}>
-                  {authenticatedUser.status === "blocked" ? "BLOCKED" : "SUSPENDED"}
-                </span>
-              )}
-
-              <button onClick={logout} style={ghostButtonStyle}>
-                Logout
-              </button>
-
-            </>
-          )}
         </div>
-      </div>
-    </header>
+      </header>
+    );
+  }
+
+  return (
+    <>
+      <aside style={sidebarStyle} aria-label="Navegacion principal">
+        <div style={sidebarBrandStyle}>
+          <BrandMark href="/dashboard" compact />
+        </div>
+
+        <nav style={navStyle}>
+          {visibleNavigation.map((group) => (
+            <div key={group.label} style={navGroupStyle}>
+              <div style={navLabelStyle}>{group.label}</div>
+              <div style={navItemsStyle}>
+                {group.items.map((item) => (
+                  <SideNavLink
+                    key={item.href}
+                    href={item.href}
+                    active={item.active}
+                    token={item.token}
+                  >
+                    {item.label}
+                  </SideNavLink>
+                ))}
+              </div>
+            </div>
+          ))}
+        </nav>
+
+        <div style={sidebarFooterStyle}>
+          <Link href="/profile" style={userCardStyle}>
+            <span style={avatarStyle}>
+              {getInitials(authenticatedUser.name || authenticatedUser.email)}
+            </span>
+            <span style={userInfoStyle}>
+              <span style={userNameStyle}>
+                {authenticatedUser.name || authenticatedUser.email}
+              </span>
+              <span style={userMetaStyle}>{authenticatedUser.email}</span>
+            </span>
+          </Link>
+
+          <div style={footerBadgesStyle}>
+            <span style={navbarBadgeStyle(getUserRoleBadgeStyle(authenticatedUser.role))}>
+              {authenticatedUser.role === "admin" ? "ADMIN" : "USER"}
+            </span>
+            {authenticatedUser.status !== "active" && (
+              <span style={navbarBadgeStyle(getUserStatusBadgeStyle(authenticatedUser.status))}>
+                {authenticatedUser.status === "blocked" ? "BLOCKED" : "SUSPENDED"}
+              </span>
+            )}
+          </div>
+
+          <button onClick={logout} style={logoutButtonStyle}>
+            Logout
+          </button>
+        </div>
+      </aside>
+
+      <header style={topbarStyle}>
+        <div style={topbarTitleStyle}>
+          <span style={topbarEyebrowStyle}>BMO ISO 19650</span>
+          <span style={topbarPageStyle}>{currentPageLabel}</span>
+        </div>
+        <div style={topbarActionsStyle}>
+          <span style={compactUserStyle}>
+            {authenticatedUser.name || authenticatedUser.email}
+          </span>
+          <button onClick={logout} style={compactLogoutStyle}>
+            Logout
+          </button>
+        </div>
+      </header>
+    </>
   );
 }
 
-function TopNavLink({
+function BrandMark({
+  href,
+  compact = false,
+}: {
+  href: string;
+  compact?: boolean;
+}) {
+  return (
+    <Link href={href} style={brandLinkStyle}>
+      <span aria-hidden="true" style={brandIconStyle}>
+        BMO
+      </span>
+      <span style={{ minWidth: 0 }}>
+        <span style={{ ...brandNameStyle, fontSize: compact ? 17 : 18 }}>
+          BMO ISO 19650
+        </span>
+        <span style={brandTagStyle}>Compliance SaaS</span>
+      </span>
+    </Link>
+  );
+}
+
+function SideNavLink({
   href,
   active,
+  token,
   children,
 }: {
   href: string;
   active: boolean;
+  token: string;
   children: React.ReactNode;
 }) {
   const [hovered, setHovered] = useState(false);
@@ -296,27 +266,24 @@ function TopNavLink({
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       style={{
-        background: active ? ACTION : hovered ? `${ACTION}14` : "transparent",
-        border: `1px solid ${active ? ACTION : hovered ? `${ACTION}26` : "transparent"}`,
-        borderRadius: 8,
-        color: active ? "white" : BRAND,
-        fontSize: 15,
-        fontWeight: 800,
-        padding: "11px 16px",
-        textDecoration: "none",
-        transform: hovered && !active ? "translateY(-1px)" : "translateY(0)",
-        transition:
-          "background-color 160ms ease, color 160ms ease, border-color 160ms ease, transform 160ms ease, box-shadow 160ms ease",
-        boxShadow:
-          active
-            ? "0 10px 24px rgba(0, 37, 223, 0.18)"
-            : hovered
-              ? "0 6px 18px rgba(0, 37, 223, 0.10)"
-              : "none",
-        whiteSpace: "nowrap",
+        ...navItemStyle,
+        background: active ? BRAND : hovered ? SURFACE : "transparent",
+        borderColor: active ? BRAND : hovered ? BORDER : "transparent",
+        color: active ? "#ffffff" : BRAND,
       }}
     >
-      {children}
+      <span
+        aria-hidden="true"
+        style={{
+          ...navTokenStyle,
+          background: active ? "rgba(255,255,255,0.16)" : "#ffffff",
+          borderColor: active ? "rgba(255,255,255,0.22)" : BORDER,
+          color: active ? "#ffffff" : ACTION,
+        }}
+      >
+        {token}
+      </span>
+      <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>{children}</span>
     </Link>
   );
 }
@@ -334,35 +301,318 @@ function isRouteActive(pathname: string, href: string) {
     return pathname === "/profile" || pathname.startsWith("/profile/");
   }
 
+  if (href === "/") {
+    return pathname === "/";
+  }
+
   return pathname === href || pathname.startsWith(`${href}/`);
+}
+
+function getInitials(value: string) {
+  const parts = value
+    .trim()
+    .split(/\s+|@/)
+    .filter(Boolean)
+    .slice(0, 2);
+
+  return parts.map((part) => part[0]?.toUpperCase()).join("") || "BM";
 }
 
 function navbarBadgeStyle(style: React.CSSProperties): React.CSSProperties {
   return {
     ...style,
     alignItems: "center",
-    letterSpacing: "0.04em",
-    minHeight: 40,
-    padding: "10px 12px",
+    fontSize: 11,
+    letterSpacing: 0,
+    minHeight: 28,
+    padding: "6px 9px",
   };
 }
 
-const userPillStyle: React.CSSProperties = {
+const authHeaderStyle: React.CSSProperties = {
+  background: "#ffffff",
+  borderBottom: `1px solid ${BORDER}`,
+  minHeight: 70,
+  position: "sticky",
+  top: 0,
+  zIndex: 40,
+};
+
+const authHeaderInnerStyle: React.CSSProperties = {
   alignItems: "center",
-  background: SURFACE,
-  border: "1px solid #dbe3f1",
-  borderRadius: 10,
+  display: "flex",
+  gap: 16,
+  justifyContent: "space-between",
+  margin: "0 auto",
+  maxWidth: 1440,
+  minHeight: 70,
+  padding: "0 28px",
+};
+
+const authActionsStyle: React.CSSProperties = {
+  alignItems: "center",
+  display: "flex",
+  gap: 10,
+};
+
+const sidebarStyle: React.CSSProperties = {
+  background: "#ffffff",
+  borderRight: `1px solid ${BORDER}`,
+  bottom: 0,
+  display: "flex",
+  flexDirection: "column",
+  left: 0,
+  position: "fixed",
+  top: 0,
+  width: SIDEBAR_WIDTH,
+  zIndex: 50,
+};
+
+const sidebarBrandStyle: React.CSSProperties = {
+  borderBottom: `1px solid ${BORDER}`,
+  padding: 18,
+};
+
+const brandLinkStyle: React.CSSProperties = {
+  alignItems: "center",
   color: BRAND,
   display: "inline-flex",
+  gap: 12,
+  minWidth: 0,
+  textDecoration: "none",
+};
+
+const brandIconStyle: React.CSSProperties = {
+  alignItems: "center",
+  background: SURFACE,
+  border: `1px solid ${ACTION}22`,
+  borderRadius: 10,
+  color: ACTION,
+  display: "inline-flex",
+  flexShrink: 0,
+  fontSize: 12,
+  fontWeight: 900,
+  height: 38,
+  justifyContent: "center",
+  width: 38,
+};
+
+const brandNameStyle: React.CSSProperties = {
+  color: BRAND,
+  display: "block",
+  fontWeight: 850,
+  lineHeight: 1.1,
+  whiteSpace: "nowrap",
+};
+
+const brandTagStyle: React.CSSProperties = {
+  color: MUTED,
+  display: "block",
+  fontSize: 12,
+  lineHeight: 1.3,
+  marginTop: 2,
+  whiteSpace: "nowrap",
+};
+
+const navStyle: React.CSSProperties = {
+  display: "grid",
+  gap: 16,
+  overflowY: "auto",
+  padding: "18px 12px",
+};
+
+const navGroupStyle: React.CSSProperties = {
+  display: "grid",
+  gap: 7,
+};
+
+const navLabelStyle: React.CSSProperties = {
+  color: MUTED,
+  fontSize: 11,
+  fontWeight: 800,
+  letterSpacing: 0,
+  padding: "0 10px",
+  textTransform: "uppercase",
+};
+
+const navItemsStyle: React.CSSProperties = {
+  display: "grid",
+  gap: 3,
+};
+
+const navItemStyle: React.CSSProperties = {
+  alignItems: "center",
+  border: "1px solid transparent",
+  borderRadius: 8,
+  display: "flex",
+  gap: 10,
+  fontSize: 14,
+  fontWeight: 800,
+  minHeight: 42,
+  overflow: "hidden",
+  padding: "7px 10px",
+  textDecoration: "none",
+  transition: "background-color 160ms ease, border-color 160ms ease, color 160ms ease",
+  whiteSpace: "nowrap",
+};
+
+const navTokenStyle: React.CSSProperties = {
+  alignItems: "center",
+  border: `1px solid ${BORDER}`,
+  borderRadius: 7,
+  display: "inline-flex",
+  flexShrink: 0,
+  fontSize: 10,
+  fontWeight: 900,
+  height: 26,
+  justifyContent: "center",
+  width: 30,
+};
+
+const sidebarFooterStyle: React.CSSProperties = {
+  borderTop: `1px solid ${BORDER}`,
+  display: "grid",
+  gap: 10,
+  marginTop: "auto",
+  padding: 12,
+};
+
+const userCardStyle: React.CSSProperties = {
+  alignItems: "center",
+  borderRadius: 8,
+  color: BRAND,
+  display: "flex",
+  gap: 10,
+  minWidth: 0,
+  padding: 8,
+  textDecoration: "none",
+};
+
+const avatarStyle: React.CSSProperties = {
+  alignItems: "center",
+  background: "#eef2ff",
+  border: "1px solid #c7d2fe",
+  borderRadius: "50%",
+  color: "#4338ca",
+  display: "inline-flex",
+  flexShrink: 0,
+  fontSize: 11,
+  fontWeight: 900,
+  height: 32,
+  justifyContent: "center",
+  width: 32,
+};
+
+const userInfoStyle: React.CSSProperties = {
+  display: "grid",
+  minWidth: 0,
+};
+
+const userNameStyle: React.CSSProperties = {
+  color: BRAND,
   fontSize: 13,
-  fontWeight: 700,
-  maxWidth: 160,
-  minHeight: 40,
-  padding: "0 12px",
+  fontWeight: 800,
+  overflow: "hidden",
+  textOverflow: "ellipsis",
+  whiteSpace: "nowrap",
+};
+
+const userMetaStyle: React.CSSProperties = {
+  color: MUTED,
+  fontSize: 11,
+  overflow: "hidden",
+  textOverflow: "ellipsis",
+  whiteSpace: "nowrap",
+};
+
+const footerBadgesStyle: React.CSSProperties = {
+  display: "flex",
+  flexWrap: "wrap",
+  gap: 6,
+  padding: "0 8px",
+};
+
+const logoutButtonStyle: React.CSSProperties = {
+  background: "#ffffff",
+  border: `1px solid ${BORDER}`,
+  borderRadius: 8,
+  color: BRAND,
+  cursor: "pointer",
+  fontSize: 13,
+  fontWeight: 800,
+  minHeight: 38,
+  padding: "8px 12px",
+  textAlign: "left",
+};
+
+const topbarStyle: React.CSSProperties = {
+  alignItems: "center",
+  background: "rgba(255,255,255,0.94)",
+  borderBottom: `1px solid ${BORDER}`,
+  display: "flex",
+  gap: 16,
+  height: 64,
+  justifyContent: "space-between",
+  left: SIDEBAR_WIDTH,
+  padding: "0 clamp(18px, 2.6vw, 34px)",
+  position: "fixed",
+  right: 0,
+  top: 0,
+  zIndex: 45,
+};
+
+const topbarTitleStyle: React.CSSProperties = {
+  display: "grid",
+  gap: 2,
+  minWidth: 0,
+};
+
+const topbarEyebrowStyle: React.CSSProperties = {
+  color: MUTED,
+  fontSize: 11,
+  fontWeight: 800,
+  letterSpacing: 0,
+  textTransform: "uppercase",
+};
+
+const topbarPageStyle: React.CSSProperties = {
+  color: BRAND,
+  fontSize: 18,
+  fontWeight: 850,
+  overflow: "hidden",
+  textOverflow: "ellipsis",
+  whiteSpace: "nowrap",
+};
+
+const topbarActionsStyle: React.CSSProperties = {
+  alignItems: "center",
+  display: "flex",
+  gap: 10,
+  minWidth: 0,
+};
+
+const compactUserStyle: React.CSSProperties = {
+  background: SURFACE,
+  border: `1px solid ${BORDER}`,
+  borderRadius: 8,
+  color: BRAND,
+  fontSize: 13,
+  fontWeight: 800,
+  maxWidth: 180,
+  overflow: "hidden",
+  padding: "8px 11px",
+  textOverflow: "ellipsis",
+  whiteSpace: "nowrap",
+};
+
+const compactLogoutStyle: React.CSSProperties = {
+  ...logoutButtonStyle,
+  minHeight: 36,
+  padding: "7px 11px",
 };
 
 const ghostLinkStyle: React.CSSProperties = {
-  border: "1px solid #dbe3f1",
+  border: `1px solid ${BORDER}`,
   borderRadius: 8,
   color: BRAND,
   fontSize: 14,
@@ -382,17 +632,4 @@ const primaryLinkStyle: React.CSSProperties = {
   minHeight: 40,
   padding: "10px 14px",
   textDecoration: "none",
-};
-
-const ghostButtonStyle: React.CSSProperties = {
-  background: "transparent",
-  border: "1px solid #dbe3f1",
-  borderRadius: 8,
-  color: BRAND,
-  cursor: "pointer",
-  fontSize: 14,
-  fontWeight: 700,
-  minHeight: 40,
-  padding: "10px 14px",
-  transition: "background-color 160ms ease, border-color 160ms ease",
 };

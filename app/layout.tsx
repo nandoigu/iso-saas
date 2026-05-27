@@ -22,7 +22,7 @@ export default function RootLayout({
         }}
       >
         <Navbar />
-        <div style={{ minHeight: "calc(100vh - 70px)" }}>{children}</div>
+        <div className="bmo-app-content">{children}</div>
       </body>
     </html>
   );
