@@ -655,7 +655,7 @@ function AlertsPanel({
 
           <div style={{ display: "grid", gap: 10, marginTop: 16 }}>
             {highlightedRequirements.length === 0 ? (
-              <p style={{ color: "#16a34a", fontWeight: 700, margin: 0 }}>
+              <p style={{ color: "#15803d", fontWeight: 500, margin: 0 }}>
                 No hay requerimientos vencidos ni próximos a vencer.
               </p>
             ) : (
@@ -664,14 +664,14 @@ function AlertsPanel({
                   key={requirement.id}
                   style={{
                     border: "1px solid #fee2e2",
-                    borderLeft: `5px solid ${
+                    borderLeft: `3px solid ${
                       isRequirementOverdue(requirement) ? "#dc2626" : "#d97706"
                     }`,
-                    borderRadius: 10,
+                    borderRadius: 8,
                     padding: 12,
                   }}
                 >
-                  <strong style={{ display: "block", fontSize: 14 }}>
+                  <strong style={{ display: "block", fontSize: 14, fontWeight: 600 }}>
                     {requirement.projectName}
                   </strong>
                   <span style={{ color: "#64748b", display: "block", fontSize: 13 }}>
@@ -692,11 +692,11 @@ function AlertsPanel({
           style={{
             background: "#f8fafc",
             border: "1px solid #e2e8f0",
-            borderRadius: 12,
+            borderRadius: 8,
             padding: 16,
           }}
         >
-          <h3 style={{ fontSize: 16, margin: "0 0 12px" }}>Notificaciones</h3>
+          <h3 style={panelTitleStyle}>Notificaciones</h3>
           <label style={checkboxLabelStyle}>
             <input
               type="checkbox"
@@ -726,7 +726,7 @@ function AlertsPanel({
           </label>
 
           <label style={{ display: "grid", gap: 8, marginTop: 12 }}>
-            <span style={{ color: "#334155", fontSize: 13, fontWeight: 700 }}>
+            <span style={{ color: "#334155", fontSize: 13, fontWeight: 600 }}>
               Frecuencia
             </span>
             <select
@@ -740,7 +740,7 @@ function AlertsPanel({
               }
               style={{
                 border: "1px solid #cbd5e1",
-                borderRadius: 10,
+                borderRadius: 8,
                 minHeight: 40,
                 padding: "8px 10px",
               }}
@@ -805,14 +805,14 @@ function AlertCounter({
       style={{
         background: "#fff",
         border: "1px solid #e2e8f0",
-        borderRadius: 12,
+        borderRadius: 8,
         padding: 14,
       }}
     >
       <span style={{ color: "#64748b", display: "block", fontSize: 13 }}>
         {label}
       </span>
-      <strong style={{ color, display: "block", fontSize: 28, marginTop: 4 }}>
+      <strong style={{ color, display: "block", fontSize: 24, fontWeight: 600, marginTop: 4 }}>
         {value}
       </strong>
     </div>
@@ -1023,15 +1023,15 @@ function SelectFilter({
   onChange: (value: string) => void;
 }) {
   return (
-    <label style={{ color: "#334155", display: "grid", fontSize: 13, fontWeight: 700, gap: 8 }}>
+    <label style={{ color: "#334155", display: "grid", fontSize: 13, fontWeight: 600, gap: 8 }}>
       {label}
       <select
         value={value}
         onChange={(event) => onChange(event.target.value)}
         style={{
           border: "1px solid #cbd5e1",
-          borderRadius: 10,
-          minHeight: 42,
+          borderRadius: 8,
+          minHeight: 40,
           padding: "8px 10px",
         }}
       >
@@ -1060,7 +1060,7 @@ function KpiCard({
       <div
         style={{
           color: tone === "risk" ? "#dc2626" : "#0f172a",
-          fontSize: 26,
+          fontSize: 24,
           fontWeight: 600,
           marginTop: 8,
         }}
@@ -1617,6 +1617,13 @@ const chartTitleStyle: React.CSSProperties = {
   margin: "0 0 10px",
 };
 
+const panelTitleStyle: React.CSSProperties = {
+  color: "#002a4e",
+  fontSize: 16,
+  fontWeight: 500,
+  margin: "0 0 12px",
+};
+
 const compactChartHeight = 220;
 const mediumChartHeight = 240;
 const wideChartHeight = 250;
@@ -1625,8 +1632,8 @@ const primaryLinkStyle: React.CSSProperties = {
   ...appPrimaryButtonStyle,
   display: "inline-flex",
   justifyContent: "center",
-  minHeight: 48,
-  padding: "10px 14px",
+  minHeight: 40,
+  padding: "8px 13px",
   textDecoration: "none",
 };
 
@@ -1634,23 +1641,23 @@ const secondaryLinkStyle: React.CSSProperties = {
   ...appSecondaryButtonStyle,
   display: "inline-flex",
   justifyContent: "center",
-  minHeight: 48,
-  padding: "10px 14px",
+  minHeight: 40,
+  padding: "8px 13px",
   textDecoration: "none",
 };
 
 const primaryButtonStyle: React.CSSProperties = {
   ...appPrimaryButtonStyle,
   justifyContent: "center",
-  minHeight: 48,
-  padding: "10px 14px",
+  minHeight: 40,
+  padding: "8px 13px",
 };
 
 const secondaryButtonStyle: React.CSSProperties = {
   ...appSecondaryButtonStyle,
   justifyContent: "center",
-  minHeight: 48,
-  padding: "10px 14px",
+  minHeight: 40,
+  padding: "8px 13px",
 };
 
 const checkboxLabelStyle: React.CSSProperties = {
