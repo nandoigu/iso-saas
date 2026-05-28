@@ -8,15 +8,15 @@
 
 ## Estado actual
 
-La aplicacion ya tiene una base SaaS funcional bastante avanzada.
+La aplicacion ya tiene una base SaaS funcional avanzada y esta en fase de pulido final, QA visual/accesibilidad y preparacion de producto. La construccion funcional principal, produccion y auditoria critica estan cerradas.
 
 ## Ultima sesion de estilo y navegacion - 2026-05-28
 
 - Repo correcto de trabajo confirmado: `C:\Users\ferna\prueba-app`.
 - Produccion principal: `https://iso-saas-gamma.vercel.app`.
 - Rama activa: `main`.
-- Ultimo commit desplegado y verificado en Vercel:
-  - `2c5d9bc Refine project requirement surfaces`
+- Ultimo commit de codigo desplegado y verificado en Vercel antes de esta actualizacion de handoff:
+  - `ea75802 Soften remaining app surfaces`
 - La referencia anterior solicitada por el usuario sigue en el historial:
   - `bf91f1b Document final authenticated UI check`
 
@@ -40,6 +40,15 @@ La aplicacion ya tiene una base SaaS funcional bastante avanzada.
   - metricas mas sobrias
   - filtros, listado y tarjetas de requerimientos sin sombra y con borde/padding alineado al resto de la app
   - modo edicion y chips de estado menos pesados.
+- Pasada transversal posterior completada:
+  - iconos en el menu lateral
+  - macrosecciones `Principal` y `Cuenta` redisenadas para diferenciarse de las subsecciones
+  - Dashboard BI suavizado
+  - Matriz de cumplimiento suavizada
+  - Panel de Administracion suavizado
+  - listado de Proyectos suavizado
+  - Perfil/Login/Auth suavizados
+  - superficies compartidas, avisos, estados vacios y confirmaciones destructivas con menor peso visual
 
 ### Commits de esta tanda
 
@@ -50,6 +59,14 @@ La aplicacion ya tiene una base SaaS funcional bastante avanzada.
 - `45ff64b Clarify sidebar section hierarchy`
 - `25641fc Lighten project detail styling`
 - `2c5d9bc Refine project requirement surfaces`
+- `f589640 Add sidebar navigation icons`
+- `572e49d Redesign sidebar section labels`
+- `193535e Soften dashboard BI surfaces`
+- `c659e25 Soften compliance matrix surfaces`
+- `e076d63 Soften admin panel surfaces`
+- `6b2a93b Soften projects overview surfaces`
+- `5c611d3 Soften profile and login surfaces`
+- `ea75802 Soften remaining app surfaces`
 
 ### Validacion realizada
 
@@ -60,13 +77,37 @@ La aplicacion ya tiene una base SaaS funcional bastante avanzada.
 
 ### Recomendacion para retomar
 
-La app ya se siente bastante mas ligera. El siguiente paso recomendado, si se continua con estetica, es hacer una pasada transversal por:
+La app ya esta en estado avanzado de pulido visual. La QA visual/accesibilidad final queda cerrada en esta sesion. El siguiente paso recomendado es elegir entre:
 
-- `Dashboard BI`
-- `Matriz de cumplimiento`
-- `Panel de Administracion`
+- onboarding y primera experiencia
+- branding comercial y datos demo de calidad
+- tests automatizados de humo para APIs/rutas principales
+- una validacion visual interactiva adicional en Chrome normal si se quiere confirmar manualmente tablet/movil con sesion real
 
-Objetivo: aplicar el mismo criterio visual ya usado en `Proyecto`: menos sombras, radios 8px, pesos 500/600, cabeceras mas sobrias y paneles menos protagonistas. Mantener la funcionalidad intacta.
+## QA visual y accesibilidad final - 2026-05-28
+
+- Revisada la estructura visual y accesible de las pantallas principales:
+  - Inicio
+  - Proyectos
+  - Dashboard BI
+  - Matriz de cumplimiento
+  - Perfil
+  - Admin
+  - Prueba de email
+  - Auth/Login
+- Comprobaciones realizadas:
+  - foco visible global en enlaces, botones, inputs, selects y textareas
+  - labels presentes en formularios principales
+  - avisos comunes con `Notice` usando `role="alert"` para errores y `role="status"` para el resto
+  - confirmaciones destructivas con `role="dialog"`, `aria-modal` y titulo asociado
+  - botones deshabilitados/en curso con estado visual y `aria-disabled` donde aplica
+  - contraste basico de paleta operativa revisado para textos secundarios, acciones y estados
+  - rutas principales locales responden `200` con sesion temporal local
+- Ajustes aplicados en esta QA:
+  - anadido `aria-disabled` a botones pendientes en dashboard, prueba de email y edicion de proyecto/requerimiento
+  - handoff actualizado para reflejar que la unificacion visual ya esta cerrada
+- Limitacion de la QA:
+  - el navegador integrado no arranco por un fallo de sandbox del conector en Windows, por lo que la revision se apoyo en inspeccion de codigo/DOM, servidor local, rutas HTTP autenticadas y validacion de lint/build.
 
 ### Funcionalidades principales ya operativas
 
@@ -331,7 +372,7 @@ Objetivo: aplicar el mismo criterio visual ya usado en `Proyecto`: menos sombras
 
 ### Prioridad media pendiente
 
-- [ ] Unificación visual restante:
+- [x] Unificacion visual restante:
   - [x] primera pasada de estilos compartidos para botones, paneles, campos, ayudas y estados vacíos en vistas operativas principales
   - [x] badges de usuario/estado centralizados en `components/uiStyles.ts`
   - [x] tablas principales conectadas a estilos compartidos en admin y matriz
@@ -342,14 +383,14 @@ Objetivo: aplicar el mismo criterio visual ya usado en `Proyecto`: menos sombras
   - [x] fichas de proyecto ampliadas y con acciones en rejilla flexible
   - [x] estilos compartidos de pagina/cabecera creados en `components/uiStyles.ts`
   - [x] matriz global, matriz de proyecto y prueba de email conectadas a cabecera visual comun
-  - botones
+  - [x] botones
   - [x] Perfil, Admin y Auth conectados a patrones compartidos de cabecera/formulario.
-  - badges
-  - paneles
-  - tablas
-  - estados vacíos
-  - confirmaciones destructivas
-- [ ] Unificar avisos restantes si aparecen nuevos patrones fuera de `components/Notice.tsx`.
+  - [x] badges
+  - [x] paneles
+  - [x] tablas
+  - [x] estados vacios
+  - [x] confirmaciones destructivas
+- [x] Unificar avisos restantes si aparecen nuevos patrones fuera de `components/Notice.tsx`.
 - [x] Revisar textos con falta de acentos o restos de mojibake heredados en UI y mensajes API principales.
 - [x] Documentar formato de importación Excel para usuario final:
   - columnas aceptadas
@@ -383,11 +424,12 @@ Objetivo: aplicar el mismo criterio visual ya usado en `Proyecto`: menos sombras
   - build
   - smoke test post-deploy
   - referencia: `docs/deployment-checklist.md`
-- [ ] Revisar accesibilidad básica:
-  - labels
-  - foco visible
-  - navegación por teclado
-  - contraste
+- [x] Revisar accesibilidad basica:
+  - labels revisados en formularios principales
+  - foco visible global confirmado
+  - botones deshabilitados alineados con `aria-disabled` donde aplica
+  - contraste basico de paleta operativa revisado
+  - rutas principales comprobadas por HTTP con sesion local temporal
 - [ ] Onboarding y primera experiencia:
   - vacíos guiados
   - ayuda contextual ligera
@@ -413,8 +455,8 @@ Objetivo: aplicar el mismo criterio visual ya usado en `Proyecto`: menos sombras
 
 - [x] Terminar el pulido de la vista de detalle del proyecto.
 - [x] Revisar mensajes de error/exito para que sean consistentes.
-- [ ] Homogeneizar botones, badges, paneles y tablas en toda la app.
-  - avance fuerte en dashboard, proyectos, detalle, matriz y admin; queda una pasada final transversal.
+- [x] Homogeneizar botones, badges, paneles y tablas en toda la app.
+  - completado con pasadas sobre dashboard, proyectos, detalle, matriz, admin, perfil/login/auth y superficies compartidas.
 - [ ] Añadir mejor feedback al guardar, editar e importar donde aún falte.
   - avance: importacion global y por proyecto limpian feedback obsoleto al cambiar archivo/modo y muestran aviso de progreso durante la operacion.
 - [x] Preparar un recorrido de prueba completo con un usuario demo.

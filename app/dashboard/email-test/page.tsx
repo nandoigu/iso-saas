@@ -150,6 +150,7 @@ export default function EmailTestPage() {
           <button
             type="submit"
             disabled={loading || hydrating || !email.trim()}
+            aria-disabled={loading || hydrating || !email.trim()}
             style={{
               ...appPrimaryButtonStyle,
               ...getActionStateStyle(loading || hydrating || !email.trim()),

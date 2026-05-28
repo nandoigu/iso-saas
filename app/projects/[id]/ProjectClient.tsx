@@ -770,6 +770,7 @@ export default function ProjectClient({ projectId }: ProjectClientProps) {
                     type="button"
                     onClick={cancelProjectMetaEditing}
                     disabled={savingProjectMeta}
+                    aria-disabled={savingProjectMeta}
                     style={secondaryButtonStyle}
                   >
                     Cancelar
@@ -778,6 +779,7 @@ export default function ProjectClient({ projectId }: ProjectClientProps) {
                     type="button"
                     onClick={saveProjectMeta}
                     disabled={savingProjectMeta}
+                    aria-disabled={savingProjectMeta}
                     style={primaryButtonStyle}
                   >
                     {savingProjectMeta ? "Guardando..." : "Guardar proyecto"}
@@ -1614,6 +1616,7 @@ function EditRequirementForm({
         <button
           onClick={onCancelEditing}
           disabled={savingEdit}
+          aria-disabled={savingEdit}
           style={secondaryButtonStyle}
         >
           Cancelar
@@ -1621,6 +1624,7 @@ function EditRequirementForm({
         <button
           onClick={onSaveEditing}
           disabled={savingEdit}
+          aria-disabled={savingEdit}
           style={primaryButtonStyle}
         >
           {savingEdit ? "Guardando..." : "Guardar cambios"}

@@ -753,6 +753,7 @@ function AlertsPanel({
           <button
             onClick={onSendReport}
             disabled={sendingReport}
+            aria-disabled={sendingReport}
             style={{
               ...primaryButtonStyle,
               ...getActionStateStyle(sendingReport),
