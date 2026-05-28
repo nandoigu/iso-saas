@@ -367,7 +367,7 @@ export default function ComplianceMatrix({
         </div>
 
         <div style={{ marginTop: 14 }}>
-          <div style={{ color: "#374151", fontSize: 13, fontWeight: 700, marginBottom: 8 }}>
+          <div style={{ color: "#374151", fontSize: 13, fontWeight: 600, marginBottom: 8 }}>
             Estado
           </div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
@@ -387,7 +387,7 @@ export default function ComplianceMatrix({
                     cursor: "pointer",
                     display: "inline-flex",
                     fontSize: 13,
-                    fontWeight: 700,
+                    fontWeight: 600,
                     gap: 6,
                     padding: "7px 10px",
                   }}
@@ -450,10 +450,12 @@ export default function ComplianceMatrix({
                   flexWrap: "wrap",
                   gap: 12,
                   justifyContent: "space-between",
-                  padding: isCompact ? "12px 14px" : "14px 18px",
+                  padding: isCompact ? "12px 14px" : "13px 16px",
                 }}
               >
-                <h3 style={{ fontSize: 18, margin: 0 }}>{normaKey}</h3>
+                <h3 style={{ color: "#002a4e", fontSize: 17, fontWeight: 500, margin: 0 }}>
+                  {normaKey}
+                </h3>
                 <span style={{ color: "#6b7280", fontSize: 13, fontWeight: 600 }}>
                   {Object.keys(items).length} items
                 </span>
@@ -476,16 +478,16 @@ export default function ComplianceMatrix({
                       <article
                         key={itemKey}
                         style={{
-                          border: "1px solid #eef2f7",
-                          borderRadius: 10,
+                          border: "1px solid #dbe3f1",
+                          borderRadius: 8,
                           overflow: "hidden",
                         }}
                       >
                         <div
                           style={{
                             alignItems: isCompact ? "start" : "center",
-                            background: "#fcfcfd",
-                            borderBottom: "1px solid #eef2f7",
+                            background: "#ffffff",
+                            borderBottom: "1px solid #e2e8f0",
                             display: "grid",
                             gap: 12,
                             gridTemplateColumns: isCompact
@@ -495,7 +497,7 @@ export default function ComplianceMatrix({
                           }}
                         >
                           <div>
-                            <strong style={{ color: "#111827", fontSize: 15 }}>
+                            <strong style={{ color: "#111827", fontSize: 15, fontWeight: 500 }}>
                               {itemKey}
                             </strong>
                             <div
@@ -565,7 +567,7 @@ export default function ComplianceMatrix({
                                           style={{
                                             color: "#111827",
                                             fontSize: 14,
-                                            fontWeight: 600,
+                                            fontWeight: 500,
                                             lineHeight: 1.5,
                                           }}
                                         >
@@ -697,8 +699,8 @@ function SummaryCard({
     <div
       style={{
         background: "white",
-        border: "1px solid #e5e7eb",
-        borderRadius: 12,
+        border: "1px solid #dbe3f1",
+        borderRadius: 8,
         padding: 16,
       }}
     >
@@ -707,7 +709,7 @@ function SummaryCard({
         style={{
           color: accent || "#111827",
           fontSize: 24,
-          fontWeight: 700,
+          fontWeight: 600,
           marginTop: 6,
         }}
       >
@@ -790,7 +792,7 @@ const filterLabelStyle: React.CSSProperties = {
   color: "#374151",
   display: "grid",
   fontSize: 13,
-  fontWeight: 700,
+  fontWeight: 600,
   gap: 8,
 };
 

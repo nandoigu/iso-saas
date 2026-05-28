@@ -99,7 +99,7 @@ export default function MatrixIndexPage() {
                 ...appPanelStyle,
                 display: "grid",
                 gap: 14,
-                padding: 20,
+                padding: 18,
               }}
             >
               <div>
@@ -107,8 +107,8 @@ export default function MatrixIndexPage() {
                   style={{
                     color: "#5f7289",
                     fontSize: 12,
-                    fontWeight: 700,
-                    letterSpacing: "0.04em",
+                    fontWeight: 600,
+                    letterSpacing: 0,
                     textTransform: "uppercase",
                   }}
                 >
