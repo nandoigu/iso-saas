@@ -988,7 +988,7 @@ export default function ProjectClient({ projectId }: ProjectClientProps) {
               gap: 12,
               gridTemplateColumns: isMobile
                 ? "minmax(0, 1fr)"
-                : "minmax(0, 1.2fr) minmax(0, 0.8fr)",
+                : "repeat(2, minmax(0, 1fr))",
               marginTop: 12,
             }}
           >
@@ -1568,7 +1568,7 @@ function EditRequirementForm({
           gap: 12,
           gridTemplateColumns: compactLayout
             ? "minmax(0, 1fr)"
-            : "minmax(0, 1.2fr) minmax(0, 0.8fr)",
+            : "repeat(2, minmax(0, 1fr))",
           marginTop: 14,
         }}
       >
