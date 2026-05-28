@@ -7,6 +7,7 @@ import {
   getProjectRoleBadgeStyle,
   getProjectRoleLabel,
 } from "@/app/lib/projectRoles";
+import { EmptyState } from "@/components/EmptyState";
 import { Notice } from "@/components/Notice";
 import {
   appEmptyStateStyle,
@@ -178,6 +179,7 @@ export default function Home() {
   );
 
   const userLabel = user?.name?.trim() || user?.email || "Equipo";
+  const showFirstRunGuide = !loading && projects.length === 0;
 
   return (
     <main style={pageStyle}>
@@ -232,6 +234,42 @@ export default function Home() {
         />
       </section>
 
+      {showFirstRunGuide && (
+        <section style={onboardingPanelStyle} aria-labelledby="first-run-title">
+          <div>
+            <span style={eyebrowStyle}>Primeros pasos</span>
+            <h2 id="first-run-title" style={onboardingTitleStyle}>
+              Prepara tu primer proyecto ISO 19650
+            </h2>
+            <p style={onboardingDescriptionStyle}>
+              Empieza creando un proyecto, revisa los requerimientos generados y
+              usa la matriz o el dashboard para priorizar el seguimiento.
+            </p>
+          </div>
+
+          <div style={onboardingStepsStyle}>
+            <OnboardingStep
+              number="1"
+              title="Crear proyecto"
+              description="Define nombre, codigo y funcion para cargar la base de requisitos."
+              href="/projects#create-project"
+            />
+            <OnboardingStep
+              number="2"
+              title="Revisar requisitos"
+              description="Completa estados, responsables, evidencias y fechas limite."
+              href="/projects#create-project"
+            />
+            <OnboardingStep
+              number="3"
+              title="Medir cumplimiento"
+              description="Consulta matriz y dashboard cuando el proyecto tenga informacion."
+              href="/matrix"
+            />
+          </div>
+        </section>
+      )}
+
       <section style={contentGridStyle}>
         <div style={{ display: "grid", gap: 18, minWidth: 0 }}>
           <section style={panelStyle}>
@@ -252,10 +290,15 @@ export default function Home() {
             {loading ? (
               <div style={emptyStateStyle}>Preparando resumen de proyectos...</div>
             ) : projectCards.length === 0 ? (
-              <div style={emptyStateStyle}>
-                Crea tu primer proyecto para empezar a trabajar con la matriz y el
-                dashboard.
-              </div>
+              <EmptyState
+                title="Primer proyecto pendiente"
+                description="Crea un proyecto para activar la matriz, el dashboard y el seguimiento de requisitos."
+                action={
+                  <Link href="/projects" style={secondaryInlineActionStyle}>
+                    Crear proyecto
+                  </Link>
+                }
+              />
             ) : (
               <div style={{ display: "grid", gap: 14 }}>
                 {projectCards.map((project) => (
@@ -472,6 +515,28 @@ export default function Home() {
         </aside>
       </section>
     </main>
+  );
+}
+
+function OnboardingStep({
+  number,
+  title,
+  description,
+  href,
+}: {
+  number: string;
+  title: string;
+  description: string;
+  href: string;
+}) {
+  return (
+    <Link href={href} style={onboardingStepStyle}>
+      <span style={onboardingStepNumberStyle}>{number}</span>
+      <span style={{ display: "grid", gap: 4 }}>
+        <strong style={onboardingStepTitleStyle}>{title}</strong>
+        <span style={onboardingStepDescriptionStyle}>{description}</span>
+      </span>
+    </Link>
   );
 }
 
@@ -741,6 +806,76 @@ const contentGridStyle: React.CSSProperties = {
   gridTemplateColumns: "minmax(0, 1.6fr) minmax(320px, 0.9fr)",
   margin: "0 auto",
   maxWidth: 1360,
+};
+
+const onboardingPanelStyle: React.CSSProperties = {
+  ...appPanelStyle,
+  display: "grid",
+  gap: 18,
+  margin: "0 auto 24px",
+  maxWidth: 1360,
+  padding: 18,
+};
+
+const onboardingTitleStyle: React.CSSProperties = {
+  color: "#002a4e",
+  fontSize: 22,
+  fontWeight: 500,
+  lineHeight: 1.2,
+  margin: "8px 0 0",
+};
+
+const onboardingDescriptionStyle: React.CSSProperties = {
+  color: "#5b6b82",
+  fontSize: 14,
+  lineHeight: 1.55,
+  margin: "8px 0 0",
+  maxWidth: 760,
+};
+
+const onboardingStepsStyle: React.CSSProperties = {
+  display: "grid",
+  gap: 10,
+  gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+};
+
+const onboardingStepStyle: React.CSSProperties = {
+  alignItems: "flex-start",
+  background: "#f8fafc",
+  border: "1px solid #dbe3f1",
+  borderRadius: 8,
+  color: "inherit",
+  display: "flex",
+  gap: 12,
+  padding: 12,
+  textDecoration: "none",
+};
+
+const onboardingStepNumberStyle: React.CSSProperties = {
+  alignItems: "center",
+  background: "#eff6ff",
+  border: "1px solid #bfdbfe",
+  borderRadius: 999,
+  color: "#0025df",
+  display: "inline-flex",
+  flex: "0 0 auto",
+  fontSize: 13,
+  fontWeight: 600,
+  height: 28,
+  justifyContent: "center",
+  width: 28,
+};
+
+const onboardingStepTitleStyle: React.CSSProperties = {
+  color: "#002a4e",
+  fontSize: 14,
+  fontWeight: 600,
+};
+
+const onboardingStepDescriptionStyle: React.CSSProperties = {
+  color: "#5b6b82",
+  fontSize: 13,
+  lineHeight: 1.45,
 };
 
 const panelStyle: React.CSSProperties = {

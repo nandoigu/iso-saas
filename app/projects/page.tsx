@@ -515,7 +515,7 @@ export default function ProjectsPage() {
         }}
       >
         <div style={{ display: "grid", gap: 18, minWidth: 0 }}>
-          <section style={panelStyle}>
+          <section id="create-project" style={panelStyle}>
             <div style={panelHeaderStyle}>
               <div>
                 <h2 style={panelTitleStyle}>Crear proyecto</h2>
@@ -815,7 +815,12 @@ export default function ProjectsPage() {
           ) : projects.length === 0 ? (
             <EmptyState
               title="Sin proyectos"
-              description="Aún no hay proyectos creados en este espacio de trabajo."
+              description="Crea el primer proyecto para generar requisitos, abrir la matriz y empezar a medir cumplimiento."
+              action={
+                <a href="#create-project" style={secondaryInlineActionStyle}>
+                  Ir a crear proyecto
+                </a>
+              }
             />
           ) : projectCards.length === 0 ? (
             <EmptyState

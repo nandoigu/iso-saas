@@ -79,10 +79,23 @@ La aplicacion ya tiene una base SaaS funcional avanzada y esta en fase de pulido
 
 La app ya esta en estado avanzado de pulido visual. La QA visual/accesibilidad final queda cerrada en esta sesion. El siguiente paso recomendado es elegir entre:
 
-- onboarding y primera experiencia
 - branding comercial y datos demo de calidad
 - tests automatizados de humo para APIs/rutas principales
 - una validacion visual interactiva adicional en Chrome normal si se quiere confirmar manualmente tablet/movil con sesion real
+
+## Onboarding y primera experiencia - 2026-05-28
+
+- Retomada la siguiente tarea prevista tras la QA visual/accesibilidad final.
+- Cambios aplicados:
+  - Inicio muestra una guia ligera de `Primeros pasos` cuando todavia no hay proyectos.
+  - La guia enlaza a crear proyecto, revisar requisitos y medir cumplimiento en matriz/dashboard.
+  - El estado vacio de Inicio para proyectos ahora incluye accion directa para crear el primer proyecto.
+  - El estado vacio de Proyectos explica mejor el siguiente paso y enlaza al formulario de creacion mediante `#create-project`.
+- Validacion:
+  - `cmd /c npm run lint` pasa.
+  - `cmd /c npm run build` pasa.
+- Siguiente paso recomendado:
+  - continuar con branding comercial y datos demo de calidad, o preparar tests automatizados de humo para rutas/API principales.
 
 ## QA visual y accesibilidad final - 2026-05-28
 
@@ -430,7 +443,7 @@ La app ya esta en estado avanzado de pulido visual. La QA visual/accesibilidad f
   - botones deshabilitados alineados con `aria-disabled` donde aplica
   - contraste basico de paleta operativa revisado
   - rutas principales comprobadas por HTTP con sesion local temporal
-- [ ] Onboarding y primera experiencia:
+- [x] Onboarding y primera experiencia:
   - vacíos guiados
   - ayuda contextual ligera
   - primera creación de proyecto más acompañada
