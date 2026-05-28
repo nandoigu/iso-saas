@@ -21,9 +21,9 @@ export function Notice({
       aria-live={isError ? "assertive" : "polite"}
       style={{
         ...getNoticeToneStyle(tone),
-        borderRadius: compact ? 8 : 10,
+        borderRadius: 8,
         fontSize: compact ? 13 : 14,
-        fontWeight: 700,
+        fontWeight: 600,
         margin: 0,
         padding: compact ? 10 : 12,
         ...style,

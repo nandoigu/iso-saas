@@ -799,10 +799,10 @@ const kpiValueStyle: React.CSSProperties = {
 
 const projectCardStyle: React.CSSProperties = {
   border: "1px solid #e7edf5",
-  borderRadius: 12,
+  borderRadius: 8,
   display: "grid",
-  gap: 14,
-  padding: 16,
+  gap: 12,
+  padding: 14,
 };
 
 const projectCardHeaderStyle: React.CSSProperties = {
@@ -821,8 +821,8 @@ const projectNameRowStyle: React.CSSProperties = {
 
 const projectLinkStyle: React.CSSProperties = {
   color: "#0f172a",
-  fontSize: 20,
-  fontWeight: 600,
+  fontSize: 18,
+  fontWeight: 500,
   lineHeight: 1.2,
   textDecoration: "none",
 };
@@ -837,8 +837,8 @@ const projectRoleBadgeBaseStyle: React.CSSProperties = {
   borderRadius: 999,
   display: "inline-flex",
   fontSize: 12,
-  fontWeight: 650,
-  padding: "6px 10px",
+  fontWeight: 600,
+  padding: "5px 9px",
 };
 
 const progressSummaryStyle: React.CSSProperties = {
@@ -869,7 +869,7 @@ const metricRowStyle: React.CSSProperties = {
 
 const miniMetricStyle: React.CSSProperties = {
   background: "#f8fafc",
-  borderRadius: 10,
+  borderRadius: 8,
   display: "grid",
   gap: 6,
   padding: "10px 12px",
@@ -922,16 +922,16 @@ const alertCounterGridStyle: React.CSSProperties = {
 
 const counterCardStyle: React.CSSProperties = {
   border: "1px solid",
-  borderRadius: 12,
+  borderRadius: 8,
   display: "grid",
   gap: 6,
-  padding: 14,
+  padding: 12,
 };
 
 const counterLabelStyle: React.CSSProperties = {
   color: "#64748b",
   fontSize: 12,
-  fontWeight: 700,
+  fontWeight: 600,
 };
 
 const counterValueStyle: React.CSSProperties = {
@@ -942,8 +942,8 @@ const counterValueStyle: React.CSSProperties = {
 const alertItemStyle: React.CSSProperties = {
   background: "#fcfdff",
   border: "1px solid #e7edf5",
-  borderLeft: "4px solid",
-  borderRadius: 10,
+  borderLeft: "3px solid",
+  borderRadius: 8,
   display: "grid",
   gap: 4,
   padding: "12px 12px 12px 14px",
@@ -988,11 +988,11 @@ const quickActionsGridStyle: React.CSSProperties = {
 const quickActionTileStyle: React.CSSProperties = {
   background: "#f8fafc",
   border: "1px solid #dde6f2",
-  borderRadius: 12,
+  borderRadius: 8,
   color: "inherit",
   display: "grid",
   gap: 6,
-  padding: 14,
+  padding: 12,
   textDecoration: "none",
 };
 

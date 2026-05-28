@@ -167,7 +167,7 @@ export const appEmptyStateStyle: CSSProperties = {
   border: "1px dashed #cbd5e1",
   borderRadius: 8,
   color: "#64748b",
-  padding: 22,
+  padding: 18,
   textAlign: "center",
 };
 

@@ -100,11 +100,11 @@ const dialogStyle: React.CSSProperties = {
   background: "#ffffff",
   border: "1px solid #fecaca",
   borderRadius: 8,
-  boxShadow: "0 24px 60px rgba(15, 23, 42, 0.24)",
+  boxShadow: "0 18px 44px rgba(15, 23, 42, 0.16)",
   display: "grid",
   gap: 14,
   maxWidth: 460,
-  padding: 20,
+  padding: 18,
   width: "100%",
 };
 
@@ -115,7 +115,7 @@ const warningMarkStyle: React.CSSProperties = {
   borderRadius: 999,
   color: "#b91c1c",
   display: "inline-flex",
-  fontWeight: 900,
+  fontWeight: 700,
   height: 34,
   justifyContent: "center",
   width: 34,
@@ -123,7 +123,8 @@ const warningMarkStyle: React.CSSProperties = {
 
 const titleStyle: React.CSSProperties = {
   color: "#0f172a",
-  fontSize: 20,
+  fontSize: 18,
+  fontWeight: 500,
   lineHeight: 1.25,
   margin: 0,
 };

@@ -100,12 +100,19 @@ export default function EmailTestPage() {
           boxSizing: "border-box",
           margin: "0 auto",
           maxWidth: 640,
-          padding: "clamp(20px, 4vw, 28px)",
+          padding: "clamp(18px, 4vw, 24px)",
           width: "100%",
         }}
       >
-        <div style={{ marginBottom: 20 }}>
-          <h2 style={{ color: "#0f172a", fontSize: 20, margin: 0 }}>
+        <div style={{ marginBottom: 18 }}>
+          <h2
+            style={{
+              color: "#0f172a",
+              fontSize: 18,
+              fontWeight: 500,
+              margin: 0,
+            }}
+          >
             Destinatario de prueba
           </h2>
           <p style={{ color: "#64748b", lineHeight: 1.7, margin: "8px 0 0" }}>
@@ -119,7 +126,7 @@ export default function EmailTestPage() {
               color: "#334155",
               display: "grid",
               fontSize: 14,
-              fontWeight: 700,
+              fontWeight: 500,
               gap: 8,
             }}
           >
@@ -134,7 +141,7 @@ export default function EmailTestPage() {
               style={{
                 ...appFieldStyle,
                 fontSize: 15,
-                minHeight: 46,
+                minHeight: 40,
                 padding: "10px 12px",
               }}
             />
@@ -147,7 +154,7 @@ export default function EmailTestPage() {
               ...appPrimaryButtonStyle,
               ...getActionStateStyle(loading || hydrating || !email.trim()),
               fontSize: 14,
-              minHeight: 46,
+              minHeight: 40,
               padding: "0 16px",
               width: "100%",
             }}
