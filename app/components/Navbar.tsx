@@ -171,7 +171,10 @@ export default function Navbar() {
         <nav style={navStyle}>
           {visibleNavigation.map((group) => (
             <div key={group.label} style={navGroupStyle}>
-              <div style={navLabelStyle}>{group.label}</div>
+              <div style={navLabelStyle}>
+                <span>{group.label}</span>
+                <span aria-hidden="true" style={navLabelRuleStyle} />
+              </div>
               <div style={navItemsStyle}>
                 {group.items.map((item) => (
                   <SideNavLink
@@ -469,34 +472,39 @@ const brandTagStyle: React.CSSProperties = {
 
 const navStyle: React.CSSProperties = {
   display: "grid",
-  gap: 16,
+  gap: 18,
   overflowY: "auto",
-  padding: "16px 12px",
+  padding: "18px 12px",
 };
 
 const navGroupStyle: React.CSSProperties = {
   display: "grid",
-  gap: 8,
+  gap: 6,
 };
 
 const navLabelStyle: React.CSSProperties = {
-  background: "#f8fafc",
-  border: `1px solid ${BORDER}`,
-  borderLeft: `3px solid ${ACTION}`,
-  borderRadius: 8,
-  color: BRAND,
+  alignItems: "center",
+  color: MUTED,
+  display: "flex",
   fontSize: 10,
   fontWeight: 600,
+  gap: 10,
   letterSpacing: 0,
   lineHeight: 1,
-  padding: "8px 10px",
+  padding: "6px 8px 5px",
   textTransform: "uppercase",
+};
+
+const navLabelRuleStyle: React.CSSProperties = {
+  background: BORDER,
+  flex: 1,
+  height: 1,
+  minWidth: 16,
 };
 
 const navItemsStyle: React.CSSProperties = {
   display: "grid",
   gap: 4,
-  paddingLeft: 6,
 };
 
 const navIconStyle: React.CSSProperties = {
