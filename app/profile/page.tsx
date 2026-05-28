@@ -427,7 +427,7 @@ function useProfileBreakpoint() {
 const pageStyle: React.CSSProperties = {
   ...appPageStyle,
   display: "grid",
-  gap: 24,
+  gap: 20,
 };
 
 const compactPageStyle: React.CSSProperties = {
@@ -445,7 +445,7 @@ const compactHeroStyle: React.CSSProperties = {
 
 const contentGridStyle: React.CSSProperties = {
   display: "grid",
-  gap: 24,
+  gap: 20,
   margin: "0 auto",
   maxWidth: 1360,
   width: "100%",
@@ -453,18 +453,21 @@ const contentGridStyle: React.CSSProperties = {
 
 const cardStyle: React.CSSProperties = {
   ...appPanelStyle,
-  padding: 24,
+  padding: 18,
 };
 
 const sectionTitleStyle: React.CSSProperties = {
-  margin: "0 0 18px",
+  color: "#002a4e",
+  fontSize: 18,
+  fontWeight: 500,
+  margin: "0 0 16px",
 };
 
 const labelStyle: React.CSSProperties = {
   color: "#374151",
   display: "grid",
   fontSize: 14,
-  fontWeight: 700,
+  fontWeight: 600,
   gap: 6,
 };
 
@@ -474,14 +477,14 @@ const inputStyle: React.CSSProperties = {
 
 const primaryButtonStyle: React.CSSProperties = {
   ...appPrimaryButtonStyle,
-  minHeight: 42,
-  padding: "0 14px",
+  minHeight: 38,
+  padding: "8px 13px",
   width: "100%",
 };
 
 const secondaryButtonStyle: React.CSSProperties = {
   ...appSecondaryButtonStyle,
-  minHeight: 42,
-  padding: "0 14px",
+  minHeight: 38,
+  padding: "8px 13px",
   width: "100%",
 };

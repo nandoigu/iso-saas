@@ -173,7 +173,7 @@ const passwordFieldStyle: React.CSSProperties = {
   border: "1px solid #d1d5db",
   borderRadius: 8,
   display: "flex",
-  minHeight: 42,
+  minHeight: 40,
   overflow: "hidden",
 };
 
@@ -194,9 +194,9 @@ const passwordToggleStyle: React.CSSProperties = {
   cursor: "pointer",
   display: "inline-flex",
   fontSize: 13,
-  fontWeight: 700,
+  fontWeight: 600,
   justifyContent: "center",
-  minHeight: 42,
+  minHeight: 40,
   outlineColor: "#0025df",
   outlineOffset: -2,
   padding: "0 12px",
