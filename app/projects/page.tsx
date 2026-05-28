@@ -1205,8 +1205,8 @@ const secondaryActionStyle: React.CSSProperties = {
   border: "1px solid #c9d4e5",
   borderRadius: 8,
   color: "#002a4e",
-  fontWeight: 600,
-  padding: "10px 14px",
+  fontWeight: 500,
+  padding: "8px 13px",
   textDecoration: "none",
 };
 
@@ -1279,7 +1279,7 @@ const checkboxFieldStyle: React.CSSProperties = {
   fontSize: 14,
   fontWeight: 600,
   gap: 8,
-  minHeight: 44,
+  minHeight: 40,
 };
 
 const formActionRowStyle: React.CSSProperties = {
@@ -1289,26 +1289,26 @@ const formActionRowStyle: React.CSSProperties = {
 
 const inputStyle: React.CSSProperties = {
   ...appFieldStyle,
-  minHeight: 44,
-  padding: "10px 12px",
+  minHeight: 40,
+  padding: "8px 10px",
 };
 
 const fileInputStyle: React.CSSProperties = {
   ...appFieldStyle,
-  minHeight: 44,
+  minHeight: 40,
   padding: 8,
 };
 
 const primaryButtonStyle: React.CSSProperties = {
   ...appPrimaryButtonStyle,
-  minHeight: 42,
-  padding: "9px 14px",
+  minHeight: 38,
+  padding: "8px 13px",
 };
 
 const detailsStyle: React.CSSProperties = {
   background: "#fff7ed",
   border: "1px solid #fed7aa",
-  borderRadius: 10,
+  borderRadius: 8,
   color: "#9a3412",
   margin: "14px 0 0",
   padding: "10px 10px 10px 28px",
@@ -1333,18 +1333,18 @@ const kpiLabelStyle: React.CSSProperties = {
 
 const kpiValueStyle: React.CSSProperties = {
   display: "block",
-  fontSize: 28,
+  fontSize: 24,
   fontWeight: 600,
   lineHeight: 1.1,
   marginTop: 8,
 };
 
 const projectCardStyle: React.CSSProperties = {
-  border: "1px solid #e7edf5",
+  border: "1px solid #dbe3f1",
   borderRadius: 8,
   display: "grid",
-  gap: 16,
-  padding: 18,
+  gap: 14,
+  padding: 16,
 };
 
 const projectListGridStyle: React.CSSProperties = {
@@ -1374,8 +1374,8 @@ const projectNameRowStyle: React.CSSProperties = {
 
 const projectLinkStyle: React.CSSProperties = {
   color: "#0f172a",
-  fontSize: 20,
-  fontWeight: 600,
+  fontSize: 18,
+  fontWeight: 500,
   lineHeight: 1.2,
   textDecoration: "none",
 };
@@ -1404,7 +1404,7 @@ const mobileProgressSummaryStyle: React.CSSProperties = {
 
 const progressValueStyle: React.CSSProperties = {
   color: "#002a4e",
-  fontSize: 22,
+  fontSize: 20,
   fontWeight: 600,
   lineHeight: 1,
 };
@@ -1423,7 +1423,7 @@ const metricRowStyle: React.CSSProperties = {
 
 const miniMetricStyle: React.CSSProperties = {
   background: "#f8fafc",
-  borderRadius: 10,
+  borderRadius: 8,
   display: "grid",
   gap: 6,
   padding: "10px 12px",
