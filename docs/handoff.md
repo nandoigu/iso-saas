@@ -80,8 +80,28 @@ La aplicacion ya tiene una base SaaS funcional avanzada y esta en fase de pulido
 La app ya esta en estado avanzado de pulido visual. La QA visual/accesibilidad final queda cerrada en esta sesion. El siguiente paso recomendado es elegir entre:
 
 - branding comercial y datos demo de calidad
-- tests automatizados de humo para APIs/rutas principales
 - una validacion visual interactiva adicional en Chrome normal si se quiere confirmar manualmente tablet/movil con sesion real
+
+## Tests de humo - 2026-05-28
+
+- Retomada la tarea de preparar tests automatizados de humo para rutas/API principales.
+- Cambios aplicados:
+  - nuevo script `scripts/smoke-routes.mjs`
+  - nuevo comando `npm run smoke`
+  - documentacion en `docs/smoke-tests.md`
+- Cobertura inicial:
+  - rutas publicas `/login`, `/register`, `/forgot-password`
+  - rutas protegidas sin sesion redirigen a `/login`
+  - `/api/auth/me` devuelve `401` sin sesion
+- Validacion:
+  - `cmd /c npm run smoke` pasa contra `https://iso-saas-gamma.vercel.app`
+  - `cmd /c npm run lint` pasa
+  - `cmd /c npm run build` pasa
+- Uso:
+  - produccion: `npm run smoke`
+  - local: definir `SMOKE_BASE_URL=http://127.0.0.1:3000` y ejecutar `npm run smoke`
+- Siguiente paso recomendado:
+  - continuar con branding comercial, datos demo de calidad y cuenta demo.
 
 ## Onboarding y primera experiencia - 2026-05-28
 
@@ -461,7 +481,7 @@ La app ya esta en estado avanzado de pulido visual. La QA visual/accesibilidad f
   - exportaciones más ricas
   - comparativas entre proyectos
   - métricas por empresa
-- [ ] Evaluar tests automatizados de humo para APIs principales.
+- [x] Evaluar tests automatizados de humo para APIs principales.
 - [ ] Revisar si conviene extraer más estilos compartidos después de cerrar responsive.
 
 ### Quick wins pendientes

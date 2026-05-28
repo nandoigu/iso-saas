@@ -6,7 +6,8 @@
     "dev": "next dev --webpack",
     "build": "prisma generate && next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "smoke": "node scripts/smoke-routes.mjs"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",
