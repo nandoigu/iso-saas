@@ -16,6 +16,18 @@ type CurrentUser = {
   status: string;
 };
 
+type NavIconName = "home" | "projects" | "dashboard" | "matrix" | "profile" | "admin";
+type NavItem = {
+  href: string;
+  label: string;
+  icon: NavIconName;
+};
+
+type NavGroup = {
+  label: string;
+  items: NavItem[];
+};
+
 const BRAND = "#002a4e";
 const ACTION = "#0025df";
 const SURFACE = "#f4f6fc";
@@ -23,19 +35,19 @@ const BORDER = "#dbe3f1";
 const MUTED = "#5f7289";
 const SIDEBAR_WIDTH = 224;
 
-const navigationGroups = [
+const navigationGroups: NavGroup[] = [
   {
     label: "Principal",
     items: [
-      { href: "/", label: "Inicio" },
-      { href: "/projects", label: "Proyectos" },
-      { href: "/dashboard", label: "Dashboard" },
-      { href: "/matrix", label: "Matriz" },
+      { href: "/", label: "Inicio", icon: "home" },
+      { href: "/projects", label: "Proyectos", icon: "projects" },
+      { href: "/dashboard", label: "Dashboard", icon: "dashboard" },
+      { href: "/matrix", label: "Matriz", icon: "matrix" },
     ],
   },
   {
     label: "Cuenta",
-    items: [{ href: "/profile", label: "Perfil" }],
+    items: [{ href: "/profile", label: "Perfil", icon: "profile" }],
   },
 ];
 
@@ -101,7 +113,7 @@ export default function Navbar() {
     }));
 
     if (authenticatedUser.role === "admin") {
-      groups[1].items.push({ href: "/admin", label: "Admin" });
+      groups[1].items.push({ href: "/admin", label: "Admin", icon: "admin" });
     }
 
     return groups.map((group) => ({
@@ -166,6 +178,7 @@ export default function Navbar() {
                     key={item.href}
                     href={item.href}
                     active={item.active}
+                    icon={item.icon}
                   >
                     {item.label}
                   </SideNavLink>
@@ -245,13 +258,16 @@ function BrandMark({
 function SideNavLink({
   href,
   active,
+  icon,
   children,
 }: {
   href: string;
   active: boolean;
+  icon: NavIconName;
   children: React.ReactNode;
 }) {
   const [hovered, setHovered] = useState(false);
+  const itemColor = active ? ACTION : hovered ? BRAND : MUTED;
 
   return (
     <Link
@@ -267,9 +283,72 @@ function SideNavLink({
         color: BRAND,
       }}
     >
+      <span aria-hidden="true" style={{ ...navIconStyle, color: itemColor }}>
+        <NavIcon name={icon} />
+      </span>
       <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>{children}</span>
     </Link>
   );
+}
+
+function NavIcon({ name }: { name: NavIconName }) {
+  const common = {
+    fill: "none",
+    stroke: "currentColor",
+    strokeLinecap: "round" as const,
+    strokeLinejoin: "round" as const,
+    strokeWidth: 1.8,
+  };
+
+  switch (name) {
+    case "home":
+      return (
+        <svg viewBox="0 0 24 24" style={navSvgStyle}>
+          <path {...common} d="M4 10.8 12 4l8 6.8" />
+          <path {...common} d="M6.5 10.5V20h4v-5.2h3V20h4v-9.5" />
+        </svg>
+      );
+    case "projects":
+      return (
+        <svg viewBox="0 0 24 24" style={navSvgStyle}>
+          <path {...common} d="M3.8 7.5h6l1.7 2h8.7v8.8a1.7 1.7 0 0 1-1.7 1.7h-13A1.7 1.7 0 0 1 3.8 18.3Z" />
+          <path {...common} d="M3.8 7.5V6.4a1.7 1.7 0 0 1 1.7-1.7h4.2l1.8 2.1" />
+        </svg>
+      );
+    case "dashboard":
+      return (
+        <svg viewBox="0 0 24 24" style={navSvgStyle}>
+          <path {...common} d="M5 5h5v5H5z" />
+          <path {...common} d="M14 5h5v5h-5z" />
+          <path {...common} d="M5 14h5v5H5z" />
+          <path {...common} d="M14 14h5v5h-5z" />
+        </svg>
+      );
+    case "matrix":
+      return (
+        <svg viewBox="0 0 24 24" style={navSvgStyle}>
+          <path {...common} d="M4.5 5.5h15" />
+          <path {...common} d="M4.5 12h15" />
+          <path {...common} d="M4.5 18.5h15" />
+          <path {...common} d="M8 5.5v13" />
+          <path {...common} d="M16 5.5v13" />
+        </svg>
+      );
+    case "profile":
+      return (
+        <svg viewBox="0 0 24 24" style={navSvgStyle}>
+          <path {...common} d="M12 12.2a3.6 3.6 0 1 0 0-7.2 3.6 3.6 0 0 0 0 7.2Z" />
+          <path {...common} d="M5 20a7 7 0 0 1 14 0" />
+        </svg>
+      );
+    case "admin":
+      return (
+        <svg viewBox="0 0 24 24" style={navSvgStyle}>
+          <path {...common} d="M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7Z" />
+          <path {...common} d="M19.4 13.5a7.8 7.8 0 0 0 0-3l2-1.2-2-3.4-2.2 1a8.5 8.5 0 0 0-2.6-1.5L14.3 3h-4.6l-.3 2.4A8.5 8.5 0 0 0 6.8 7L4.6 6 2.6 9.3l2 1.2a7.8 7.8 0 0 0 0 3l-2 1.2 2 3.4 2.2-1a8.5 8.5 0 0 0 2.6 1.5l.3 2.4h4.6l.3-2.4a8.5 8.5 0 0 0 2.6-1.5l2.2 1 2-3.4Z" />
+        </svg>
+      );
+  }
 }
 
 function isRouteActive(pathname: string, href: string) {
@@ -418,6 +497,22 @@ const navItemsStyle: React.CSSProperties = {
   display: "grid",
   gap: 4,
   paddingLeft: 6,
+};
+
+const navIconStyle: React.CSSProperties = {
+  alignItems: "center",
+  display: "inline-flex",
+  flexShrink: 0,
+  height: 18,
+  justifyContent: "center",
+  transition: "color 160ms ease",
+  width: 18,
+};
+
+const navSvgStyle: React.CSSProperties = {
+  display: "block",
+  height: 18,
+  width: 18,
 };
 
 const navItemStyle: React.CSSProperties = {
