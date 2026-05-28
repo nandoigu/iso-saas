@@ -279,7 +279,7 @@ export default function AdminPanelClient({
             }}
           >
             <div>
-              <h2 style={{ margin: 0 }}>Usuarios</h2>
+              <h2 style={sectionTitleStyle}>Usuarios</h2>
               <p style={sectionDescriptionStyle}>
                 Control de roles, estado de cuenta y administración de usuarios registrados.
               </p>
@@ -316,7 +316,7 @@ export default function AdminPanelClient({
               {users.map((user) => (
                 <tr key={user.id}>
                   <td style={tdStyle}>
-                    <div style={{ fontWeight: 700 }}>{user.name || user.email}</div>
+                    <div style={{ fontWeight: 500 }}>{user.name || user.email}</div>
                     <div style={{ color: "#64748b", fontSize: 13 }}>{user.email}</div>
                   </td>
                   <td style={tdStyle}>{user.companyName || "Sin empresa"}</td>
@@ -403,7 +403,7 @@ export default function AdminPanelClient({
             }}
           >
             <div>
-              <h2 style={{ margin: 0 }}>Todos los proyectos</h2>
+              <h2 style={sectionTitleStyle}>Todos los proyectos</h2>
               <p style={sectionDescriptionStyle}>
                 Vista consolidada de proyectos creados en la plataforma y su propietario actual.
               </p>
@@ -506,7 +506,7 @@ const sectionStyle: React.CSSProperties = {
   boxSizing: "border-box",
   margin: "0 auto",
   maxWidth: 1360,
-  padding: 24,
+  padding: 18,
   width: "100%",
 };
 
@@ -516,8 +516,8 @@ const compactSectionStyle: React.CSSProperties = {
 
 const sectionIntroStyle: React.CSSProperties = {
   borderBottom: "1px solid #e8eef7",
-  marginBottom: 18,
-  paddingBottom: 16,
+  marginBottom: 16,
+  paddingBottom: 14,
 };
 
 const sectionHeaderStyle: React.CSSProperties = {
@@ -536,10 +536,17 @@ const sectionEyebrowStyle: React.CSSProperties = {
   color: "#0025df",
   display: "inline-flex",
   fontSize: 12,
-  fontWeight: 800,
+  fontWeight: 600,
   letterSpacing: 0,
   marginBottom: 10,
   textTransform: "uppercase",
+};
+
+const sectionTitleStyle: React.CSSProperties = {
+  color: "#002a4e",
+  fontSize: 18,
+  fontWeight: 500,
+  margin: 0,
 };
 
 const sectionDescriptionStyle: React.CSSProperties = {
@@ -554,7 +561,7 @@ const pillStyle: React.CSSProperties = {
   borderRadius: 999,
   color: "#1d4ed8",
   fontSize: 13,
-  fontWeight: 700,
+  fontWeight: 600,
   padding: "8px 12px",
 };
 
@@ -577,7 +584,7 @@ const tdStyle: React.CSSProperties = {
 
 const emptyStyle: React.CSSProperties = {
   color: "#64748b",
-  padding: 20,
+  padding: 18,
   textAlign: "center",
 };
 
