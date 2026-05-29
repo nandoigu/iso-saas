@@ -375,8 +375,11 @@ export default function AuditReportsClient() {
         <section style={panelStyle}>
           <div style={previewHeaderStyle}>
             <div>
-              <span style={appHeroEyebrowStyle}>Previsualizacion editable</span>
+              <span style={appHeroEyebrowStyle}>Informe editable</span>
               <h2 style={sectionTitleStyle}>{selectedReport.reportNumber} · {draftContent.generalData.projectName}</h2>
+              <p style={sectionDescriptionStyle}>
+                Revisa el contenido en orden documental. Los anexos y KPIs quedan al final del informe.
+              </p>
             </div>
             <div style={actionRowStyle}>
               <button type="button" onClick={saveDraft} disabled={saving} style={{ ...appPrimaryButtonStyle, ...getActionStateStyle(saving) }}>
@@ -390,28 +393,37 @@ export default function AuditReportsClient() {
             </div>
           </div>
 
-          <div style={kpiGridStyle}>
-            <ScoreInput label="Compliance Score" value={draftContent.executiveResult.complianceScore} onChange={(value) => updateDraft((content) => syncKpi(content, "complianceScore", value))} />
-            <ScoreInput label="Risk Score" value={draftContent.executiveResult.riskScore} onChange={(value) => updateDraft((content) => syncKpi(content, "riskScore", value))} />
-            <ScoreInput label="Confidence Score" value={draftContent.executiveResult.confidenceScore} onChange={(value) => updateDraft((content) => syncKpi(content, "confidenceScore", value))} />
-            <label style={labelStyle}>
-              Estado
-              <input value={draftContent.executiveResult.status} onChange={(event) => updateDraft((content) => ({ ...content, executiveResult: { ...content.executiveResult, status: event.target.value } }))} style={appFieldStyle} />
-            </label>
-          </div>
-
           <div style={editorStackStyle}>
             <div style={editorSectionStyle}>
-              <h3 style={subsectionTitleStyle}>Datos generales</h3>
+              <SectionHeading number="1" title="Portada" />
+              <ReadOnlyGrid
+                items={[
+                  ["Organizacion", draftContent.cover.organizationName],
+                  ["Numero auditoria", draftContent.cover.auditNumber],
+                  ["Numero informe", draftContent.cover.reportNumber],
+                  ["Tipo auditoria", draftContent.cover.auditType],
+                  ["Norma aplicable", draftContent.cover.standards.join(", ")],
+                  ["Fechas auditoria", draftContent.cover.auditDates],
+                  ["Fecha informe", draftContent.cover.reportDate],
+                ]}
+              />
+            </div>
+
+            <div style={editorSectionStyle}>
+              <SectionHeading number="2" title="Datos generales" />
               <TextInput label="Organizacion" value={draftContent.generalData.organizationName} onChange={(value) => updateDraft((content) => ({ ...content, generalData: { ...content.generalData, organizationName: value } }))} />
               <TextInput label="Representante" value={draftContent.generalData.organizationRepresentative} onChange={(value) => updateDraft((content) => ({ ...content, generalData: { ...content.generalData, organizationRepresentative: value } }))} />
               <TextInput label="Auditor jefe" value={draftContent.generalData.leadAuditorName} onChange={(value) => updateDraft((content) => ({ ...content, generalData: { ...content.generalData, leadAuditorName: value } }))} />
               <TextArea label="Alcance de la certificacion" value={draftContent.generalData.certificationScope} onChange={(value) => updateDraft((content) => ({ ...content, generalData: { ...content.generalData, certificationScope: value } }))} />
+            </div>
+
+            <div style={editorSectionStyle}>
+              <SectionHeading number="3" title="Criterios de auditoria" />
               <TextArea label="Criterios de auditoria" value={draftContent.auditCriteria.join("\n")} onChange={(value) => updateDraft((content) => ({ ...content, auditCriteria: splitLines(value) }))} />
             </div>
 
             <div style={editorSectionStyle}>
-              <h3 style={subsectionTitleStyle}>Resumen ejecutivo</h3>
+              <SectionHeading number="4" title="Resumen ejecutivo" />
               {summaryFields.map((field) => (
                 <TextArea
                   key={field.key}
@@ -428,9 +440,22 @@ export default function AuditReportsClient() {
             </div>
 
             <div style={editorSectionStyle}>
-              <h3 style={subsectionTitleStyle}>Dictamen y anexos</h3>
+              <SectionHeading number="5" title="Resultado ejecutivo" />
+              <label style={labelStyle}>
+                Estado
+                <input value={draftContent.executiveResult.status} onChange={(event) => updateDraft((content) => ({ ...content, executiveResult: { ...content.executiveResult, status: event.target.value } }))} style={appFieldStyle} />
+              </label>
+            </div>
+
+            <div style={editorSectionStyle}>
+              <SectionHeading number="6" title="Dictamen final" />
               <TextInput label="Dictamen final" value={draftContent.finalOpinion.decision} onChange={(value) => updateDraft((content) => ({ ...content, finalOpinion: { ...content.finalOpinion, decision: value } }))} />
               <TextArea label="Razonamiento" value={draftContent.finalOpinion.rationale} onChange={(value) => updateDraft((content) => ({ ...content, finalOpinion: { ...content.finalOpinion, rationale: value } }))} />
+            </div>
+
+            <div style={editorSectionStyle}>
+              <SectionHeading number="7" title="Anexos" />
+              <h4 style={annexTitleStyle}>a. Matriz de auditoria</h4>
               <div style={tableWrapperStyle}>
                 <table style={{ ...appTableStyle, minWidth: 620 }}>
                   <thead>
@@ -450,6 +475,33 @@ export default function AuditReportsClient() {
                     ))}
                   </tbody>
                 </table>
+              </div>
+              <h4 style={annexTitleStyle}>b. Requisito y evidencias utilizadas</h4>
+              <div style={tableWrapperStyle}>
+                <table style={{ ...appTableStyle, minWidth: 620 }}>
+                  <thead>
+                    <tr>
+                      <th style={appTableHeaderStyle}>Requisito</th>
+                      <th style={appTableHeaderStyle}>Evidencias</th>
+                      <th style={appTableHeaderStyle}>IDs</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {draftContent.annexes.requirementEvidence.slice(0, 12).map((row) => (
+                      <tr key={row.requirementId}>
+                        <td style={appTableCellStyle}>{row.requirement}</td>
+                        <td style={appTableCellStyle}>{row.evidence}</td>
+                        <td style={appTableCellStyle}>{row.evidenceIds.join(", ") || "-"}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <h4 style={annexTitleStyle}>c. KPIs</h4>
+              <div style={kpiAnnexStyle}>
+                <ScoreInput label="Compliance Score" value={draftContent.annexes.kpis.complianceScore} onChange={(value) => updateDraft((content) => syncKpi(content, "complianceScore", value))} />
+                <ScoreInput label="Risk Score" value={draftContent.annexes.kpis.riskScore} onChange={(value) => updateDraft((content) => syncKpi(content, "riskScore", value))} />
+                <ScoreInput label="Confidence Score" value={draftContent.annexes.kpis.confidenceScore} onChange={(value) => updateDraft((content) => syncKpi(content, "confidenceScore", value))} />
               </div>
             </div>
           </div>
@@ -483,6 +535,28 @@ function ScoreInput({ label, value, onChange }: { label: string; value: number; 
       {label}
       <input type="number" min={0} max={100} value={value} onChange={(event) => onChange(Number(event.target.value))} style={appFieldStyle} />
     </label>
+  );
+}
+
+function SectionHeading({ number, title }: { number: string; title: string }) {
+  return (
+    <div style={sectionHeadingStyle}>
+      <span style={sectionNumberStyle}>{number}</span>
+      <h3 style={subsectionTitleStyle}>{title}</h3>
+    </div>
+  );
+}
+
+function ReadOnlyGrid({ items }: { items: Array<[string, string]> }) {
+  return (
+    <div style={readOnlyGridStyle}>
+      {items.map(([label, value]) => (
+        <div key={label} style={readOnlyItemStyle}>
+          <span style={readOnlyLabelStyle}>{label}</span>
+          <strong style={readOnlyValueStyle}>{value || "Sin datos"}</strong>
+        </div>
+      ))}
+    </div>
   );
 }
 
@@ -570,11 +644,39 @@ const sectionTitleStyle: React.CSSProperties = {
   margin: 0,
 };
 
+const sectionDescriptionStyle: React.CSSProperties = {
+  color: "#64748b",
+  fontSize: 14,
+  lineHeight: 1.45,
+  margin: "6px 0 0",
+};
+
 const subsectionTitleStyle: React.CSSProperties = {
   color: "#002a4e",
   fontSize: 16,
   fontWeight: 600,
   margin: 0,
+};
+
+const sectionHeadingStyle: React.CSSProperties = {
+  alignItems: "center",
+  display: "flex",
+  gap: 10,
+};
+
+const sectionNumberStyle: React.CSSProperties = {
+  alignItems: "center",
+  background: "#eef4ff",
+  border: "1px solid #bfdbfe",
+  borderRadius: 8,
+  color: "#0025df",
+  display: "inline-flex",
+  flexShrink: 0,
+  fontSize: 13,
+  fontWeight: 700,
+  height: 30,
+  justifyContent: "center",
+  width: 30,
 };
 
 const labelStyle: React.CSSProperties = {
@@ -620,21 +722,55 @@ const previewHeaderStyle: React.CSSProperties = {
   gap: 12,
 };
 
-const kpiGridStyle: React.CSSProperties = {
-  display: "grid",
-  gap: 10,
-  gridTemplateColumns: "1fr",
-};
-
 const editorStackStyle: React.CSSProperties = {
   display: "grid",
   gap: 16,
 };
 
 const editorSectionStyle: React.CSSProperties = {
-  borderTop: "1px solid #e2e8f0",
+  borderTop: "1px solid #dbe3f1",
   display: "grid",
-  gap: 12,
+  gap: 14,
   minWidth: 0,
-  paddingTop: 16,
+  paddingTop: 18,
+};
+
+const readOnlyGridStyle: React.CSSProperties = {
+  display: "grid",
+  gap: 10,
+  gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+};
+
+const readOnlyItemStyle: React.CSSProperties = {
+  background: "#f8fafc",
+  border: "1px solid #e2e8f0",
+  borderRadius: 8,
+  display: "grid",
+  gap: 4,
+  padding: 12,
+};
+
+const readOnlyLabelStyle: React.CSSProperties = {
+  color: "#64748b",
+  fontSize: 12,
+  fontWeight: 600,
+};
+
+const readOnlyValueStyle: React.CSSProperties = {
+  color: "#0f172a",
+  fontSize: 14,
+  lineHeight: 1.35,
+};
+
+const annexTitleStyle: React.CSSProperties = {
+  color: "#334155",
+  fontSize: 14,
+  fontWeight: 700,
+  margin: "6px 0 0",
+};
+
+const kpiAnnexStyle: React.CSSProperties = {
+  display: "grid",
+  gap: 10,
+  gridTemplateColumns: "1fr",
 };
