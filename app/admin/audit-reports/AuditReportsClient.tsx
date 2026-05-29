@@ -276,8 +276,8 @@ export default function AuditReportsClient() {
   };
 
   return (
-    <main style={{ ...appPageStyle, display: "grid", gap: 20 }}>
-      <section style={appHeroStyle}>
+    <main style={pageStyle}>
+      <section style={heroStyle}>
         <div style={appHeroCopyStyle}>
           <span style={appHeroEyebrowStyle}>Informes</span>
           <h1 style={appHeroTitleStyle}>Informes de auditoria ISO 19650</h1>
@@ -293,7 +293,7 @@ export default function AuditReportsClient() {
       {error && <Notice tone="error" message={error} />}
       {success && <Notice tone="success" message={success} />}
 
-      <section style={gridStyle}>
+      <section style={stackStyle}>
         <div style={panelStyle}>
           <h2 style={sectionTitleStyle}>Generar informe</h2>
           <label style={labelStyle}>
@@ -400,8 +400,8 @@ export default function AuditReportsClient() {
             </label>
           </div>
 
-          <div style={editorGridStyle}>
-            <div style={editorColumnStyle}>
+          <div style={editorStackStyle}>
+            <div style={editorSectionStyle}>
               <h3 style={subsectionTitleStyle}>Datos generales</h3>
               <TextInput label="Organizacion" value={draftContent.generalData.organizationName} onChange={(value) => updateDraft((content) => ({ ...content, generalData: { ...content.generalData, organizationName: value } }))} />
               <TextInput label="Representante" value={draftContent.generalData.organizationRepresentative} onChange={(value) => updateDraft((content) => ({ ...content, generalData: { ...content.generalData, organizationRepresentative: value } }))} />
@@ -410,7 +410,7 @@ export default function AuditReportsClient() {
               <TextArea label="Criterios de auditoria" value={draftContent.auditCriteria.join("\n")} onChange={(value) => updateDraft((content) => ({ ...content, auditCriteria: splitLines(value) }))} />
             </div>
 
-            <div style={editorColumnStyle}>
+            <div style={editorSectionStyle}>
               <h3 style={subsectionTitleStyle}>Resumen ejecutivo</h3>
               {summaryFields.map((field) => (
                 <TextArea
@@ -427,7 +427,7 @@ export default function AuditReportsClient() {
               ))}
             </div>
 
-            <div style={editorColumnStyle}>
+            <div style={editorSectionStyle}>
               <h3 style={subsectionTitleStyle}>Dictamen y anexos</h3>
               <TextInput label="Dictamen final" value={draftContent.finalOpinion.decision} onChange={(value) => updateDraft((content) => ({ ...content, finalOpinion: { ...content.finalOpinion, decision: value } }))} />
               <TextArea label="Razonamiento" value={draftContent.finalOpinion.rationale} onChange={(value) => updateDraft((content) => ({ ...content, finalOpinion: { ...content.finalOpinion, rationale: value } }))} />
@@ -530,18 +530,37 @@ async function fetchJson<T>(url: string): Promise<{ data?: T; error?: string }> 
   }
 }
 
-const gridStyle: React.CSSProperties = {
-  alignItems: "start",
+const pageStyle: React.CSSProperties = {
+  ...appPageStyle,
   display: "grid",
   gap: 18,
-  gridTemplateColumns: "minmax(280px, 360px) minmax(0, 1fr)",
+  padding: "24px clamp(16px, 3vw, 32px) 40px",
+};
+
+const heroStyle: React.CSSProperties = {
+  ...appHeroStyle,
+  margin: "0 auto",
+  maxWidth: 1120,
+  width: "100%",
+};
+
+const stackStyle: React.CSSProperties = {
+  display: "grid",
+  gap: 16,
+  margin: "0 auto",
+  maxWidth: 1120,
+  width: "100%",
 };
 
 const panelStyle: React.CSSProperties = {
   ...appPanelStyle,
+  boxSizing: "border-box",
   display: "grid",
   gap: 14,
+  margin: "0 auto",
+  maxWidth: 1120,
   padding: 18,
+  width: "100%",
 };
 
 const sectionTitleStyle: React.CSSProperties = {
@@ -596,28 +615,26 @@ const secondaryLinkStyle: React.CSSProperties = {
 };
 
 const previewHeaderStyle: React.CSSProperties = {
-  alignItems: "center",
-  display: "flex",
-  flexWrap: "wrap",
-  gap: 14,
-  justifyContent: "space-between",
+  alignItems: "start",
+  display: "grid",
+  gap: 12,
 };
 
 const kpiGridStyle: React.CSSProperties = {
   display: "grid",
-  gap: 12,
-  gridTemplateColumns: "repeat(4, minmax(140px, 1fr))",
+  gap: 10,
+  gridTemplateColumns: "1fr",
 };
 
-const editorGridStyle: React.CSSProperties = {
-  alignItems: "start",
+const editorStackStyle: React.CSSProperties = {
   display: "grid",
   gap: 16,
-  gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
 };
 
-const editorColumnStyle: React.CSSProperties = {
+const editorSectionStyle: React.CSSProperties = {
+  borderTop: "1px solid #e2e8f0",
   display: "grid",
   gap: 12,
   minWidth: 0,
+  paddingTop: 16,
 };
