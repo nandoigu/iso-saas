@@ -53,9 +53,9 @@ export function generateAuditReportPdf(content: AuditReportContent) {
 
     section(doc, "4. Resultado ejecutivo");
     rows(doc, [
-      ["Compliance Score", `${content.executiveResult.complianceScore}/100`],
-      ["Risk Score", `${content.executiveResult.riskScore}/100`],
-      ["Confidence Score", `${content.executiveResult.confidenceScore}/100`],
+      ["Cumplimiento ponderado", `${content.annexes.kpis.weightedComplianceScore}/100`],
+      ["Requisitos parciales", String(content.annexes.kpis.partialRequirements)],
+      ["Requisitos no conformes", String(content.annexes.kpis.nonCompliantRequirements)],
       ["Estado", content.executiveResult.status],
     ]);
 
@@ -66,11 +66,14 @@ export function generateAuditReportPdf(content: AuditReportContent) {
     section(doc, "6. Anexos");
     subsection(doc, "Matriz de auditoria");
     rows(doc, content.annexes.auditMatrix.map((row) => [row.requirement, row.status, row.evidence]));
-    subsection(doc, "KPIs");
+    subsection(doc, "Indicadores auditables");
     rows(doc, [
-      ["Compliance Score", `${content.annexes.kpis.complianceScore}/100`],
-      ["Risk Score", `${content.annexes.kpis.riskScore}/100`],
-      ["Confidence Score", `${content.annexes.kpis.confidenceScore}/100`],
+      ["Requisitos auditados", String(content.annexes.kpis.totalRequirements)],
+      ["Requisitos conformes", String(content.annexes.kpis.compliantRequirements)],
+      ["Requisitos parciales", String(content.annexes.kpis.partialRequirements)],
+      ["Requisitos no conformes", String(content.annexes.kpis.nonCompliantRequirements)],
+      ["Evidencias registradas", String(content.annexes.kpis.evidenceCount)],
+      ["Cumplimiento ponderado", `${content.annexes.kpis.weightedComplianceScore}/100`],
     ]);
 
     doc.end();

@@ -78,9 +78,12 @@ type ReportContent = {
   annexes: {
     auditMatrix: Array<{ requirementId: string; requirement: string; status: string; evidence: string }>;
     kpis: {
-      complianceScore: number;
-      riskScore: number;
-      confidenceScore: number;
+      totalRequirements: number;
+      compliantRequirements: number;
+      partialRequirements: number;
+      nonCompliantRequirements: number;
+      evidenceCount: number;
+      weightedComplianceScore: number;
     };
   };
   traceability: Array<{
@@ -483,12 +486,17 @@ export default function AuditReportsClient() {
                   </tbody>
                 </table>
               </div>
-              <h4 style={annexTitleStyle}>b. KPIs</h4>
-              <div style={kpiAnnexStyle}>
-                <ScoreInput label="Compliance Score" value={draftContent.annexes.kpis.complianceScore} onChange={(value) => updateDraft((content) => syncKpi(content, "complianceScore", value))} />
-                <ScoreInput label="Risk Score" value={draftContent.annexes.kpis.riskScore} onChange={(value) => updateDraft((content) => syncKpi(content, "riskScore", value))} />
-                <ScoreInput label="Confidence Score" value={draftContent.annexes.kpis.confidenceScore} onChange={(value) => updateDraft((content) => syncKpi(content, "confidenceScore", value))} />
-              </div>
+              <h4 style={annexTitleStyle}>b. Indicadores auditables</h4>
+              <ReadOnlyGrid
+                items={[
+                  ["Requisitos auditados", String(draftContent.annexes.kpis.totalRequirements)],
+                  ["Requisitos conformes", String(draftContent.annexes.kpis.compliantRequirements)],
+                  ["Requisitos parciales", String(draftContent.annexes.kpis.partialRequirements)],
+                  ["Requisitos no conformes", String(draftContent.annexes.kpis.nonCompliantRequirements)],
+                  ["Evidencias registradas", String(draftContent.annexes.kpis.evidenceCount)],
+                  ["Cumplimiento ponderado", `${draftContent.annexes.kpis.weightedComplianceScore}/100`],
+                ]}
+              />
             </div>
           </div>
         </section>
@@ -511,15 +519,6 @@ function TextArea({ label, value, onChange }: { label: string; value: string; on
     <label style={labelStyle}>
       {label}
       <textarea value={value} onChange={(event) => onChange(event.target.value)} rows={4} style={editableFieldStyle} />
-    </label>
-  );
-}
-
-function ScoreInput({ label, value, onChange }: { label: string; value: number; onChange: (value: number) => void }) {
-  return (
-    <label style={labelStyle}>
-      {label}
-      <input type="number" min={0} max={100} value={value} onChange={(event) => onChange(Number(event.target.value))} style={editableFieldStyle} />
     </label>
   );
 }
@@ -618,15 +617,6 @@ function ReadOnlyGrid({ items }: { items: Array<[string, string]> }) {
       ))}
     </div>
   );
-}
-
-function syncKpi(content: ReportContent, key: keyof ReportContent["annexes"]["kpis"], value: number) {
-  const score = Math.max(0, Math.min(100, Math.round(Number(value) || 0)));
-  return {
-    ...content,
-    executiveResult: { ...content.executiveResult, [key]: score },
-    annexes: { ...content.annexes, kpis: { ...content.annexes.kpis, [key]: score } },
-  };
 }
 
 function cloneContent(content: ReportContent) {
@@ -937,10 +927,4 @@ const annexTitleStyle: React.CSSProperties = {
   fontSize: 14,
   fontWeight: 700,
   margin: "6px 0 0",
-};
-
-const kpiAnnexStyle: React.CSSProperties = {
-  display: "grid",
-  gap: 10,
-  gridTemplateColumns: "1fr",
 };

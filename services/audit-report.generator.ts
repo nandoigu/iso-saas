@@ -11,8 +11,6 @@ export function buildAuditReportContent(
   const nonConformityRequirements = input.results.auditedRequirements.filter((requirement) =>
     isNonConformityStatus(requirement.status)
   );
-  const status = getExecutiveStatus(input.results.complianceScore, input.results.riskScore);
-  const decision = getFinalDecision(status, input.results.complianceScore);
   const requirementIds = input.results.auditedRequirements.map((requirement) => requirement.id);
   const evidenceIds = input.results.analyzedEvidence.map((evidence) => evidence.id);
   const auditMatrix = input.results.auditedRequirements.map((requirement) => ({
@@ -21,6 +19,12 @@ export function buildAuditReportContent(
     status: requirement.status,
     evidence: requirement.evidence || "Sin evidencia registrada",
   }));
+  const indicators = calculateIndicators(auditMatrix);
+  const status = getExecutiveStatus(
+    indicators.weightedComplianceScore,
+    Math.max(0, 100 - indicators.weightedComplianceScore)
+  );
+  const decision = getFinalDecision(status, indicators.weightedComplianceScore);
 
   return {
     cover: {
@@ -76,22 +80,18 @@ export function buildAuditReportContent(
       })),
     },
     executiveResult: {
-      complianceScore: input.results.complianceScore,
-      riskScore: input.results.riskScore,
+      complianceScore: indicators.weightedComplianceScore,
+      riskScore: Math.max(0, 100 - indicators.weightedComplianceScore),
       confidenceScore: input.results.confidenceScore,
       status,
     },
     finalOpinion: {
       decision,
-      rationale: `Dictamen calculado con Compliance Score ${input.results.complianceScore}/100, Risk Score ${input.results.riskScore}/100 y Confidence Score ${input.results.confidenceScore}/100. El auditor puede modificar este razonamiento durante la previsualizacion.`,
+      rationale: `Dictamen calculado con cumplimiento ponderado ${indicators.weightedComplianceScore}/100 sobre ${indicators.totalRequirements} requisitos auditados. El auditor puede modificar este razonamiento durante la previsualizacion.`,
     },
     annexes: {
       auditMatrix,
-      kpis: {
-        complianceScore: input.results.complianceScore,
-        riskScore: input.results.riskScore,
-        confidenceScore: input.results.confidenceScore,
-      },
+      kpis: indicators,
     },
     traceability: [
       {
@@ -139,6 +139,40 @@ function isNonConformityStatus(status: string) {
   return ["no_conforme", "no conforme", "non compliant", "parcial", "partial"].includes(
     status.trim().toLowerCase()
   );
+}
+
+function calculateIndicators(auditMatrix: Array<{ status: string; evidence: string }>) {
+  const totalRequirements = auditMatrix.length;
+  const compliantRequirements = auditMatrix.filter((row) => isCompliantStatus(row.status)).length;
+  const partialRequirements = auditMatrix.filter((row) => isPartialStatus(row.status)).length;
+  const nonCompliantRequirements = auditMatrix.filter((row) => isNoConformityStatus(row.status)).length;
+  const evidenceCount = auditMatrix.filter((row) => hasEvidence(row.evidence)).length;
+  const weightedScore =
+    totalRequirements > 0
+      ? Math.round(((compliantRequirements + partialRequirements * 0.5) / totalRequirements) * 100)
+      : 0;
+
+  return {
+    totalRequirements,
+    compliantRequirements,
+    partialRequirements,
+    nonCompliantRequirements,
+    evidenceCount,
+    weightedComplianceScore: weightedScore,
+  };
+}
+
+function isPartialStatus(status: string) {
+  return ["parcial", "partial"].includes(status.trim().toLowerCase());
+}
+
+function isNoConformityStatus(status: string) {
+  return ["no_conforme", "no conforme", "non compliant"].includes(status.trim().toLowerCase());
+}
+
+function hasEvidence(evidence: string) {
+  const normalized = evidence.trim().toLowerCase();
+  return Boolean(normalized) && !["sin evidencia registrada", "pendiente de completar"].includes(normalized);
 }
 
 function formatRequirement(requirement: { norma?: string | null; item?: string | null; title: string }) {

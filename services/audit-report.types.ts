@@ -59,6 +59,15 @@ export type AuditReportNonConformity = {
   reason: string;
 };
 
+export type AuditReportIndicators = {
+  totalRequirements: number;
+  compliantRequirements: number;
+  partialRequirements: number;
+  nonCompliantRequirements: number;
+  evidenceCount: number;
+  weightedComplianceScore: number;
+};
+
 export type AuditReportContent = {
   cover: {
     reportNumber: string;
@@ -108,11 +117,7 @@ export type AuditReportContent = {
       status: string;
       evidence: string;
     }>;
-    kpis: {
-      complianceScore: number;
-      riskScore: number;
-      confidenceScore: number;
-    };
+    kpis: AuditReportIndicators;
   };
   traceability: Array<{
     section: string;

@@ -3,6 +3,7 @@ import { prisma } from "@/app/lib/prisma";
 import { buildAuditReportContent } from "@/services/audit-report.generator";
 import type {
   AuditReportContent,
+  AuditReportIndicators,
   AuditReportInput,
   AuditReportNonConformity,
 } from "@/services/audit-report.types";
@@ -212,17 +213,15 @@ export async function buildInputFromProject(projectId: string, body: Partial<Aud
 function calculateComplianceScore(requirements: Array<{ status: string }>) {
   if (requirements.length === 0) return 0;
 
-  const compliant = requirements.filter((requirement) =>
-    ["total", "conforme", "cumple", "completed", "compliant", "aprobado"].includes(
-      requirement.status.toLowerCase()
-    )
-  ).length;
+  const compliant = requirements.filter((requirement) => isCompliantStatus(requirement.status)).length;
+  const partial = requirements.filter((requirement) => isPartialStatus(requirement.status)).length;
 
-  return Math.round((compliant / requirements.length) * 100);
+  return Math.round(((compliant + partial * 0.5) / requirements.length) * 100);
 }
 
 function normalizeContent(content: AuditReportContent): AuditReportContent {
   const auditMatrix = normalizeAuditMatrix(content.annexes.auditMatrix);
+  const indicators = buildIndicatorsFromAuditMatrix(auditMatrix, content.annexes.kpis);
 
   return {
     ...content,
@@ -235,18 +234,14 @@ function normalizeContent(content: AuditReportContent): AuditReportContent {
     },
     executiveResult: {
       ...content.executiveResult,
-      complianceScore: clampScore(content.executiveResult.complianceScore),
-      riskScore: clampScore(content.executiveResult.riskScore),
+      complianceScore: indicators.weightedComplianceScore,
+      riskScore: Math.max(0, 100 - indicators.weightedComplianceScore),
       confidenceScore: clampScore(content.executiveResult.confidenceScore),
     },
     annexes: {
       ...content.annexes,
       auditMatrix,
-      kpis: {
-        complianceScore: clampScore(content.annexes.kpis.complianceScore),
-        riskScore: clampScore(content.annexes.kpis.riskScore),
-        confidenceScore: clampScore(content.annexes.kpis.confidenceScore),
-      },
+      kpis: indicators,
     },
   };
 }
@@ -320,6 +315,40 @@ function buildNonConformitiesFromAuditMatrix(
     });
 }
 
+function buildIndicatorsFromAuditMatrix(
+  auditMatrix: AuditReportContent["annexes"]["auditMatrix"],
+  legacyValue?: unknown
+): AuditReportIndicators {
+  const totalRequirements = auditMatrix.length;
+  const compliantRequirements = auditMatrix.filter((row) => isCompliantStatus(row.status)).length;
+  const partialRequirements = auditMatrix.filter((row) => isPartialStatus(row.status)).length;
+  const nonCompliantRequirements = auditMatrix.filter((row) => isNoConformityStatus(row.status)).length;
+  const evidenceCount = auditMatrix.filter((row) => hasEvidence(row.evidence)).length;
+
+  if (totalRequirements === 0) {
+    const legacy = legacyValue as Partial<AuditReportIndicators> | undefined;
+    return {
+      totalRequirements: Number(legacy?.totalRequirements || 0),
+      compliantRequirements: Number(legacy?.compliantRequirements || 0),
+      partialRequirements: Number(legacy?.partialRequirements || 0),
+      nonCompliantRequirements: Number(legacy?.nonCompliantRequirements || 0),
+      evidenceCount: Number(legacy?.evidenceCount || 0),
+      weightedComplianceScore: clampScore(Number(legacy?.weightedComplianceScore || 0)),
+    };
+  }
+
+  return {
+    totalRequirements,
+    compliantRequirements,
+    partialRequirements,
+    nonCompliantRequirements,
+    evidenceCount,
+    weightedComplianceScore: Math.round(
+      ((compliantRequirements + partialRequirements * 0.5) / totalRequirements) * 100
+    ),
+  };
+}
+
 function findExistingNonConformity(
   items: AuditReportNonConformity[],
   requirementId: string,
@@ -342,6 +371,25 @@ function isNonConformityStatus(status: string) {
   return ["no_conforme", "no conforme", "non compliant", "parcial", "partial"].includes(
     status.trim().toLowerCase()
   );
+}
+
+function isCompliantStatus(status: string) {
+  return ["total", "conforme", "cumple", "completed", "compliant", "aprobado"].includes(
+    status.trim().toLowerCase()
+  );
+}
+
+function isPartialStatus(status: string) {
+  return ["parcial", "partial"].includes(status.trim().toLowerCase());
+}
+
+function isNoConformityStatus(status: string) {
+  return ["no_conforme", "no conforme", "non compliant"].includes(status.trim().toLowerCase());
+}
+
+function hasEvidence(evidence: string) {
+  const normalized = evidence.trim().toLowerCase();
+  return Boolean(normalized) && !["sin evidencia registrada", "pendiente de completar"].includes(normalized);
 }
 
 function extractRequirementCode(requirement: string) {
@@ -489,9 +537,13 @@ function normalizeStoredContent(report: {
         evidence: String(row.evidence || "Sin evidencia registrada"),
       })),
       kpis: {
-        complianceScore: content?.executiveResults?.complianceScore ?? report.complianceScore,
-        riskScore: content?.executiveResults?.riskScore ?? report.riskScore,
-        confidenceScore: content?.executiveResults?.confidenceScore ?? report.confidenceScore,
+        totalRequirements: 0,
+        compliantRequirements: 0,
+        partialRequirements: 0,
+        nonCompliantRequirements: 0,
+        evidenceCount: 0,
+        weightedComplianceScore:
+          content?.executiveResults?.complianceScore ?? report.complianceScore,
       },
     },
     traceability: [],

@@ -57,10 +57,10 @@ export async function generateAuditReportDocx(content: AuditReportContent) {
             ])
           ),
           heading("4. Resultado ejecutivo"),
-          table(["KPI", "Resultado"], [
-            ["Compliance Score", `${content.executiveResult.complianceScore}/100`],
-            ["Risk Score", `${content.executiveResult.riskScore}/100`],
-            ["Confidence Score", `${content.executiveResult.confidenceScore}/100`],
+          table(["Indicador", "Resultado"], [
+            ["Cumplimiento ponderado", `${content.annexes.kpis.weightedComplianceScore}/100`],
+            ["Requisitos parciales", String(content.annexes.kpis.partialRequirements)],
+            ["Requisitos no conformes", String(content.annexes.kpis.nonCompliantRequirements)],
             ["Estado", content.executiveResult.status],
           ]),
           heading("5. Dictamen final"),
@@ -72,11 +72,14 @@ export async function generateAuditReportDocx(content: AuditReportContent) {
             ["Requisito", "Estado", "Evidencia"],
             content.annexes.auditMatrix.map((row) => [row.requirement, row.status, row.evidence])
           ),
-          heading("KPIs", 3),
-          table(["KPI", "Valor"], [
-            ["Compliance Score", `${content.annexes.kpis.complianceScore}/100`],
-            ["Risk Score", `${content.annexes.kpis.riskScore}/100`],
-            ["Confidence Score", `${content.annexes.kpis.confidenceScore}/100`],
+          heading("Indicadores auditables", 3),
+          table(["Indicador", "Valor"], [
+            ["Requisitos auditados", String(content.annexes.kpis.totalRequirements)],
+            ["Requisitos conformes", String(content.annexes.kpis.compliantRequirements)],
+            ["Requisitos parciales", String(content.annexes.kpis.partialRequirements)],
+            ["Requisitos no conformes", String(content.annexes.kpis.nonCompliantRequirements)],
+            ["Evidencias registradas", String(content.annexes.kpis.evidenceCount)],
+            ["Cumplimiento ponderado", `${content.annexes.kpis.weightedComplianceScore}/100`],
           ]),
         ],
       },
