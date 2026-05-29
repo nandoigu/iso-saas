@@ -1,16 +1,17 @@
+import crypto from "crypto";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/app/lib/prisma";
 import { buildAuditReportContent } from "@/services/audit-report.generator";
 import type { AuditReportInput } from "@/services/audit-report.types";
 
 export async function listAuditReports() {
-  return prisma.auditReport.findMany({
-    orderBy: { updatedAt: "desc" },
-    include: {
-      project: { select: { id: true, name: true, code: true } },
-      createdBy: { select: { id: true, email: true, name: true } },
-    },
-  });
+  try {
+    return await findAuditReports();
+  } catch (error) {
+    if (!isMissingAuditReportTableError(error)) throw error;
+    await ensureAuditReportStorage();
+    return findAuditReports();
+  }
 }
 
 export async function getAuditReport(reportId: string) {
@@ -25,6 +26,7 @@ export async function getAuditReport(reportId: string) {
 }
 
 export async function createAuditReport(input: AuditReportInput, createdById: string) {
+  await ensureAuditReportStorage();
   const reportNumber = await nextReportNumber();
   const content = buildAuditReportContent(input, reportNumber);
   const sourceData = toJsonValue(input);
@@ -84,6 +86,7 @@ export async function createAuditReport(input: AuditReportInput, createdById: st
 }
 
 export async function regenerateAuditReport(reportId: string, createdById: string) {
+  await ensureAuditReportStorage();
   const report = await prisma.auditReport.findUnique({ where: { id: reportId } });
 
   if (!report) return null;
@@ -212,4 +215,143 @@ async function nextReportNumber() {
 
 function toJsonValue(value: unknown): Prisma.InputJsonValue {
   return JSON.parse(JSON.stringify(value)) as Prisma.InputJsonValue;
+}
+
+function findAuditReports() {
+  return prisma.auditReport.findMany({
+    orderBy: { updatedAt: "desc" },
+    include: {
+      project: { select: { id: true, name: true, code: true } },
+      createdBy: { select: { id: true, email: true, name: true } },
+    },
+  });
+}
+
+function isMissingAuditReportTableError(error: unknown) {
+  return (
+    error instanceof Prisma.PrismaClientKnownRequestError &&
+    error.code === "P2021" &&
+    String(error.meta?.table || "").includes("AuditReport")
+  );
+}
+
+async function ensureAuditReportStorage() {
+  await prisma.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS "AuditReport" (
+      "id" TEXT NOT NULL,
+      "auditId" TEXT NOT NULL,
+      "reportNumber" TEXT NOT NULL,
+      "version" INTEGER NOT NULL DEFAULT 1,
+      "status" TEXT NOT NULL DEFAULT 'draft',
+      "auditType" TEXT NOT NULL,
+      "scope" TEXT NOT NULL,
+      "auditedOrgName" TEXT NOT NULL,
+      "auditedOrgAddress" TEXT,
+      "auditedOrgRep" TEXT,
+      "leadAuditor" TEXT NOT NULL,
+      "auditors" JSONB NOT NULL,
+      "technicalExperts" JSONB NOT NULL,
+      "auditStartDate" TIMESTAMP(3) NOT NULL,
+      "auditEndDate" TIMESTAMP(3) NOT NULL,
+      "reportDate" TIMESTAMP(3) NOT NULL,
+      "applicableStandards" JSONB NOT NULL,
+      "sourceData" JSONB NOT NULL,
+      "generatedContent" JSONB NOT NULL,
+      "traceability" JSONB NOT NULL,
+      "complianceScore" INTEGER NOT NULL,
+      "maturityScore" INTEGER NOT NULL,
+      "riskScore" INTEGER NOT NULL,
+      "confidenceScore" INTEGER NOT NULL,
+      "globalStatus" TEXT NOT NULL,
+      "finalOpinion" TEXT NOT NULL,
+      "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      "updatedAt" TIMESTAMP(3) NOT NULL,
+      "projectId" TEXT NOT NULL,
+      "createdById" TEXT NOT NULL,
+      CONSTRAINT "AuditReport_pkey" PRIMARY KEY ("id")
+    )
+  `);
+
+  await prisma.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS "AuditReportVersion" (
+      "id" TEXT NOT NULL,
+      "version" INTEGER NOT NULL,
+      "status" TEXT NOT NULL,
+      "snapshot" JSONB NOT NULL,
+      "traceability" JSONB NOT NULL,
+      "complianceScore" INTEGER NOT NULL,
+      "maturityScore" INTEGER NOT NULL,
+      "riskScore" INTEGER NOT NULL,
+      "confidenceScore" INTEGER NOT NULL,
+      "globalStatus" TEXT NOT NULL,
+      "finalOpinion" TEXT NOT NULL,
+      "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      "reportId" TEXT NOT NULL,
+      "createdById" TEXT NOT NULL,
+      CONSTRAINT "AuditReportVersion_pkey" PRIMARY KEY ("id")
+    )
+  `);
+
+  await prisma.$executeRawUnsafe(
+    `CREATE UNIQUE INDEX IF NOT EXISTS "AuditReport_reportNumber_version_key" ON "AuditReport"("reportNumber", "version")`
+  );
+  await prisma.$executeRawUnsafe(
+    `CREATE INDEX IF NOT EXISTS "AuditReport_projectId_idx" ON "AuditReport"("projectId")`
+  );
+  await prisma.$executeRawUnsafe(
+    `CREATE INDEX IF NOT EXISTS "AuditReport_createdById_idx" ON "AuditReport"("createdById")`
+  );
+  await prisma.$executeRawUnsafe(
+    `CREATE INDEX IF NOT EXISTS "AuditReport_auditId_idx" ON "AuditReport"("auditId")`
+  );
+  await prisma.$executeRawUnsafe(
+    `CREATE UNIQUE INDEX IF NOT EXISTS "AuditReportVersion_reportId_version_key" ON "AuditReportVersion"("reportId", "version")`
+  );
+  await prisma.$executeRawUnsafe(
+    `CREATE INDEX IF NOT EXISTS "AuditReportVersion_createdById_idx" ON "AuditReportVersion"("createdById")`
+  );
+
+  await addConstraintIfMissing(
+    "AuditReport_projectId_fkey",
+    `ALTER TABLE "AuditReport" ADD CONSTRAINT "AuditReport_projectId_fkey" FOREIGN KEY ("projectId") REFERENCES "Project"("id") ON DELETE CASCADE ON UPDATE CASCADE`
+  );
+  await addConstraintIfMissing(
+    "AuditReport_createdById_fkey",
+    `ALTER TABLE "AuditReport" ADD CONSTRAINT "AuditReport_createdById_fkey" FOREIGN KEY ("createdById") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE`
+  );
+  await addConstraintIfMissing(
+    "AuditReportVersion_reportId_fkey",
+    `ALTER TABLE "AuditReportVersion" ADD CONSTRAINT "AuditReportVersion_reportId_fkey" FOREIGN KEY ("reportId") REFERENCES "AuditReport"("id") ON DELETE CASCADE ON UPDATE CASCADE`
+  );
+
+  await markAuditReportMigrationApplied();
+}
+
+async function addConstraintIfMissing(name: string, sql: string) {
+  await prisma.$executeRawUnsafe(`
+    DO $$
+    BEGIN
+      IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint WHERE conname = '${name.replace(/'/g, "''")}'
+      ) THEN
+        ${sql};
+      END IF;
+    END $$;
+  `);
+}
+
+async function markAuditReportMigrationApplied() {
+  const migrationName = "20260529110000_add_audit_report_generator";
+  const checksum = "09f3f16dfbb718856dd0bbfe3a2f5dfd788e8c736e0310a08e7aff94175e9b9d";
+
+  await prisma.$executeRawUnsafe(
+    `INSERT INTO "_prisma_migrations" ("id", "checksum", "finished_at", "migration_name", "logs", "rolled_back_at", "started_at", "applied_steps_count")
+     SELECT $1, $2, NOW(), $3, NULL, NULL, NOW(), 1
+     WHERE NOT EXISTS (
+       SELECT 1 FROM "_prisma_migrations" WHERE "migration_name" = $3
+     )`,
+    crypto.randomUUID(),
+    checksum,
+    migrationName
+  );
 }
