@@ -407,10 +407,11 @@ export default function DashboardPage() {
     <main style={pageStyle}>
       <section style={heroStyle}>
         <div style={heroCopyStyle}>
-          <span style={eyebrowStyle}>Workspace ISO 19650</span>
-          <h1 style={heroTitleStyle}>Dashboard BI</h1>
+          <span style={eyebrowStyle}>Inteligencia de cumplimiento</span>
+          <h1 style={heroTitleStyle}>Dashboard operativo ISO 19650</h1>
           <p style={heroDescriptionStyle}>
-            Análisis interactivo de cumplimiento ISO 19650 por proyecto, norma y estado.
+            Analiza cumplimiento, vencimientos y estados por proyecto para detectar
+            riesgos antes de que se conviertan en incidencias.
           </p>
         </div>
 

@@ -452,13 +452,13 @@ export default function ProjectsPage() {
         }}
       >
         <div style={{ display: "grid", gap: 10 }}>
-          <span style={eyebrowStyle}>Workspace de proyectos</span>
+          <span style={eyebrowStyle}>Cartera ISO 19650</span>
           <h1 style={{ ...heroTitleStyle, ...(isMobile ? mobileHeroTitleStyle : {}) }}>
-            Gestion de proyectos
+            Gestion de proyectos y requisitos
           </h1>
           <p style={heroDescriptionStyle}>
-            Crea proyectos, define su función ISO 19650 y administra las
-            plantillas base que se cargan automaticamente.
+            Crea proyectos, define la funcion de informacion y mantiene conectados
+            requisitos, evidencias, matriz y dashboard.
           </p>
         </div>
 

@@ -185,11 +185,12 @@ export default function Home() {
     <main style={pageStyle}>
       <section style={heroStyle}>
         <div style={{ display: "grid", gap: 10 }}>
-          <span style={eyebrowStyle}>Workspace ISO 19650</span>
-          <h1 style={heroTitleStyle}>Panel de cumplimiento</h1>
+          <span style={eyebrowStyle}>Control ISO 19650</span>
+          <h1 style={heroTitleStyle}>Cumplimiento, evidencias y plazos en un solo lugar</h1>
           <p style={heroDescriptionStyle}>
-            {userLabel}, aquí tienes un resumen operativo de proyectos,
-            requerimientos y vencimientos para entrar rápido a lo importante.
+            {userLabel}, aquí tienes la situación operativa de tus proyectos:
+            requisitos, evidencias, vencimientos y cumplimiento para priorizar
+            con claridad.
           </p>
         </div>
 
@@ -239,11 +240,12 @@ export default function Home() {
           <div>
             <span style={eyebrowStyle}>Primeros pasos</span>
             <h2 id="first-run-title" style={onboardingTitleStyle}>
-              Prepara tu primer proyecto ISO 19650
+              Prepara tu primer proyecto con trazabilidad desde el inicio
             </h2>
             <p style={onboardingDescriptionStyle}>
               Empieza creando un proyecto, revisa los requerimientos generados y
-              usa la matriz o el dashboard para priorizar el seguimiento.
+              usa la matriz o el dashboard para convertir el seguimiento en
+              decisiones concretas.
             </p>
           </div>
 

@@ -53,10 +53,11 @@ export default function MatrixIndexPage() {
     <main style={appPageStyle}>
       <section style={appHeroStyle}>
         <div style={appHeroCopyStyle}>
-          <span style={appHeroEyebrowStyle}>Workspace ISO 19650</span>
+          <span style={appHeroEyebrowStyle}>Trazabilidad documental</span>
           <h1 style={appHeroTitleStyle}>Matriz de cumplimiento</h1>
           <p style={appHeroDescriptionStyle}>
-            Selecciona un proyecto para abrir su matriz de cumplimiento.
+            Selecciona un proyecto para revisar requisitos, evidencias y estado de
+            cumplimiento en formato matriz.
           </p>
         </div>
 

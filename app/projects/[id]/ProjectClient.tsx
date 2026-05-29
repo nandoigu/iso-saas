@@ -707,7 +707,7 @@ export default function ProjectClient({ projectId }: ProjectClientProps) {
         }}
       >
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={eyebrowStyle}>Workspace de requerimientos</div>
+          <div style={eyebrowStyle}>Trazabilidad del proyecto</div>
           {editingProjectMeta ? (
             <div
               style={{

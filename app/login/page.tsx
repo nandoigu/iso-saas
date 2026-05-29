@@ -76,9 +76,11 @@ export default function LoginPage() {
   return (
     <main style={pageStyle}>
       <section style={cardStyle}>
-        <h1 style={appAuthTitleStyle}>Iniciar sesión</h1>
+        <span style={authKickerStyle}>BMO ISO 19650</span>
+        <h1 style={appAuthTitleStyle}>Controla requisitos y evidencias sin perder trazabilidad</h1>
         <p style={appAuthSubtitleStyle}>
-          Accede a tus proyectos y requerimientos ISO 19650.
+          Accede al espacio de trabajo donde centralizas cumplimiento ISO 19650,
+          vencimientos y evidencias por proyecto.
         </p>
 
         <form onSubmit={submit} style={{ display: "grid", gap: 14 }}>
@@ -158,6 +160,15 @@ const pageStyle: React.CSSProperties = {
 const cardStyle: React.CSSProperties = {
   ...appAuthCardStyle,
   maxWidth: 440,
+};
+
+const authKickerStyle: React.CSSProperties = {
+  color: "#0025df",
+  display: "block",
+  fontSize: 12,
+  fontWeight: 600,
+  marginBottom: 8,
+  textTransform: "uppercase",
 };
 
 const labelStyle: React.CSSProperties = {

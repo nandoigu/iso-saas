@@ -3,7 +3,8 @@ import Navbar from "./components/Navbar";
 
 export const metadata = {
   title: "BMO ISO 19650",
-  description: "Plataforma de gestion de cumplimiento ISO 19650",
+  description:
+    "Plataforma para controlar requisitos, evidencias y cumplimiento ISO 19650 en proyectos BIM.",
 };
 
 export default function RootLayout({

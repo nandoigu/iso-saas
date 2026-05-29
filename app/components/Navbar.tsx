@@ -252,7 +252,7 @@ function BrandMark({
         <span style={{ ...brandNameStyle, fontSize: compact ? 17 : 18 }}>
           BMO ISO 19650
         </span>
-        <span style={brandTagStyle}>Compliance SaaS</span>
+        <span style={brandTagStyle}>Control ISO 19650</span>
       </span>
     </Link>
   );

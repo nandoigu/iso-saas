@@ -86,9 +86,11 @@ function ResetPasswordForm() {
   return (
     <main style={pageStyle}>
       <section style={cardStyle}>
+        <span style={authKickerStyle}>BMO ISO 19650</span>
         <h1 style={appAuthTitleStyle}>Nueva contraseña</h1>
         <p style={subtitleStyle}>
-          Define una nueva contraseña segura para recuperar el acceso a tu cuenta.
+          Define una nueva contraseña segura para volver a tu espacio de
+          cumplimiento ISO 19650.
         </p>
 
         <form onSubmit={submit} style={{ display: "grid", gap: 14 }}>
@@ -145,6 +147,15 @@ const pageStyle: React.CSSProperties = {
 
 const cardStyle: React.CSSProperties = {
   ...appAuthCardStyle,
+};
+
+const authKickerStyle: React.CSSProperties = {
+  color: "#0025df",
+  display: "block",
+  fontSize: 12,
+  fontWeight: 600,
+  marginBottom: 8,
+  textTransform: "uppercase",
 };
 
 const subtitleStyle: React.CSSProperties = {

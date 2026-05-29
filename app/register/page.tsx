@@ -56,9 +56,11 @@ export default function RegisterPage() {
   return (
     <main style={pageStyle}>
       <section style={cardStyle}>
-        <h1 style={appAuthTitleStyle}>Crear cuenta</h1>
+        <span style={authKickerStyle}>BMO ISO 19650</span>
+        <h1 style={appAuthTitleStyle}>Crea tu espacio de control ISO 19650</h1>
         <p style={appAuthSubtitleStyle}>
-          Crea tu espacio privado para gestionar cumplimiento ISO 19650.
+          Organiza proyectos, requisitos, evidencias y alertas desde un entorno
+          preparado para equipos BIM y cumplimiento documental.
         </p>
 
         <form onSubmit={submit} style={{ display: "grid", gap: 14 }}>
@@ -124,6 +126,15 @@ const pageStyle: React.CSSProperties = {
 const cardStyle: React.CSSProperties = {
   ...appAuthCardStyle,
   maxWidth: 440,
+};
+
+const authKickerStyle: React.CSSProperties = {
+  color: "#0025df",
+  display: "block",
+  fontSize: 12,
+  fontWeight: 600,
+  marginBottom: 8,
+  textTransform: "uppercase",
 };
 
 const labelStyle: React.CSSProperties = {

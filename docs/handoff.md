@@ -79,8 +79,24 @@ La aplicacion ya tiene una base SaaS funcional avanzada y esta en fase de pulido
 
 La app ya esta en estado avanzado de pulido visual. La QA visual/accesibilidad final queda cerrada en esta sesion. El siguiente paso recomendado es elegir entre:
 
-- branding comercial y datos demo de calidad
+- datos demo de calidad y cuenta demo
 - una validacion visual interactiva adicional en Chrome normal si se quiere confirmar manualmente tablet/movil con sesion real
+
+## Branding comercial - 2026-05-29
+
+- Retomada la tarea de branding y presencia comercial.
+- Cambios aplicados:
+  - metadata del producto actualizada con una descripcion mas concreta.
+  - claim de Inicio orientado a cumplimiento, evidencias y plazos.
+  - subtitulos de Login/Register/Recuperacion alineados con control ISO 19650 y trazabilidad.
+  - etiqueta secundaria del logo cambiada de `Compliance SaaS` a `Control ISO 19650`.
+  - copy de Proyectos, Dashboard, Matriz y Detalle de proyecto alineado con trazabilidad, evidencias y riesgo operativo.
+  - nueva guia en `docs/brand-messaging.md` con posicionamiento, promesa, mensajes clave, tono y demo comercial recomendada.
+- Validacion:
+  - `cmd /c npm run lint` pasa.
+  - `cmd /c npm run build` pasa.
+- Siguiente paso recomendado:
+  - preparar datos demo y cuenta demo siguiendo `docs/brand-messaging.md`.
 
 ## Tests de humo - 2026-05-28
 
@@ -469,7 +485,8 @@ La app ya esta en estado avanzado de pulido visual. La QA visual/accesibilidad f
   - primera creación de proyecto más acompañada
   - sugerencias de siguiente paso
 - [ ] Branding y presencia comercial:
-  - copy mas consistente
+  - [x] copy mas consistente
+  - [x] guia de posicionamiento y mensajes en `docs/brand-messaging.md`
   - pulido visual final
   - datos demo de calidad
   - cuenta demo
