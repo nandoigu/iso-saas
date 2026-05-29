@@ -304,12 +304,6 @@ function normalizeStoredContent(report: {
   const legacyMatrix = Array.isArray(content?.annexes?.auditMatrix)
     ? content.annexes.auditMatrix
     : [];
-  const legacyEvidence = Array.isArray(content?.annexes?.evidenceUsed)
-    ? content.annexes.evidenceUsed
-    : [];
-  const legacyTraceability = Array.isArray(content?.annexes?.requirementEvidenceTraceability)
-    ? content.annexes.requirementEvidenceTraceability
-    : [];
   const recommendation =
     "recommendation" in (content?.finalOpinion || {})
       ? (content.finalOpinion as { recommendation?: string }).recommendation
@@ -378,12 +372,6 @@ function normalizeStoredContent(report: {
         requirement: String(row.requirement || "Requisito sin titulo"),
         status: String(row.status || "Sin estado"),
         evidence: String(row.evidence || "Sin evidencia registrada"),
-      })),
-      requirementEvidence: legacyTraceability.map((row, index) => ({
-        requirementId: row.requirementId || `legacy-trace-${index + 1}`,
-        requirement: row.requirementId || `Requisito ${index + 1}`,
-        evidenceIds: row.evidenceIds || [],
-        evidence: legacyEvidence.map((evidence) => evidence.title).join("; ") || "Sin evidencia registrada",
       })),
       kpis: {
         complianceScore: content?.executiveResults?.complianceScore ?? report.complianceScore,

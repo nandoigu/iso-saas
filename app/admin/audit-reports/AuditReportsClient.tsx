@@ -71,12 +71,6 @@ type ReportContent = {
   };
   annexes: {
     auditMatrix: Array<{ requirementId: string; requirement: string; status: string; evidence: string }>;
-    requirementEvidence: Array<{
-      requirementId: string;
-      requirement: string;
-      evidenceIds: string[];
-      evidence: string;
-    }>;
     kpis: {
       complianceScore: number;
       riskScore: number;
@@ -476,28 +470,7 @@ export default function AuditReportsClient() {
                   </tbody>
                 </table>
               </div>
-              <h4 style={annexTitleStyle}>b. Requisito y evidencias utilizadas</h4>
-              <div style={tableWrapperStyle}>
-                <table style={{ ...appTableStyle, minWidth: 620 }}>
-                  <thead>
-                    <tr>
-                      <th style={appTableHeaderStyle}>Requisito</th>
-                      <th style={appTableHeaderStyle}>Evidencias</th>
-                      <th style={appTableHeaderStyle}>IDs</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {draftContent.annexes.requirementEvidence.slice(0, 12).map((row) => (
-                      <tr key={row.requirementId}>
-                        <td style={appTableCellStyle}>{row.requirement}</td>
-                        <td style={appTableCellStyle}>{row.evidence}</td>
-                        <td style={appTableCellStyle}>{row.evidenceIds.join(", ") || "-"}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              <h4 style={annexTitleStyle}>c. KPIs</h4>
+              <h4 style={annexTitleStyle}>b. KPIs</h4>
               <div style={kpiAnnexStyle}>
                 <ScoreInput label="Compliance Score" value={draftContent.annexes.kpis.complianceScore} onChange={(value) => updateDraft((content) => syncKpi(content, "complianceScore", value))} />
                 <ScoreInput label="Risk Score" value={draftContent.annexes.kpis.riskScore} onChange={(value) => updateDraft((content) => syncKpi(content, "riskScore", value))} />

@@ -101,12 +101,6 @@ export type AuditReportContent = {
       status: string;
       evidence: string;
     }>;
-    requirementEvidence: Array<{
-      requirementId: string;
-      requirement: string;
-      evidenceIds: string[];
-      evidence: string;
-    }>;
     kpis: {
       complianceScore: number;
       riskScore: number;

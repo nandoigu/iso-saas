@@ -87,18 +87,6 @@ export function buildAuditReportContent(
         status: requirement.status,
         evidence: requirement.evidence || "Sin evidencia registrada",
       })),
-      requirementEvidence: input.results.auditedRequirements.map((requirement) => {
-        const linkedEvidence = input.results.analyzedEvidence.filter(
-          (evidence) => evidence.requirementId === requirement.id
-        );
-
-        return {
-          requirementId: requirement.id,
-          requirement: formatRequirement(requirement),
-          evidenceIds: linkedEvidence.map((evidence) => evidence.id),
-          evidence: linkedEvidence.map((evidence) => evidence.title).join("; ") || "Sin evidencia registrada",
-        };
-      }),
       kpis: {
         complianceScore: input.results.complianceScore,
         riskScore: input.results.riskScore,

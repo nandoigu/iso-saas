@@ -64,15 +64,6 @@ export async function generateAuditReportDocx(content: AuditReportContent) {
             ["Requisito", "Estado", "Evidencia"],
             content.annexes.auditMatrix.map((row) => [row.requirement, row.status, row.evidence])
           ),
-          heading("Requisito y evidencias utilizadas", 3),
-          table(
-            ["Requisito", "Evidencias", "IDs"],
-            content.annexes.requirementEvidence.map((row) => [
-              row.requirement,
-              row.evidence,
-              row.evidenceIds.join(", ") || "-",
-            ])
-          ),
           heading("KPIs", 3),
           table(["KPI", "Valor"], [
             ["Compliance Score", `${content.annexes.kpis.complianceScore}/100`],

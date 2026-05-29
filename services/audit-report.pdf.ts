@@ -58,15 +58,6 @@ export function generateAuditReportPdf(content: AuditReportContent) {
     section(doc, "7. Anexos");
     subsection(doc, "Matriz de auditoria");
     rows(doc, content.annexes.auditMatrix.map((row) => [row.requirement, row.status, row.evidence]));
-    subsection(doc, "Requisito y evidencias utilizadas");
-    rows(
-      doc,
-      content.annexes.requirementEvidence.map((row) => [
-        row.requirement,
-        row.evidence,
-        row.evidenceIds.join(", ") || "-",
-      ])
-    );
     subsection(doc, "KPIs");
     rows(doc, [
       ["Compliance Score", `${content.annexes.kpis.complianceScore}/100`],
