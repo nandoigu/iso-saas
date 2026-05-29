@@ -790,7 +790,7 @@ const editableCardInputStyle: React.CSSProperties = {
   color: "#0f172a",
   font: "inherit",
   fontSize: 14,
-  fontWeight: 700,
+  fontWeight: 400,
   lineHeight: 1.35,
   outline: "none",
   padding: 0,
