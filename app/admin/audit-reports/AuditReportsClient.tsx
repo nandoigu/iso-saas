@@ -72,23 +72,28 @@ export default function AuditReportsClient() {
     setError("");
 
     try {
-      const [reportsRes, projectsRes] = await Promise.all([
-        fetch("/api/admin/audit-reports", { cache: "no-store" }),
-        fetch("/api/projects", { cache: "no-store" }),
+      const [reportsResult, projectsResult] = await Promise.all([
+        fetchJson<{ data: AuditReport[] }>("/api/admin/audit-reports"),
+        fetchJson<Project[]>("/api/projects"),
       ]);
+      const loadErrors = [reportsResult.error, projectsResult.error].filter(Boolean);
+      const loadedReports = reportsResult.data?.data ?? [];
+      const loadedProjects = projectsResult.data ?? [];
 
-      if (!reportsRes.ok || !projectsRes.ok) {
-        throw new Error("No se pudieron cargar los datos.");
+      if (reportsResult.data) {
+        setReports(Array.isArray(loadedReports) ? loadedReports : []);
       }
 
-      const [reportsData, projectsData] = await Promise.all([reportsRes.json(), projectsRes.json()]);
-      const loadedReports = Array.isArray(reportsData.data) ? reportsData.data : [];
-      const loadedProjects = Array.isArray(projectsData) ? projectsData : [];
+      if (projectsResult.data) {
+        setProjects(Array.isArray(loadedProjects) ? loadedProjects : []);
+        setSelectedProjectId((current) => current || loadedProjects[0]?.id || "");
+      }
 
-      setReports(loadedReports);
-      setProjects(loadedProjects);
-      setSelectedProjectId((current) => current || loadedProjects[0]?.id || "");
       setSelectedReportId((current) => current || loadedReports[0]?.id || null);
+
+      if (loadErrors.length > 0) {
+        setError(loadErrors.join(" "));
+      }
     } catch (loadError) {
       console.error(loadError);
       setError("No se pudo cargar el generador de informes.");
@@ -114,6 +119,7 @@ export default function AuditReportsClient() {
     try {
       const res = await fetch("/api/admin/audit-reports", {
         method: "POST",
+        credentials: "same-origin",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           projectId: selectedProjectId,
@@ -145,7 +151,10 @@ export default function AuditReportsClient() {
     setSuccess("");
 
     try {
-      const res = await fetch(`/api/admin/audit-reports/${reportId}`, { method: "PATCH" });
+      const res = await fetch(`/api/admin/audit-reports/${reportId}`, {
+        method: "PATCH",
+        credentials: "same-origin",
+      });
       const data = await res.json();
 
       if (!res.ok) {
@@ -322,6 +331,29 @@ function initials(value: string) {
     .slice(0, 2)
     .map((part) => part[0]?.toUpperCase())
     .join("") || "BA";
+}
+
+async function fetchJson<T>(url: string): Promise<{ data?: T; error?: string }> {
+  try {
+    const res = await fetch(url, {
+      cache: "no-store",
+      credentials: "same-origin",
+    });
+    const data = await res.json().catch(() => null);
+
+    if (!res.ok) {
+      const message = data?.error || `HTTP ${res.status}`;
+      return { error: `${url}: ${message}` };
+    }
+
+    return { data: data as T };
+  } catch (error) {
+    return {
+      error: `${url}: ${
+        error instanceof Error ? error.message : "No se pudo completar la peticion"
+      }`,
+    };
+  }
 }
 
 const gridStyle: React.CSSProperties = {

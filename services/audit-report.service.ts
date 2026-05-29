@@ -27,6 +27,9 @@ export async function getAuditReport(reportId: string) {
 export async function createAuditReport(input: AuditReportInput, createdById: string) {
   const reportNumber = await nextReportNumber();
   const content = buildAuditReportContent(input, reportNumber);
+  const sourceData = toJsonValue(input);
+  const generatedContent = toJsonValue(content);
+  const traceability = toJsonValue(content.traceability);
 
   return prisma.$transaction(async (tx) => {
     const report = await tx.auditReport.create({
@@ -39,15 +42,15 @@ export async function createAuditReport(input: AuditReportInput, createdById: st
         auditedOrgAddress: input.organization.address || null,
         auditedOrgRep: input.organization.representative || null,
         leadAuditor: input.leadAuditor.name,
-        auditors: input.auditors as unknown as Prisma.InputJsonValue,
-        technicalExperts: input.technicalExperts as unknown as Prisma.InputJsonValue,
+        auditors: toJsonValue(input.auditors),
+        technicalExperts: toJsonValue(input.technicalExperts),
         auditStartDate: new Date(input.dates.start),
         auditEndDate: new Date(input.dates.end),
         reportDate: new Date(input.dates.report),
-        applicableStandards: content.cover.standards as Prisma.InputJsonValue,
-        sourceData: input as unknown as Prisma.InputJsonValue,
-        generatedContent: content as unknown as Prisma.InputJsonValue,
-        traceability: content.traceability as Prisma.InputJsonValue,
+        applicableStandards: toJsonValue(content.cover.standards),
+        sourceData,
+        generatedContent,
+        traceability,
         complianceScore: content.executiveResults.complianceScore,
         maturityScore: content.executiveResults.maturityScore,
         riskScore: content.executiveResults.riskScore,
@@ -64,8 +67,8 @@ export async function createAuditReport(input: AuditReportInput, createdById: st
         reportId: report.id,
         version: report.version,
         status: report.status,
-        snapshot: content as unknown as Prisma.InputJsonValue,
-        traceability: content.traceability as Prisma.InputJsonValue,
+        snapshot: generatedContent,
+        traceability,
         complianceScore: report.complianceScore,
         maturityScore: report.maturityScore,
         riskScore: report.riskScore,
@@ -88,14 +91,16 @@ export async function regenerateAuditReport(reportId: string, createdById: strin
   const input = report.sourceData as unknown as AuditReportInput;
   const nextVersion = report.version + 1;
   const content = buildAuditReportContent(input, report.reportNumber);
+  const generatedContent = toJsonValue(content);
+  const traceability = toJsonValue(content.traceability);
 
   return prisma.$transaction(async (tx) => {
     const updated = await tx.auditReport.update({
       where: { id: reportId },
       data: {
         version: nextVersion,
-        generatedContent: content as unknown as Prisma.InputJsonValue,
-        traceability: content.traceability as Prisma.InputJsonValue,
+        generatedContent,
+        traceability,
         complianceScore: content.executiveResults.complianceScore,
         maturityScore: content.executiveResults.maturityScore,
         riskScore: content.executiveResults.riskScore,
@@ -110,8 +115,8 @@ export async function regenerateAuditReport(reportId: string, createdById: strin
         reportId,
         version: nextVersion,
         status: updated.status,
-        snapshot: content as unknown as Prisma.InputJsonValue,
-        traceability: content.traceability as Prisma.InputJsonValue,
+        snapshot: generatedContent,
+        traceability,
         complianceScore: updated.complianceScore,
         maturityScore: updated.maturityScore,
         riskScore: updated.riskScore,
@@ -203,4 +208,8 @@ function calculateComplianceScore(requirements: Array<{ status: string }>) {
 async function nextReportNumber() {
   const count = await prisma.auditReport.count();
   return `BAOS-AR-${String(count + 1).padStart(5, "0")}`;
+}
+
+function toJsonValue(value: unknown): Prisma.InputJsonValue {
+  return JSON.parse(JSON.stringify(value)) as Prisma.InputJsonValue;
 }
