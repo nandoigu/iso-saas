@@ -34,6 +34,7 @@ model User {
   company             Company?             @relation(fields: [companyId], references: [id])
   projects            Project[]
   passwordResetTokens PasswordResetToken[]
+  auditReports        AuditReport[]
 }
 
 model Project {
@@ -50,6 +51,7 @@ model Project {
   company   Company? @relation(fields: [companyId], references: [id])
 
   requirements Requirement[]
+  auditReports AuditReport[]
 }
 
 model Requirement {
@@ -104,4 +106,71 @@ model PasswordResetToken {
 
   @@index([userId])
   @@index([expiresAt])
+}
+
+model AuditReport {
+  id                 String   @id @default(cuid())
+  auditId            String
+  reportNumber       String
+  version            Int      @default(1)
+  status             String   @default("draft")
+  auditType          String
+  scope              String
+  auditedOrgName     String
+  auditedOrgAddress  String?
+  auditedOrgRep      String?
+  leadAuditor        String
+  auditors           Json
+  technicalExperts   Json
+  auditStartDate     DateTime
+  auditEndDate       DateTime
+  reportDate         DateTime
+  applicableStandards Json
+  sourceData         Json
+  generatedContent   Json
+  traceability       Json
+  complianceScore    Int
+  maturityScore      Int
+  riskScore          Int
+  confidenceScore    Int
+  globalStatus       String
+  finalOpinion       String
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  createdById String
+  createdBy   User   @relation(fields: [createdById], references: [id], onDelete: Restrict)
+
+  versions AuditReportVersion[]
+
+  @@unique([reportNumber, version])
+  @@index([projectId])
+  @@index([createdById])
+  @@index([auditId])
+}
+
+model AuditReportVersion {
+  id               String   @id @default(cuid())
+  version          Int
+  status           String
+  snapshot         Json
+  traceability     Json
+  complianceScore  Int
+  maturityScore    Int
+  riskScore        Int
+  confidenceScore  Int
+  globalStatus     String
+  finalOpinion     String
+  createdAt        DateTime @default(now())
+
+  reportId String
+  report   AuditReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
+
+  createdById String
+
+  @@unique([reportId, version])
+  @@index([createdById])
 }

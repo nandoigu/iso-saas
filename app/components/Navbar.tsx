@@ -17,7 +17,7 @@ type CurrentUser = {
   status: string;
 };
 
-type NavIconName = "home" | "projects" | "dashboard" | "matrix" | "profile" | "admin";
+type NavIconName = "home" | "projects" | "dashboard" | "matrix" | "profile" | "admin" | "reports";
 type NavItem = {
   href: string;
   label: string;
@@ -115,6 +115,7 @@ export default function Navbar() {
 
     if (authenticatedUser.role === "admin") {
       groups[1].items.push({ href: "/admin", label: "Admin", icon: "admin" });
+      groups[1].items.push({ href: "/admin/audit-reports", label: "Informes", icon: "reports" });
     }
 
     return groups.map((group) => ({
@@ -356,6 +357,16 @@ function NavIcon({ name }: { name: NavIconName }) {
         <svg viewBox="0 0 24 24" style={navSvgStyle}>
           <path {...common} d="M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7Z" />
           <path {...common} d="M19.4 13.5a7.8 7.8 0 0 0 0-3l2-1.2-2-3.4-2.2 1a8.5 8.5 0 0 0-2.6-1.5L14.3 3h-4.6l-.3 2.4A8.5 8.5 0 0 0 6.8 7L4.6 6 2.6 9.3l2 1.2a7.8 7.8 0 0 0 0 3l-2 1.2 2 3.4 2.2-1a8.5 8.5 0 0 0 2.6 1.5l.3 2.4h4.6l.3-2.4a8.5 8.5 0 0 0 2.6-1.5l2.2 1 2-3.4Z" />
+        </svg>
+      );
+    case "reports":
+      return (
+        <svg viewBox="0 0 24 24" style={navSvgStyle}>
+          <path {...common} d="M7 3.8h7.2L19 8.6v11.6H7z" />
+          <path {...common} d="M14 3.8v5h5" />
+          <path {...common} d="M9.8 12.2h6.4" />
+          <path {...common} d="M9.8 15.2h6.4" />
+          <path {...common} d="M9.8 18.2h3.8" />
         </svg>
       );
   }

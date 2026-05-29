@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import {
   DestructiveConfirmationDialog,
@@ -262,6 +263,9 @@ export default function AdminPanelClient({
           </p>
         </div>
         <div style={appHeroActionsStyle}>
+          <Link href="/admin/audit-reports" style={reportLinkStyle}>
+            Generador de informes
+          </Link>
           <div style={pillStyle}>{currentUserEmail}</div>
         </div>
       </section>
@@ -611,4 +615,12 @@ const dangerButtonStyle: React.CSSProperties = {
   minHeight: 38,
   padding: "0 12px",
   width: "100%",
+};
+
+const reportLinkStyle: React.CSSProperties = {
+  ...appPrimaryButtonStyle,
+  alignItems: "center",
+  display: "inline-flex",
+  minHeight: 38,
+  textDecoration: "none",
 };
