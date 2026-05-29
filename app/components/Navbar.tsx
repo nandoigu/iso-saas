@@ -248,10 +248,10 @@ function BrandMark({
     <Link href={href} style={brandLinkStyle}>
       <span aria-hidden="true" style={brandIconStyle}>
         <Image
-          src="/bmo-eficax-icon.png"
+          src="/eficax-icon.png"
           alt=""
-          width={116}
-          height={64}
+          width={462}
+          height={442}
           style={brandIconImageStyle}
         />
       </span>
@@ -450,9 +450,9 @@ const brandIconStyle: React.CSSProperties = {
   background: SURFACE,
   display: "inline-flex",
   flexShrink: 0,
-  height: 38,
+  height: 44,
   justifyContent: "center",
-  width: 68,
+  width: 44,
 };
 
 const brandIconImageStyle: React.CSSProperties = {
