@@ -222,11 +222,16 @@ function calculateComplianceScore(requirements: Array<{ status: string }>) {
 }
 
 function normalizeContent(content: AuditReportContent): AuditReportContent {
+  const auditMatrix = normalizeAuditMatrix(content.annexes.auditMatrix);
+
   return {
     ...content,
     executiveSummary: {
       ...content.executiveSummary,
-      nonConformities: normalizeNonConformities(content.executiveSummary.nonConformities),
+      nonConformities: buildNonConformitiesFromAuditMatrix(
+        auditMatrix,
+        content.executiveSummary.nonConformities
+      ),
     },
     executiveResult: {
       ...content.executiveResult,
@@ -236,6 +241,7 @@ function normalizeContent(content: AuditReportContent): AuditReportContent {
     },
     annexes: {
       ...content.annexes,
+      auditMatrix,
       kpis: {
         complianceScore: clampScore(content.annexes.kpis.complianceScore),
         riskScore: clampScore(content.annexes.kpis.riskScore),
@@ -275,6 +281,77 @@ function normalizeNonConformities(value: unknown): AuditReportNonConformity[] {
   }
 
   return [];
+}
+
+function normalizeAuditMatrix(
+  value: unknown
+): AuditReportContent["annexes"]["auditMatrix"] {
+  if (!Array.isArray(value)) return [];
+
+  return value.map((row, index) => {
+    const item = row as Partial<AuditReportContent["annexes"]["auditMatrix"][number]>;
+    return {
+      requirementId: String(item.requirementId || `matrix-${index + 1}`),
+      requirement: String(item.requirement || "Requisito sin codigo"),
+      status: String(item.status || "Sin estado"),
+      evidence: String(item.evidence || "Sin evidencia registrada"),
+    };
+  });
+}
+
+function buildNonConformitiesFromAuditMatrix(
+  auditMatrix: AuditReportContent["annexes"]["auditMatrix"],
+  currentValue: unknown
+): AuditReportNonConformity[] {
+  const existing = normalizeNonConformities(currentValue);
+
+  return auditMatrix
+    .filter((row) => isNonConformityStatus(row.status))
+    .map((row) => {
+      const itemCode = extractRequirementCode(row.requirement);
+      const previous = findExistingNonConformity(existing, row.requirementId, itemCode);
+
+      return {
+        requirementId: row.requirementId,
+        itemCode,
+        status: row.status,
+        reason: previous?.reason || "",
+      };
+    });
+}
+
+function findExistingNonConformity(
+  items: AuditReportNonConformity[],
+  requirementId: string,
+  itemCode: string
+) {
+  const normalizedCode = normalizeCode(itemCode);
+  const shortCode = normalizeCode(itemCode.split(" - ").pop() || itemCode);
+
+  return items.find((item) => {
+    const candidateCode = normalizeCode(item.itemCode);
+    return (
+      item.requirementId === requirementId ||
+      candidateCode === normalizedCode ||
+      candidateCode === shortCode
+    );
+  });
+}
+
+function isNonConformityStatus(status: string) {
+  return ["no_conforme", "no conforme", "non compliant", "parcial", "partial"].includes(
+    status.trim().toLowerCase()
+  );
+}
+
+function extractRequirementCode(requirement: string) {
+  const parts = requirement.split(" - ").map((part) => part.trim()).filter(Boolean);
+  if (parts.length >= 2 && /^\d/.test(parts[1])) return `${parts[0]} - ${parts[1]}`;
+  return parts[0] || requirement;
+}
+
+function normalizeCode(value: string) {
+  return value.trim().toLowerCase();
 }
 
 async function nextReportNumber() {
@@ -351,7 +428,7 @@ function normalizeStoredContent(report: {
       ? (content.finalOpinion as { reasoning?: Array<{ text?: string }> }).reasoning?.map((entry) => entry.text || "").join("\n")
       : content?.finalOpinion?.rationale;
 
-  return {
+  const normalizedLegacyContent: AuditReportContent = {
     cover: {
       reportNumber: content?.cover?.reportNumber || report.reportNumber,
       auditNumber: content?.cover?.auditNumber || report.auditId,
@@ -419,6 +496,8 @@ function normalizeStoredContent(report: {
     },
     traceability: [],
   };
+
+  return normalizeContent(normalizedLegacyContent);
 }
 
 function initials(value: string) {

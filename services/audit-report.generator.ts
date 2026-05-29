@@ -15,6 +15,12 @@ export function buildAuditReportContent(
   const decision = getFinalDecision(status, input.results.complianceScore);
   const requirementIds = input.results.auditedRequirements.map((requirement) => requirement.id);
   const evidenceIds = input.results.analyzedEvidence.map((evidence) => evidence.id);
+  const auditMatrix = input.results.auditedRequirements.map((requirement) => ({
+    requirementId: requirement.id,
+    requirement: formatRequirement(requirement),
+    status: requirement.status,
+    evidence: requirement.evidence || "Sin evidencia registrada",
+  }));
 
   return {
     cover: {
@@ -62,10 +68,10 @@ export function buildAuditReportContent(
         input.results.analyzedEvidence.length > 0
           ? "Existen evidencias vinculadas a requisitos auditados. Debe revisarse su suficiencia antes de emitir el informe."
           : "No constan evidencias documentales asociadas; se recomienda completar la trazabilidad.",
-      nonConformities: nonConformityRequirements.map((requirement) => ({
-        requirementId: requirement.id,
-        itemCode: getRequirementItemCode(requirement),
-        status: requirement.status,
+      nonConformities: auditMatrix.filter((row) => isNonConformityStatus(row.status)).map((row) => ({
+        requirementId: row.requirementId,
+        itemCode: extractRequirementCode(row.requirement),
+        status: row.status,
         reason: "",
       })),
     },
@@ -80,12 +86,7 @@ export function buildAuditReportContent(
       rationale: `Dictamen calculado con Compliance Score ${input.results.complianceScore}/100, Risk Score ${input.results.riskScore}/100 y Confidence Score ${input.results.confidenceScore}/100. El auditor puede modificar este razonamiento durante la previsualizacion.`,
     },
     annexes: {
-      auditMatrix: input.results.auditedRequirements.map((requirement) => ({
-        requirementId: requirement.id,
-        requirement: formatRequirement(requirement),
-        status: requirement.status,
-        evidence: requirement.evidence || "Sin evidencia registrada",
-      })),
+      auditMatrix,
       kpis: {
         complianceScore: input.results.complianceScore,
         riskScore: input.results.riskScore,
@@ -144,8 +145,10 @@ function formatRequirement(requirement: { norma?: string | null; item?: string |
   return [requirement.norma, requirement.item, requirement.title].filter(Boolean).join(" - ");
 }
 
-function getRequirementItemCode(requirement: { item?: string | null; id: string }) {
-  return requirement.item || requirement.id;
+function extractRequirementCode(requirement: string) {
+  const parts = requirement.split(" - ").map((part) => part.trim()).filter(Boolean);
+  if (parts.length >= 2 && /^\d/.test(parts[1])) return `${parts[0]} - ${parts[1]}`;
+  return parts[0] || requirement;
 }
 
 function formatDate(value: string) {
