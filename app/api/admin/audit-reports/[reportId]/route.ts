@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
 import { forbidden, getAuthSession, isAdminRole, unauthorized } from "@/app/lib/auth";
-import { getAuditReport, regenerateAuditReport } from "@/services/audit-report.service";
+import {
+  getAuditReport,
+  regenerateAuditReport,
+  saveAuditReportContent,
+} from "@/services/audit-report.service";
+import type { AuditReportContent } from "@/services/audit-report.types";
 
 export async function GET(
   req: Request,
@@ -37,7 +42,16 @@ export async function PATCH(
     if (!isAdminRole(user.role)) return forbidden();
 
     const { reportId } = await params;
-    const report = await regenerateAuditReport(reportId, user.id);
+    const body = await req.json().catch(() => null);
+    const action = typeof body?.action === "string" ? body.action : "regenerate";
+    const report =
+      action === "save"
+        ? await saveAuditReportContent({
+            reportId,
+            content: body.content as AuditReportContent,
+            createdById: user.id,
+          })
+        : await regenerateAuditReport(reportId, user.id);
 
     if (!report) {
       return NextResponse.json({ error: "Informe no encontrado." }, { status: 404 });
@@ -46,6 +60,6 @@ export async function PATCH(
     return NextResponse.json({ data: report });
   } catch (error) {
     console.error("ERROR PATCH /api/admin/audit-reports/[reportId]:", error);
-    return NextResponse.json({ error: "No se pudo versionar el informe." }, { status: 500 });
+    return NextResponse.json({ error: "No se pudo guardar o versionar el informe." }, { status: 500 });
   }
 }

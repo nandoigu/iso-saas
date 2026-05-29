@@ -11,66 +11,6 @@ export type AuditPerson = {
   role?: string;
 };
 
-export type FindingSeverity = "Menor" | "Mayor" | "Critica";
-export type ImprovementPriority = "Alta" | "Media" | "Baja";
-
-export type TraceabilityRef = {
-  requirementId: string;
-  evidenceIds: string[];
-  confidenceScore: number;
-};
-
-export type ReportParagraph = TraceabilityRef & {
-  id: string;
-  text: string;
-};
-
-export type Strength = TraceabilityRef & {
-  code: string;
-  description: string;
-  evidence: string;
-};
-
-export type Improvement = TraceabilityRef & {
-  code: string;
-  description: string;
-  recommendation: string;
-  priority: ImprovementPriority;
-};
-
-export type Observation = TraceabilityRef & {
-  reference: string;
-  observation: string;
-  requirement: string;
-};
-
-export type NonConformity = TraceabilityRef & {
-  id: string;
-  isoRequirement: string;
-  severity: FindingSeverity;
-  description: string;
-  evidence: string;
-  impact: string;
-  probableCause: string;
-};
-
-export type IsoDomainEvaluation = TraceabilityRef & {
-  domain: string;
-  result: string;
-  strengths: string[];
-  weaknesses: string[];
-  evidenceUsed: string[];
-  complianceLevel: number;
-};
-
-export type CorrectiveAction = {
-  nonConformityId: string;
-  requiredAction: string;
-  owner: string;
-  targetDate: string;
-  priority: ImprovementPriority;
-};
-
 export type AuditReportInput = {
   auditId: string;
   projectId: string;
@@ -78,43 +18,38 @@ export type AuditReportInput = {
     name: string;
     address?: string;
     representative?: string;
-    logoUrl?: string;
   };
   scope: string;
   auditType: AuditType;
   leadAuditor: AuditPerson;
-  auditors: AuditPerson[];
-  technicalExperts: AuditPerson[];
   dates: {
     start: string;
     end: string;
     report: string;
   };
+  standards: string[];
   results: {
-    auditedRequirements: Array<{
-      id: string;
-      name: string;
-      norma?: string | null;
-      item?: string | null;
-      status: string;
-      evidencia?: string | null;
-    }>;
-    analyzedEvidence: Array<{ id: string; title: string; source?: string }>;
+    auditedRequirements: AuditRequirementSnapshot[];
+    analyzedEvidence: AuditEvidenceSnapshot[];
     complianceScore: number;
-    maturityScore: number;
     riskScore: number;
     confidenceScore: number;
   };
-  findings?: {
-    strengths?: Strength[];
-    improvements?: Improvement[];
-    observations?: Observation[];
-    nonConformities?: NonConformity[];
-  };
-  standards?: string[];
-  internalProcedures?: string[];
-  contractualRequirements?: string[];
-  legalRequirements?: string[];
+};
+
+export type AuditRequirementSnapshot = {
+  id: string;
+  title: string;
+  norma?: string | null;
+  item?: string | null;
+  status: string;
+  evidence?: string | null;
+};
+
+export type AuditEvidenceSnapshot = {
+  id: string;
+  title: string;
+  requirementId: string;
 };
 
 export type AuditReportContent = {
@@ -128,34 +63,60 @@ export type AuditReportContent = {
     reportDate: string;
   };
   generalData: {
-    organization: AuditReportInput["organization"];
-    auditTeam: AuditPerson[];
-    auditCriteria: string[];
+    projectName: string;
+    projectCode: string;
+    organizationName: string;
+    organizationAddress: string;
+    organizationRepresentative: string;
+    leadAuditorName: string;
+    leadAuditorInitials: string;
+    certificationScope: string;
   };
-  executiveSummary: ReportParagraph[];
-  executiveResults: {
+  auditCriteria: string[];
+  executiveSummary: {
+    generalIssues: string;
+    scopeAdequacy: string;
+    auditObjectives: string;
+    auditContext: string;
+    auditorGeneralConsiderations: string;
+    strengths: string;
+    weaknessesAndImprovements: string;
+    observations: string;
+    nonConformities: string;
+  };
+  executiveResult: {
     complianceScore: number;
-    maturityScore: number;
     riskScore: number;
     confidenceScore: number;
-    globalStatus: string;
+    status: string;
   };
-  strengths: Strength[];
-  improvements: Improvement[];
-  observations: Observation[];
-  nonConformities: NonConformity[];
-  isoEvaluation: IsoDomainEvaluation[];
   finalOpinion: {
-    recommendation: string;
-    reasoning: ReportParagraph[];
+    decision: string;
+    rationale: string;
   };
-  correctiveActions: CorrectiveAction[];
   annexes: {
-    auditMatrix: Array<{ requirement: string; status: string; evidence: string }>;
-    evidenceUsed: AuditReportInput["results"]["analyzedEvidence"];
-    requirementEvidenceTraceability: TraceabilityRef[];
-    auditedDocumentRegister: string[];
-    previousAuditHistory: string[];
+    auditMatrix: Array<{
+      requirementId: string;
+      requirement: string;
+      status: string;
+      evidence: string;
+    }>;
+    requirementEvidence: Array<{
+      requirementId: string;
+      requirement: string;
+      evidenceIds: string[];
+      evidence: string;
+    }>;
+    kpis: {
+      complianceScore: number;
+      riskScore: number;
+      confidenceScore: number;
+    };
   };
-  traceability: Record<string, TraceabilityRef>;
+  traceability: Array<{
+    section: string;
+    requirementIds: string[];
+    evidenceIds: string[];
+    confidenceScore: number;
+  }>;
 };

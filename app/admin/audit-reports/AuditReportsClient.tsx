@@ -26,6 +26,71 @@ type Project = {
   code?: string | null;
 };
 
+type ReportContent = {
+  cover: {
+    reportNumber: string;
+    auditNumber: string;
+    organizationName: string;
+    auditType: string;
+    standards: string[];
+    auditDates: string;
+    reportDate: string;
+  };
+  generalData: {
+    projectName: string;
+    projectCode: string;
+    organizationName: string;
+    organizationAddress: string;
+    organizationRepresentative: string;
+    leadAuditorName: string;
+    leadAuditorInitials: string;
+    certificationScope: string;
+  };
+  auditCriteria: string[];
+  executiveSummary: Record<
+    | "generalIssues"
+    | "scopeAdequacy"
+    | "auditObjectives"
+    | "auditContext"
+    | "auditorGeneralConsiderations"
+    | "strengths"
+    | "weaknessesAndImprovements"
+    | "observations"
+    | "nonConformities",
+    string
+  >;
+  executiveResult: {
+    complianceScore: number;
+    riskScore: number;
+    confidenceScore: number;
+    status: string;
+  };
+  finalOpinion: {
+    decision: string;
+    rationale: string;
+  };
+  annexes: {
+    auditMatrix: Array<{ requirementId: string; requirement: string; status: string; evidence: string }>;
+    requirementEvidence: Array<{
+      requirementId: string;
+      requirement: string;
+      evidenceIds: string[];
+      evidence: string;
+    }>;
+    kpis: {
+      complianceScore: number;
+      riskScore: number;
+      confidenceScore: number;
+    };
+  };
+  traceability: Array<{
+    section: string;
+    requirementIds: string[];
+    evidenceIds: string[];
+    confidenceScore: number;
+  }>;
+};
+
 type AuditReport = {
   id: string;
   reportNumber: string;
@@ -33,21 +98,27 @@ type AuditReport = {
   auditType: string;
   auditedOrgName: string;
   complianceScore: number;
-  maturityScore: number;
   riskScore: number;
   confidenceScore: number;
   globalStatus: string;
   finalOpinion: string;
   updatedAt: string;
   project?: Project | null;
-  generatedContent?: {
-    executiveSummary?: Array<{ id: string; text: string; confidenceScore: number }>;
-    isoEvaluation?: Array<{ domain: string; result: string; complianceLevel: number }>;
-    nonConformities?: Array<{ id: string; severity: string; description: string }>;
-  };
+  generatedContent?: ReportContent;
 };
 
 const auditTypes = ["Fase 1", "Fase 2", "Seguimiento", "Renovacion", "Extraordinaria"];
+const summaryFields: Array<{ key: keyof ReportContent["executiveSummary"]; label: string }> = [
+  { key: "generalIssues", label: "Cuestiones generales" },
+  { key: "scopeAdequacy", label: "Adecuacion del alcance" },
+  { key: "auditObjectives", label: "Objetivos de auditoria" },
+  { key: "auditContext", label: "Contexto de la auditoria" },
+  { key: "auditorGeneralConsiderations", label: "Consideraciones generales del auditor" },
+  { key: "strengths", label: "Puntos fuertes" },
+  { key: "weaknessesAndImprovements", label: "Debilidades y oportunidades de mejora" },
+  { key: "observations", label: "Observaciones" },
+  { key: "nonConformities", label: "No conformidades" },
+];
 
 export default function AuditReportsClient() {
   const [reports, setReports] = useState<AuditReport[]>([]);
@@ -57,8 +128,9 @@ export default function AuditReportsClient() {
   const [scope, setScope] = useState("");
   const [leadAuditor, setLeadAuditor] = useState("Auditor jefe BAOS");
   const [loading, setLoading] = useState(true);
-  const [creating, setCreating] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [selectedReportId, setSelectedReportId] = useState<string | null>(null);
+  const [draftContent, setDraftContent] = useState<ReportContent | null>(null);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
@@ -66,6 +138,10 @@ export default function AuditReportsClient() {
     () => reports.find((report) => report.id === selectedReportId) || reports[0] || null,
     [reports, selectedReportId]
   );
+
+  useEffect(() => {
+    setDraftContent(selectedReport?.generatedContent ? cloneContent(selectedReport.generatedContent) : null);
+  }, [selectedReport]);
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -80,23 +156,17 @@ export default function AuditReportsClient() {
       const loadedReports = reportsResult.data?.data ?? [];
       const loadedProjects = projectsResult.data ?? [];
 
-      if (reportsResult.data) {
-        setReports(Array.isArray(loadedReports) ? loadedReports : []);
-      }
-
+      if (reportsResult.data) setReports(Array.isArray(loadedReports) ? loadedReports : []);
       if (projectsResult.data) {
         setProjects(Array.isArray(loadedProjects) ? loadedProjects : []);
         setSelectedProjectId((current) => current || loadedProjects[0]?.id || "");
       }
 
       setSelectedReportId((current) => current || loadedReports[0]?.id || null);
-
-      if (loadErrors.length > 0) {
-        setError(loadErrors.join(" "));
-      }
+      if (loadErrors.length > 0) setError(loadErrors.join(" "));
     } catch (loadError) {
       console.error(loadError);
-      setError("No se pudo cargar el generador de informes.");
+      setError("No se pudo cargar el modulo de informes.");
     } finally {
       setLoading(false);
     }
@@ -112,7 +182,7 @@ export default function AuditReportsClient() {
       return;
     }
 
-    setCreating(true);
+    setSaving(true);
     setError("");
     setSuccess("");
 
@@ -130,9 +200,7 @@ export default function AuditReportsClient() {
       });
       const data = await res.json();
 
-      if (!res.ok) {
-        throw new Error(data.error || "No se pudo generar el informe.");
-      }
+      if (!res.ok) throw new Error(data.error || "No se pudo generar el informe.");
 
       await loadData();
       setSelectedReportId(data.data.id);
@@ -141,45 +209,80 @@ export default function AuditReportsClient() {
       console.error(createError);
       setError(createError instanceof Error ? createError.message : "No se pudo generar el informe.");
     } finally {
-      setCreating(false);
+      setSaving(false);
     }
   };
 
-  const regenerate = async (reportId: string) => {
-    setCreating(true);
+  const saveDraft = async () => {
+    if (!selectedReport || !draftContent) return;
+
+    setSaving(true);
     setError("");
     setSuccess("");
 
     try {
-      const res = await fetch(`/api/admin/audit-reports/${reportId}`, {
+      const res = await fetch(`/api/admin/audit-reports/${selectedReport.id}`, {
         method: "PATCH",
         credentials: "same-origin",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "save", content: draftContent }),
       });
       const data = await res.json();
 
-      if (!res.ok) {
-        throw new Error(data.error || "No se pudo versionar el informe.");
-      }
+      if (!res.ok) throw new Error(data.error || "No se pudo guardar el informe.");
 
       await loadData();
-      setSelectedReportId(reportId);
-      setSuccess(`Nueva version v${data.data.version} generada.`);
+      setSelectedReportId(selectedReport.id);
+      setSuccess(`Informe guardado como version v${data.data.version}.`);
+    } catch (saveError) {
+      console.error(saveError);
+      setError(saveError instanceof Error ? saveError.message : "No se pudo guardar el informe.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const regenerate = async () => {
+    if (!selectedReport) return;
+
+    setSaving(true);
+    setError("");
+    setSuccess("");
+
+    try {
+      const res = await fetch(`/api/admin/audit-reports/${selectedReport.id}`, {
+        method: "PATCH",
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "regenerate" }),
+      });
+      const data = await res.json();
+
+      if (!res.ok) throw new Error(data.error || "No se pudo regenerar el informe.");
+
+      await loadData();
+      setSelectedReportId(selectedReport.id);
+      setSuccess(`Informe regenerado como version v${data.data.version}.`);
     } catch (regenerateError) {
       console.error(regenerateError);
-      setError(regenerateError instanceof Error ? regenerateError.message : "No se pudo versionar el informe.");
+      setError(regenerateError instanceof Error ? regenerateError.message : "No se pudo regenerar el informe.");
     } finally {
-      setCreating(false);
+      setSaving(false);
     }
+  };
+
+  const updateDraft = (updater: (content: ReportContent) => ReportContent) => {
+    setDraftContent((current) => (current ? updater(current) : current));
   };
 
   return (
     <main style={{ ...appPageStyle, display: "grid", gap: 20 }}>
       <section style={appHeroStyle}>
         <div style={appHeroCopyStyle}>
-          <span style={appHeroEyebrowStyle}>Audit Report Generator</span>
+          <span style={appHeroEyebrowStyle}>Informes</span>
           <h1 style={appHeroTitleStyle}>Informes de auditoria ISO 19650</h1>
           <p style={appHeroDescriptionStyle}>
-            Generacion documental con versionado, trazabilidad interna por requisito/evidencia y exportacion profesional a DOCX y PDF. Disponible solo para Admin.
+            Version basica estable: genera un informe desde proyecto y requisitos, permite editar la previsualizacion y exporta DOCX/PDF.
           </p>
         </div>
         <Link href="/admin" style={secondaryLinkStyle}>
@@ -216,11 +319,11 @@ export default function AuditReportsClient() {
             <input value={leadAuditor} onChange={(event) => setLeadAuditor(event.target.value)} style={appFieldStyle} />
           </label>
           <label style={labelStyle}>
-            Alcance
+            Alcance de la certificacion
             <textarea value={scope} onChange={(event) => setScope(event.target.value)} rows={4} style={appFieldStyle} />
           </label>
-          <button type="button" onClick={createReport} disabled={creating || loading} style={{ ...appPrimaryButtonStyle, ...getActionStateStyle(creating || loading) }}>
-            {creating ? "Generando..." : "Generar informe"}
+          <button type="button" onClick={createReport} disabled={saving || loading} style={{ ...appPrimaryButtonStyle, ...getActionStateStyle(saving || loading) }}>
+            {saving ? "Procesando..." : "Generar informe"}
           </button>
         </div>
 
@@ -268,33 +371,87 @@ export default function AuditReportsClient() {
         </div>
       </section>
 
-      {selectedReport && (
+      {selectedReport && draftContent && (
         <section style={panelStyle}>
           <div style={previewHeaderStyle}>
             <div>
-              <span style={appHeroEyebrowStyle}>Previsualizacion</span>
-              <h2 style={sectionTitleStyle}>{selectedReport.reportNumber} · {selectedReport.auditedOrgName}</h2>
+              <span style={appHeroEyebrowStyle}>Previsualizacion editable</span>
+              <h2 style={sectionTitleStyle}>{selectedReport.reportNumber} · {draftContent.generalData.projectName}</h2>
             </div>
             <div style={actionRowStyle}>
-              <button type="button" onClick={() => regenerate(selectedReport.id)} disabled={creating} style={{ ...appSecondaryButtonStyle, ...getActionStateStyle(creating) }}>
-                Versionar
+              <button type="button" onClick={saveDraft} disabled={saving} style={{ ...appPrimaryButtonStyle, ...getActionStateStyle(saving) }}>
+                Guardar version
               </button>
-              <a href={`/api/admin/audit-reports/${selectedReport.id}/export/docx`} style={primaryLinkStyle}>Exportar DOCX</a>
-              <a href={`/api/admin/audit-reports/${selectedReport.id}/export/pdf`} style={primaryLinkStyle}>Exportar PDF</a>
+              <button type="button" onClick={regenerate} disabled={saving} style={{ ...appSecondaryButtonStyle, ...getActionStateStyle(saving) }}>
+                Regenerar base
+              </button>
+              <a href={`/api/admin/audit-reports/${selectedReport.id}/export/docx`} style={secondaryLinkStyle}>Exportar DOCX</a>
+              <a href={`/api/admin/audit-reports/${selectedReport.id}/export/pdf`} style={secondaryLinkStyle}>Exportar PDF</a>
             </div>
           </div>
 
           <div style={kpiGridStyle}>
-            <Kpi label="Compliance" value={selectedReport.complianceScore} />
-            <Kpi label="Maturity" value={selectedReport.maturityScore} />
-            <Kpi label="Risk" value={selectedReport.riskScore} />
-            <Kpi label="Confidence" value={selectedReport.confidenceScore} />
+            <ScoreInput label="Compliance Score" value={draftContent.executiveResult.complianceScore} onChange={(value) => updateDraft((content) => syncKpi(content, "complianceScore", value))} />
+            <ScoreInput label="Risk Score" value={draftContent.executiveResult.riskScore} onChange={(value) => updateDraft((content) => syncKpi(content, "riskScore", value))} />
+            <ScoreInput label="Confidence Score" value={draftContent.executiveResult.confidenceScore} onChange={(value) => updateDraft((content) => syncKpi(content, "confidenceScore", value))} />
+            <label style={labelStyle}>
+              Estado
+              <input value={draftContent.executiveResult.status} onChange={(event) => updateDraft((content) => ({ ...content, executiveResult: { ...content.executiveResult, status: event.target.value } }))} style={appFieldStyle} />
+            </label>
           </div>
 
-          <div style={previewGridStyle}>
-            <PreviewBlock title="Resumen ejecutivo" items={(selectedReport.generatedContent?.executiveSummary || []).map((item) => item.text)} />
-            <PreviewBlock title="Evaluacion ISO 19650" items={(selectedReport.generatedContent?.isoEvaluation || []).map((item) => `${item.domain}: ${item.result} (${item.complianceLevel}/100)`)} />
-            <PreviewBlock title="No conformidades" items={(selectedReport.generatedContent?.nonConformities || []).map((item) => `${item.id} · ${item.severity}: ${item.description}`)} />
+          <div style={editorGridStyle}>
+            <div style={editorColumnStyle}>
+              <h3 style={subsectionTitleStyle}>Datos generales</h3>
+              <TextInput label="Organizacion" value={draftContent.generalData.organizationName} onChange={(value) => updateDraft((content) => ({ ...content, generalData: { ...content.generalData, organizationName: value } }))} />
+              <TextInput label="Representante" value={draftContent.generalData.organizationRepresentative} onChange={(value) => updateDraft((content) => ({ ...content, generalData: { ...content.generalData, organizationRepresentative: value } }))} />
+              <TextInput label="Auditor jefe" value={draftContent.generalData.leadAuditorName} onChange={(value) => updateDraft((content) => ({ ...content, generalData: { ...content.generalData, leadAuditorName: value } }))} />
+              <TextArea label="Alcance de la certificacion" value={draftContent.generalData.certificationScope} onChange={(value) => updateDraft((content) => ({ ...content, generalData: { ...content.generalData, certificationScope: value } }))} />
+              <TextArea label="Criterios de auditoria" value={draftContent.auditCriteria.join("\n")} onChange={(value) => updateDraft((content) => ({ ...content, auditCriteria: splitLines(value) }))} />
+            </div>
+
+            <div style={editorColumnStyle}>
+              <h3 style={subsectionTitleStyle}>Resumen ejecutivo</h3>
+              {summaryFields.map((field) => (
+                <TextArea
+                  key={field.key}
+                  label={field.label}
+                  value={draftContent.executiveSummary[field.key]}
+                  onChange={(value) =>
+                    updateDraft((content) => ({
+                      ...content,
+                      executiveSummary: { ...content.executiveSummary, [field.key]: value },
+                    }))
+                  }
+                />
+              ))}
+            </div>
+
+            <div style={editorColumnStyle}>
+              <h3 style={subsectionTitleStyle}>Dictamen y anexos</h3>
+              <TextInput label="Dictamen final" value={draftContent.finalOpinion.decision} onChange={(value) => updateDraft((content) => ({ ...content, finalOpinion: { ...content.finalOpinion, decision: value } }))} />
+              <TextArea label="Razonamiento" value={draftContent.finalOpinion.rationale} onChange={(value) => updateDraft((content) => ({ ...content, finalOpinion: { ...content.finalOpinion, rationale: value } }))} />
+              <div style={tableWrapperStyle}>
+                <table style={{ ...appTableStyle, minWidth: 620 }}>
+                  <thead>
+                    <tr>
+                      <th style={appTableHeaderStyle}>Requisito</th>
+                      <th style={appTableHeaderStyle}>Estado</th>
+                      <th style={appTableHeaderStyle}>Evidencia</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {draftContent.annexes.auditMatrix.slice(0, 12).map((row) => (
+                      <tr key={row.requirementId}>
+                        <td style={appTableCellStyle}>{row.requirement}</td>
+                        <td style={appTableCellStyle}>{row.status}</td>
+                        <td style={appTableCellStyle}>{row.evidence}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
         </section>
       )}
@@ -302,26 +459,48 @@ export default function AuditReportsClient() {
   );
 }
 
-function Kpi({ label, value }: { label: string; value: number }) {
+function TextInput({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) {
   return (
-    <div style={kpiStyle}>
-      <span style={kpiLabelStyle}>{label}</span>
-      <strong style={kpiValueStyle}>{value}/100</strong>
-    </div>
+    <label style={labelStyle}>
+      {label}
+      <input value={value} onChange={(event) => onChange(event.target.value)} style={appFieldStyle} />
+    </label>
   );
 }
 
-function PreviewBlock({ title, items }: { title: string; items: string[] }) {
+function TextArea({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) {
   return (
-    <div style={previewBlockStyle}>
-      <h3 style={previewTitleStyle}>{title}</h3>
-      <ul style={listStyle}>
-        {(items.length ? items : ["Sin datos"]).slice(0, 12).map((item, index) => (
-          <li key={`${title}-${index}`}>{item}</li>
-        ))}
-      </ul>
-    </div>
+    <label style={labelStyle}>
+      {label}
+      <textarea value={value} onChange={(event) => onChange(event.target.value)} rows={4} style={appFieldStyle} />
+    </label>
   );
+}
+
+function ScoreInput({ label, value, onChange }: { label: string; value: number; onChange: (value: number) => void }) {
+  return (
+    <label style={labelStyle}>
+      {label}
+      <input type="number" min={0} max={100} value={value} onChange={(event) => onChange(Number(event.target.value))} style={appFieldStyle} />
+    </label>
+  );
+}
+
+function syncKpi(content: ReportContent, key: keyof ReportContent["annexes"]["kpis"], value: number) {
+  const score = Math.max(0, Math.min(100, Math.round(Number(value) || 0)));
+  return {
+    ...content,
+    executiveResult: { ...content.executiveResult, [key]: score },
+    annexes: { ...content.annexes, kpis: { ...content.annexes.kpis, [key]: score } },
+  };
+}
+
+function cloneContent(content: ReportContent) {
+  return JSON.parse(JSON.stringify(content)) as ReportContent;
+}
+
+function splitLines(value: string) {
+  return value.split("\n").map((line) => line.trim()).filter(Boolean);
 }
 
 function initials(value: string) {
@@ -335,10 +514,7 @@ function initials(value: string) {
 
 async function fetchJson<T>(url: string): Promise<{ data?: T; error?: string }> {
   try {
-    const res = await fetch(url, {
-      cache: "no-store",
-      credentials: "same-origin",
-    });
+    const res = await fetch(url, { cache: "no-store", credentials: "same-origin" });
     const data = await res.json().catch(() => null);
 
     if (!res.ok) {
@@ -349,9 +525,7 @@ async function fetchJson<T>(url: string): Promise<{ data?: T; error?: string }> 
     return { data: data as T };
   } catch (error) {
     return {
-      error: `${url}: ${
-        error instanceof Error ? error.message : "No se pudo completar la peticion"
-      }`,
+      error: `${url}: ${error instanceof Error ? error.message : "No se pudo completar la peticion"}`,
     };
   }
 }
@@ -373,6 +547,13 @@ const panelStyle: React.CSSProperties = {
 const sectionTitleStyle: React.CSSProperties = {
   color: "#002a4e",
   fontSize: 19,
+  fontWeight: 600,
+  margin: 0,
+};
+
+const subsectionTitleStyle: React.CSSProperties = {
+  color: "#002a4e",
+  fontSize: 16,
   fontWeight: 600,
   margin: 0,
 };
@@ -407,14 +588,6 @@ const smallLinkStyle: React.CSSProperties = {
   textDecoration: "none",
 };
 
-const primaryLinkStyle: React.CSSProperties = {
-  ...appPrimaryButtonStyle,
-  alignItems: "center",
-  display: "inline-flex",
-  minHeight: 38,
-  textDecoration: "none",
-};
-
 const secondaryLinkStyle: React.CSSProperties = {
   ...appSecondaryButtonStyle,
   alignItems: "center",
@@ -433,55 +606,18 @@ const previewHeaderStyle: React.CSSProperties = {
 const kpiGridStyle: React.CSSProperties = {
   display: "grid",
   gap: 12,
-  gridTemplateColumns: "repeat(4, minmax(120px, 1fr))",
+  gridTemplateColumns: "repeat(4, minmax(140px, 1fr))",
 };
 
-const kpiStyle: React.CSSProperties = {
-  background: "#f8fafc",
-  border: "1px solid #dbe3f1",
-  borderRadius: 8,
+const editorGridStyle: React.CSSProperties = {
+  alignItems: "start",
   display: "grid",
-  gap: 4,
-  padding: 14,
-};
-
-const kpiLabelStyle: React.CSSProperties = {
-  color: "#64748b",
-  fontSize: 12,
-  fontWeight: 600,
-  textTransform: "uppercase",
-};
-
-const kpiValueStyle: React.CSSProperties = {
-  color: "#002a4e",
-  fontSize: 24,
-};
-
-const previewGridStyle: React.CSSProperties = {
-  display: "grid",
-  gap: 14,
+  gap: 16,
   gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
 };
 
-const previewBlockStyle: React.CSSProperties = {
-  background: "#ffffff",
-  border: "1px solid #e2e8f0",
-  borderRadius: 8,
-  padding: 14,
-};
-
-const previewTitleStyle: React.CSSProperties = {
-  color: "#002a4e",
-  fontSize: 15,
-  margin: "0 0 10px",
-};
-
-const listStyle: React.CSSProperties = {
-  color: "#334155",
+const editorColumnStyle: React.CSSProperties = {
   display: "grid",
-  fontSize: 13,
-  gap: 8,
-  lineHeight: 1.45,
-  margin: 0,
-  paddingLeft: 18,
+  gap: 12,
+  minWidth: 0,
 };
