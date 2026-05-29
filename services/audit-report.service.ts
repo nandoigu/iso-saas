@@ -4,17 +4,19 @@ import { buildAuditReportContent } from "@/services/audit-report.generator";
 import type { AuditReportContent, AuditReportInput } from "@/services/audit-report.types";
 
 export async function listAuditReports() {
-  return prisma.auditReport.findMany({
+  const reports = await prisma.auditReport.findMany({
     orderBy: { updatedAt: "desc" },
     include: {
       project: { select: { id: true, name: true, code: true } },
       createdBy: { select: { id: true, email: true, name: true } },
     },
   });
+
+  return reports.map(withNormalizedGeneratedContent);
 }
 
 export async function getAuditReport(reportId: string) {
-  return prisma.auditReport.findUnique({
+  const report = await prisma.auditReport.findUnique({
     where: { id: reportId },
     include: {
       project: { select: { id: true, name: true, code: true } },
@@ -22,6 +24,8 @@ export async function getAuditReport(reportId: string) {
       versions: { orderBy: { version: "desc" } },
     },
   });
+
+  return report ? withNormalizedGeneratedContent(report) : null;
 }
 
 export async function createAuditReport(input: AuditReportInput, createdById: string) {
@@ -244,6 +248,160 @@ async function nextReportNumber() {
 
 function toJsonValue(value: unknown): Prisma.InputJsonValue {
   return JSON.parse(JSON.stringify(value)) as Prisma.InputJsonValue;
+}
+
+function withNormalizedGeneratedContent<T extends { generatedContent: unknown; reportNumber: string; auditId: string; auditType: string; auditedOrgName: string; scope: string; leadAuditor: string; complianceScore: number; riskScore: number; confidenceScore: number; globalStatus: string; finalOpinion: string; project?: { name: string; code?: string | null } | null }>(
+  report: T
+) {
+  return {
+    ...report,
+    generatedContent: normalizeStoredContent(report),
+  };
+}
+
+function normalizeStoredContent(report: {
+  generatedContent: unknown;
+  reportNumber: string;
+  auditId: string;
+  auditType: string;
+  auditedOrgName: string;
+  scope: string;
+  leadAuditor: string;
+  complianceScore: number;
+  riskScore: number;
+  confidenceScore: number;
+  globalStatus: string;
+  finalOpinion: string;
+  project?: { name: string; code?: string | null } | null;
+}): AuditReportContent {
+  const content = report.generatedContent as Partial<AuditReportContent> & {
+    executiveResults?: {
+      complianceScore?: number;
+      riskScore?: number;
+      confidenceScore?: number;
+      globalStatus?: string;
+    };
+    finalOpinion?: AuditReportContent["finalOpinion"] | { recommendation?: string; reasoning?: Array<{ text?: string }> };
+    generalData?: Partial<AuditReportContent["generalData"]> & {
+      organization?: { name?: string; address?: string; representative?: string };
+      auditCriteria?: string[];
+    };
+    executiveSummary?: AuditReportContent["executiveSummary"] | Array<{ text?: string }>;
+    annexes?: Partial<AuditReportContent["annexes"]> & {
+      auditMatrix?: AuditReportContent["annexes"]["auditMatrix"] | Array<{ requirement?: string; status?: string; evidence?: string }>;
+      evidenceUsed?: Array<{ id: string; title: string }>;
+      requirementEvidenceTraceability?: Array<{ requirementId: string; evidenceIds: string[] }>;
+    };
+  };
+
+  if (content?.executiveResult && content.generalData?.projectName && content.annexes?.kpis) {
+    return content as AuditReportContent;
+  }
+
+  const legacySummary = Array.isArray(content?.executiveSummary)
+    ? content.executiveSummary.map((entry) => entry.text || "").filter(Boolean)
+    : [];
+  const legacyMatrix = Array.isArray(content?.annexes?.auditMatrix)
+    ? content.annexes.auditMatrix
+    : [];
+  const legacyEvidence = Array.isArray(content?.annexes?.evidenceUsed)
+    ? content.annexes.evidenceUsed
+    : [];
+  const legacyTraceability = Array.isArray(content?.annexes?.requirementEvidenceTraceability)
+    ? content.annexes.requirementEvidenceTraceability
+    : [];
+  const recommendation =
+    "recommendation" in (content?.finalOpinion || {})
+      ? (content.finalOpinion as { recommendation?: string }).recommendation
+      : content?.finalOpinion?.decision;
+  const rationale =
+    "reasoning" in (content?.finalOpinion || {}) && Array.isArray((content.finalOpinion as { reasoning?: Array<{ text?: string }> }).reasoning)
+      ? (content.finalOpinion as { reasoning?: Array<{ text?: string }> }).reasoning?.map((entry) => entry.text || "").join("\n")
+      : content?.finalOpinion?.rationale;
+
+  return {
+    cover: {
+      reportNumber: content?.cover?.reportNumber || report.reportNumber,
+      auditNumber: content?.cover?.auditNumber || report.auditId,
+      organizationName: content?.cover?.organizationName || report.auditedOrgName,
+      auditType: (content?.cover?.auditType || report.auditType) as AuditReportContent["cover"]["auditType"],
+      standards: content?.cover?.standards || ["ISO 19650-1", "ISO 19650-2"],
+      auditDates: content?.cover?.auditDates || "No informado",
+      reportDate: content?.cover?.reportDate || "No informado",
+    },
+    generalData: {
+      projectName: content?.generalData?.projectName || report.project?.name || report.auditedOrgName,
+      projectCode: content?.generalData?.projectCode || report.project?.code || "Sin codigo",
+      organizationName:
+        content?.generalData?.organizationName ||
+        content?.generalData?.organization?.name ||
+        report.auditedOrgName,
+      organizationAddress:
+        content?.generalData?.organizationAddress ||
+        content?.generalData?.organization?.address ||
+        "No informado",
+      organizationRepresentative:
+        content?.generalData?.organizationRepresentative ||
+        content?.generalData?.organization?.representative ||
+        "No informado",
+      leadAuditorName: content?.generalData?.leadAuditorName || report.leadAuditor,
+      leadAuditorInitials: content?.generalData?.leadAuditorInitials || initials(report.leadAuditor),
+      certificationScope: content?.generalData?.certificationScope || report.scope,
+    },
+    auditCriteria:
+      content?.auditCriteria ||
+      content?.generalData?.auditCriteria || ["ISO 19650-1", "ISO 19650-2"],
+    executiveSummary: {
+      generalIssues: legacySummary[0] || "Informe migrado desde una version anterior del modulo.",
+      scopeAdequacy: legacySummary[1] || "Pendiente de revision por el auditor.",
+      auditObjectives: legacySummary[2] || "Verificar requisitos y evidencias registrados en BAOS.",
+      auditContext: legacySummary[3] || "Contexto generado desde datos existentes.",
+      auditorGeneralConsiderations: legacySummary[4] || "Pendiente de completar.",
+      strengths: legacySummary[5] || "Pendiente de completar.",
+      weaknessesAndImprovements: legacySummary[6] || "Pendiente de completar.",
+      observations: legacySummary[7] || "Pendiente de completar.",
+      nonConformities: legacySummary[8] || "Pendiente de completar.",
+    },
+    executiveResult: {
+      complianceScore: content?.executiveResults?.complianceScore ?? report.complianceScore,
+      riskScore: content?.executiveResults?.riskScore ?? report.riskScore,
+      confidenceScore: content?.executiveResults?.confidenceScore ?? report.confidenceScore,
+      status: content?.executiveResults?.globalStatus || report.globalStatus,
+    },
+    finalOpinion: {
+      decision: recommendation || report.finalOpinion,
+      rationale: rationale || "Razonamiento pendiente de revision por el auditor.",
+    },
+    annexes: {
+      auditMatrix: legacyMatrix.map((row, index) => ({
+        requirementId: "requirementId" in row ? String(row.requirementId) : `legacy-${index + 1}`,
+        requirement: String(row.requirement || "Requisito sin titulo"),
+        status: String(row.status || "Sin estado"),
+        evidence: String(row.evidence || "Sin evidencia registrada"),
+      })),
+      requirementEvidence: legacyTraceability.map((row, index) => ({
+        requirementId: row.requirementId || `legacy-trace-${index + 1}`,
+        requirement: row.requirementId || `Requisito ${index + 1}`,
+        evidenceIds: row.evidenceIds || [],
+        evidence: legacyEvidence.map((evidence) => evidence.title).join("; ") || "Sin evidencia registrada",
+      })),
+      kpis: {
+        complianceScore: content?.executiveResults?.complianceScore ?? report.complianceScore,
+        riskScore: content?.executiveResults?.riskScore ?? report.riskScore,
+        confidenceScore: content?.executiveResults?.confidenceScore ?? report.confidenceScore,
+      },
+    },
+    traceability: [],
+  };
+}
+
+function initials(value: string) {
+  return value
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join("") || "AU";
 }
 
 async function createVersion(
