@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import {
@@ -246,13 +247,19 @@ function BrandMark({
   return (
     <Link href={href} style={brandLinkStyle}>
       <span aria-hidden="true" style={brandIconStyle}>
-        BMO
+        <Image
+          src="/bmo-eficax-icon.png"
+          alt=""
+          width={116}
+          height={64}
+          style={brandIconImageStyle}
+        />
       </span>
       <span style={{ minWidth: 0 }}>
         <span style={{ ...brandNameStyle, fontSize: compact ? 17 : 18 }}>
           BMO ISO 19650
         </span>
-        <span style={brandTagStyle}>Control ISO 19650</span>
+        <span style={brandTagStyle}>Compliance SaaS</span>
       </span>
     </Link>
   );
@@ -441,16 +448,18 @@ const brandLinkStyle: React.CSSProperties = {
 const brandIconStyle: React.CSSProperties = {
   alignItems: "center",
   background: SURFACE,
-  border: `1px solid ${ACTION}22`,
-  borderRadius: 10,
-  color: ACTION,
   display: "inline-flex",
   flexShrink: 0,
-  fontSize: 12,
-  fontWeight: 700,
-  height: 36,
+  height: 38,
   justifyContent: "center",
-  width: 36,
+  width: 68,
+};
+
+const brandIconImageStyle: React.CSSProperties = {
+  display: "block",
+  height: "100%",
+  objectFit: "contain",
+  width: "100%",
 };
 
 const brandNameStyle: React.CSSProperties = {

@@ -89,7 +89,8 @@ La app ya esta en estado avanzado de pulido visual. La QA visual/accesibilidad f
   - metadata del producto actualizada con una descripcion mas concreta.
   - claim de Inicio orientado a cumplimiento, evidencias y plazos.
   - subtitulos de Login/Register/Recuperacion alineados con control ISO 19650 y trazabilidad.
-  - etiqueta secundaria del logo cambiada de `Compliance SaaS` a `Control ISO 19650`.
+  - etiqueta secundaria del logo revisada: se mantiene `Compliance SaaS` para evitar repetir `ISO 19650` junto al nombre de marca.
+  - icono de marca actualizado con asset combinado BMO + simbolo EFICAX en `public/bmo-eficax-icon.png`.
   - copy de Proyectos, Dashboard, Matriz y Detalle de proyecto alineado con trazabilidad, evidencias y riesgo operativo.
   - nueva guia en `docs/brand-messaging.md` con posicionamiento, promesa, mensajes clave, tono y demo comercial recomendada.
 - Validacion:

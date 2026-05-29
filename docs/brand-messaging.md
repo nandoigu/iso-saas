@@ -20,7 +20,7 @@ Convertir el seguimiento de requisitos ISO 19650 en una vista clara, trazable y 
 - Claro y operativo.
 - Profesional, sin lenguaje excesivamente comercial.
 - Orientado a control, trazabilidad y decision.
-- Evitar terminos genericos como `Compliance SaaS` cuando pueda usarse lenguaje de producto mas concreto.
+- Mantener `Compliance SaaS` como subtitulo de marca; en titulares y textos de pantalla usar lenguaje mas concreto sobre control, trazabilidad y evidencias.
 
 ## Copy base recomendado
 
