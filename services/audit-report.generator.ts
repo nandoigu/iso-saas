@@ -8,8 +8,8 @@ export function buildAuditReportContent(
   const compliantRequirements = input.results.auditedRequirements.filter((requirement) =>
     isCompliantStatus(requirement.status)
   );
-  const nonCompliantRequirements = input.results.auditedRequirements.filter(
-    (requirement) => !isCompliantStatus(requirement.status)
+  const nonConformityRequirements = input.results.auditedRequirements.filter((requirement) =>
+    isNonConformityStatus(requirement.status)
   );
   const status = getExecutiveStatus(input.results.complianceScore, input.results.riskScore);
   const decision = getFinalDecision(status, input.results.complianceScore);
@@ -55,20 +55,19 @@ export function buildAuditReportContent(
           ? `${compliantRequirements.length} requisitos aparecen en estado conforme o equivalente.`
           : "No se han identificado puntos fuertes automaticos en esta version basica.",
       weaknessesAndImprovements:
-        nonCompliantRequirements.length > 0
-          ? `${nonCompliantRequirements.length} requisitos requieren revision, cierre documental o mejora.`
+        nonConformityRequirements.length > 0
+          ? `${nonConformityRequirements.length} requisitos requieren revision, cierre documental o mejora.`
           : "No se han identificado debilidades relevantes a partir de los estados actuales.",
       observations:
         input.results.analyzedEvidence.length > 0
           ? "Existen evidencias vinculadas a requisitos auditados. Debe revisarse su suficiencia antes de emitir el informe."
           : "No constan evidencias documentales asociadas; se recomienda completar la trazabilidad.",
-      nonConformities:
-        nonCompliantRequirements.length > 0
-          ? nonCompliantRequirements
-              .slice(0, 8)
-              .map((requirement) => `${formatRequirement(requirement)}: ${requirement.status}`)
-              .join("\n")
-          : "No se generan no conformidades basicas a partir de los estados actuales.",
+      nonConformities: nonConformityRequirements.map((requirement) => ({
+        requirementId: requirement.id,
+        itemCode: getRequirementItemCode(requirement),
+        status: requirement.status,
+        reason: "",
+      })),
     },
     executiveResult: {
       complianceScore: input.results.complianceScore,
@@ -130,13 +129,23 @@ function getFinalDecision(status: string, complianceScore: number) {
 }
 
 function isCompliantStatus(status: string) {
-  return ["conforme", "cumple", "completed", "compliant", "aprobado"].includes(
+  return ["total", "conforme", "cumple", "completed", "compliant", "aprobado"].includes(
+    status.trim().toLowerCase()
+  );
+}
+
+function isNonConformityStatus(status: string) {
+  return ["no_conforme", "no conforme", "non compliant", "parcial", "partial"].includes(
     status.trim().toLowerCase()
   );
 }
 
 function formatRequirement(requirement: { norma?: string | null; item?: string | null; title: string }) {
   return [requirement.norma, requirement.item, requirement.title].filter(Boolean).join(" - ");
+}
+
+function getRequirementItemCode(requirement: { item?: string | null; id: string }) {
+  return requirement.item || requirement.id;
 }
 
 function formatDate(value: string) {

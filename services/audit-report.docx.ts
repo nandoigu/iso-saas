@@ -47,7 +47,15 @@ export async function generateAuditReportDocx(content: AuditReportContent) {
             content.executiveSummary.weaknessesAndImprovements
           ),
           subsection("Observaciones", content.executiveSummary.observations),
-          subsection("No conformidades", content.executiveSummary.nonConformities),
+          heading("No conformidades", 3),
+          table(
+            ["Requerimiento", "Estado", "Razon de la valoracion"],
+            content.executiveSummary.nonConformities.map((row) => [
+              row.itemCode,
+              formatStatus(row.status),
+              row.reason || "Pendiente de completar por el auditor",
+            ])
+          ),
           heading("4. Resultado ejecutivo"),
           table(["KPI", "Resultado"], [
             ["Compliance Score", `${content.executiveResult.complianceScore}/100`],
@@ -128,6 +136,12 @@ function paragraph(text: string) {
 
 function bullet(text: string) {
   return new Paragraph({ text, bullet: { level: 0 } });
+}
+
+function formatStatus(status: string) {
+  if (status === "parcial") return "Parcial";
+  if (status === "no_conforme") return "No conforme";
+  return status || "Sin estado";
 }
 
 function table(headers: string[], rows: string[][]) {

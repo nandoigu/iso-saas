@@ -26,6 +26,13 @@ type Project = {
   code?: string | null;
 };
 
+type ReportNonConformity = {
+  requirementId: string;
+  itemCode: string;
+  status: string;
+  reason: string;
+};
+
 type ReportContent = {
   cover: {
     reportNumber: string;
@@ -47,18 +54,17 @@ type ReportContent = {
     certificationScope: string;
   };
   auditCriteria: string[];
-  executiveSummary: Record<
-    | "generalIssues"
-    | "scopeAdequacy"
-    | "auditObjectives"
-    | "auditContext"
-    | "auditorGeneralConsiderations"
-    | "strengths"
-    | "weaknessesAndImprovements"
-    | "observations"
-    | "nonConformities",
-    string
-  >;
+  executiveSummary: {
+    generalIssues: string;
+    scopeAdequacy: string;
+    auditObjectives: string;
+    auditContext: string;
+    auditorGeneralConsiderations: string;
+    strengths: string;
+    weaknessesAndImprovements: string;
+    observations: string;
+    nonConformities: ReportNonConformity[];
+  };
   executiveResult: {
     complianceScore: number;
     riskScore: number;
@@ -102,7 +108,8 @@ type AuditReport = {
 };
 
 const auditTypes = ["Fase 1", "Fase 2", "Seguimiento", "Renovacion", "Extraordinaria"];
-const summaryFields: Array<{ key: keyof ReportContent["executiveSummary"]; label: string }> = [
+type SummaryTextKey = Exclude<keyof ReportContent["executiveSummary"], "nonConformities">;
+const summaryFields: Array<{ key: SummaryTextKey; label: string }> = [
   { key: "generalIssues", label: "Cuestiones generales" },
   { key: "scopeAdequacy", label: "Adecuacion del alcance" },
   { key: "auditObjectives", label: "Objetivos de auditoria" },
@@ -111,7 +118,6 @@ const summaryFields: Array<{ key: keyof ReportContent["executiveSummary"]; label
   { key: "strengths", label: "Puntos fuertes" },
   { key: "weaknessesAndImprovements", label: "Debilidades y oportunidades de mejora" },
   { key: "observations", label: "Observaciones" },
-  { key: "nonConformities", label: "No conformidades" },
 ];
 
 export default function AuditReportsClient() {
@@ -429,6 +435,15 @@ export default function AuditReportsClient() {
                   }
                 />
               ))}
+              <NonConformitiesEditor
+                items={draftContent.executiveSummary.nonConformities}
+                onChange={(items) =>
+                  updateDraft((content) => ({
+                    ...content,
+                    executiveSummary: { ...content.executiveSummary, nonConformities: items },
+                  }))
+                }
+              />
             </div>
 
             <div style={editorSectionStyle}>
@@ -509,6 +524,46 @@ function ScoreInput({ label, value, onChange }: { label: string; value: number; 
   );
 }
 
+function NonConformitiesEditor({
+  items,
+  onChange,
+}: {
+  items: ReportNonConformity[];
+  onChange: (items: ReportNonConformity[]) => void;
+}) {
+  return (
+    <div style={nonConformitiesStyle}>
+      <h4 style={fieldGroupTitleStyle}>No conformidades</h4>
+      {items.length === 0 ? (
+        <div style={emptyInlineStyle}>No hay requisitos con estado No conforme o Parcial.</div>
+      ) : (
+        items.map((item, index) => (
+          <div key={`${item.requirementId}-${index}`} style={nonConformityItemStyle}>
+            <div style={nonConformityMetaStyle}>
+              <span style={readOnlyLabelStyle}>Requerimiento</span>
+              <strong style={nonConformityCodeStyle}>{item.itemCode}</strong>
+              <span style={statusPillStyle}>{getRequirementStatusLabel(item.status)}</span>
+            </div>
+            <label style={nonConformityReasonStyle}>
+              Razon de la valoracion
+              <textarea
+                value={item.reason}
+                onChange={(event) => {
+                  const nextItems = [...items];
+                  nextItems[index] = { ...item, reason: event.target.value };
+                  onChange(nextItems);
+                }}
+                rows={4}
+                style={editableFieldStyle}
+              />
+            </label>
+          </div>
+        ))
+      )}
+    </div>
+  );
+}
+
 function EditableCard({
   label,
   value,
@@ -580,6 +635,12 @@ function cloneContent(content: ReportContent) {
 
 function splitLines(value: string) {
   return value.split("\n").map((line) => line.trim()).filter(Boolean);
+}
+
+function getRequirementStatusLabel(status: string) {
+  if (status === "parcial") return "Parcial";
+  if (status === "no_conforme") return "No conforme";
+  return status || "Sin estado";
 }
 
 function initials(value: string) {
@@ -695,6 +756,63 @@ const labelStyle: React.CSSProperties = {
 const editableFieldStyle: React.CSSProperties = {
   ...appFieldStyle,
   fontWeight: 400,
+};
+
+const fieldGroupTitleStyle: React.CSSProperties = {
+  color: "#1e293b",
+  fontSize: 14,
+  fontWeight: 700,
+  margin: 0,
+};
+
+const nonConformitiesStyle: React.CSSProperties = {
+  display: "grid",
+  gap: 10,
+};
+
+const nonConformityItemStyle: React.CSSProperties = {
+  background: "#f8fafc",
+  border: "1px solid #dbe3f1",
+  borderRadius: 8,
+  display: "grid",
+  gap: 12,
+  padding: 12,
+};
+
+const nonConformityMetaStyle: React.CSSProperties = {
+  alignItems: "center",
+  display: "flex",
+  flexWrap: "wrap",
+  gap: 8,
+};
+
+const nonConformityCodeStyle: React.CSSProperties = {
+  color: "#0f172a",
+  fontSize: 15,
+  fontWeight: 700,
+};
+
+const statusPillStyle: React.CSSProperties = {
+  background: "#fff7ed",
+  border: "1px solid #fed7aa",
+  borderRadius: 999,
+  color: "#9a3412",
+  fontSize: 12,
+  fontWeight: 600,
+  padding: "4px 8px",
+};
+
+const nonConformityReasonStyle: React.CSSProperties = {
+  ...labelStyle,
+  fontWeight: 600,
+};
+
+const emptyInlineStyle: React.CSSProperties = {
+  background: "#f8fafc",
+  border: "1px dashed #cbd5e1",
+  borderRadius: 8,
+  color: "#64748b",
+  padding: 12,
 };
 
 const tableWrapperStyle: React.CSSProperties = {

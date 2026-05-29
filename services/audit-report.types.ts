@@ -52,6 +52,13 @@ export type AuditEvidenceSnapshot = {
   requirementId: string;
 };
 
+export type AuditReportNonConformity = {
+  requirementId: string;
+  itemCode: string;
+  status: string;
+  reason: string;
+};
+
 export type AuditReportContent = {
   cover: {
     reportNumber: string;
@@ -82,7 +89,7 @@ export type AuditReportContent = {
     strengths: string;
     weaknessesAndImprovements: string;
     observations: string;
-    nonConformities: string;
+    nonConformities: AuditReportNonConformity[];
   };
   executiveResult: {
     complianceScore: number;

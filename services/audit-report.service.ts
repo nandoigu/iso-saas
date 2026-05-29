@@ -1,7 +1,11 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/app/lib/prisma";
 import { buildAuditReportContent } from "@/services/audit-report.generator";
-import type { AuditReportContent, AuditReportInput } from "@/services/audit-report.types";
+import type {
+  AuditReportContent,
+  AuditReportInput,
+  AuditReportNonConformity,
+} from "@/services/audit-report.types";
 
 export async function listAuditReports() {
   const reports = await prisma.auditReport.findMany({
@@ -209,7 +213,7 @@ function calculateComplianceScore(requirements: Array<{ status: string }>) {
   if (requirements.length === 0) return 0;
 
   const compliant = requirements.filter((requirement) =>
-    ["conforme", "cumple", "completed", "compliant", "aprobado"].includes(
+    ["total", "conforme", "cumple", "completed", "compliant", "aprobado"].includes(
       requirement.status.toLowerCase()
     )
   ).length;
@@ -220,6 +224,10 @@ function calculateComplianceScore(requirements: Array<{ status: string }>) {
 function normalizeContent(content: AuditReportContent): AuditReportContent {
   return {
     ...content,
+    executiveSummary: {
+      ...content.executiveSummary,
+      nonConformities: normalizeNonConformities(content.executiveSummary.nonConformities),
+    },
     executiveResult: {
       ...content.executiveResult,
       complianceScore: clampScore(content.executiveResult.complianceScore),
@@ -239,6 +247,34 @@ function normalizeContent(content: AuditReportContent): AuditReportContent {
 
 function clampScore(value: number) {
   return Math.max(0, Math.min(100, Math.round(Number(value) || 0)));
+}
+
+function normalizeNonConformities(value: unknown): AuditReportNonConformity[] {
+  if (Array.isArray(value)) {
+    return value.map((entry, index) => {
+      const row = entry as Partial<AuditReportNonConformity>;
+      return {
+        requirementId: String(row.requirementId || row.itemCode || `nc-${index + 1}`),
+        itemCode: String(row.itemCode || row.requirementId || `NC-${index + 1}`),
+        status: String(row.status || "no_conforme"),
+        reason: String(row.reason || ""),
+      };
+    });
+  }
+
+  if (typeof value === "string" && value.trim()) {
+    return value
+      .split("\n")
+      .map((line, index) => ({
+        requirementId: `legacy-nc-${index + 1}`,
+        itemCode: line.split(":")[0]?.trim() || `NC-${index + 1}`,
+        status: "no_conforme",
+        reason: line.includes(":") ? line.split(":").slice(1).join(":").trim() : "",
+      }))
+      .filter((entry) => entry.itemCode);
+  }
+
+  return [];
 }
 
 async function nextReportNumber() {
@@ -286,7 +322,9 @@ function normalizeStoredContent(report: {
       organization?: { name?: string; address?: string; representative?: string };
       auditCriteria?: string[];
     };
-    executiveSummary?: AuditReportContent["executiveSummary"] | Array<{ text?: string }>;
+    executiveSummary?:
+      | (Partial<AuditReportContent["executiveSummary"]> & { nonConformities?: unknown })
+      | Array<{ text?: string }>;
     annexes?: Partial<AuditReportContent["annexes"]> & {
       auditMatrix?: AuditReportContent["annexes"]["auditMatrix"] | Array<{ requirement?: string; status?: string; evidence?: string }>;
       evidenceUsed?: Array<{ id: string; title: string }>;
@@ -295,7 +333,7 @@ function normalizeStoredContent(report: {
   };
 
   if (content?.executiveResult && content.generalData?.projectName && content.annexes?.kpis) {
-    return content as AuditReportContent;
+    return normalizeContent(content as AuditReportContent);
   }
 
   const legacySummary = Array.isArray(content?.executiveSummary)
@@ -354,7 +392,7 @@ function normalizeStoredContent(report: {
       strengths: legacySummary[5] || "Pendiente de completar.",
       weaknessesAndImprovements: legacySummary[6] || "Pendiente de completar.",
       observations: legacySummary[7] || "Pendiente de completar.",
-      nonConformities: legacySummary[8] || "Pendiente de completar.",
+      nonConformities: normalizeNonConformities(legacySummary[8]),
     },
     executiveResult: {
       complianceScore: content?.executiveResults?.complianceScore ?? report.complianceScore,

@@ -41,7 +41,15 @@ export function generateAuditReportPdf(content: AuditReportContent) {
     kv(doc, "Puntos fuertes", content.executiveSummary.strengths);
     kv(doc, "Debilidades y oportunidades de mejora", content.executiveSummary.weaknessesAndImprovements);
     kv(doc, "Observaciones", content.executiveSummary.observations);
-    kv(doc, "No conformidades", content.executiveSummary.nonConformities);
+    subsection(doc, "No conformidades");
+    rows(
+      doc,
+      content.executiveSummary.nonConformities.map((row) => [
+        row.itemCode,
+        formatStatus(row.status),
+        row.reason || "Pendiente de completar por el auditor",
+      ])
+    );
 
     section(doc, "4. Resultado ejecutivo");
     rows(doc, [
@@ -109,6 +117,12 @@ function rows(doc: PDFKit.PDFDocument, rowsData: string[][]) {
     });
     doc.moveDown(0.25);
   });
+}
+
+function formatStatus(status: string) {
+  if (status === "parcial") return "Parcial";
+  if (status === "no_conforme") return "No conforme";
+  return status || "Sin estado";
 }
 
 function ensureSpace(doc: PDFKit.PDFDocument, height: number) {
