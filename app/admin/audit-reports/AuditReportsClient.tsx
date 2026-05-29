@@ -310,11 +310,11 @@ export default function AuditReportsClient() {
           </label>
           <label style={labelStyle}>
             Auditor jefe
-            <input value={leadAuditor} onChange={(event) => setLeadAuditor(event.target.value)} style={appFieldStyle} />
+            <input value={leadAuditor} onChange={(event) => setLeadAuditor(event.target.value)} style={editableFieldStyle} />
           </label>
           <label style={labelStyle}>
             Alcance de la certificacion
-            <textarea value={scope} onChange={(event) => setScope(event.target.value)} rows={4} style={appFieldStyle} />
+            <textarea value={scope} onChange={(event) => setScope(event.target.value)} rows={4} style={editableFieldStyle} />
           </label>
           <button type="button" onClick={createReport} disabled={saving || loading} style={{ ...appPrimaryButtonStyle, ...getActionStateStyle(saving || loading) }}>
             {saving ? "Procesando..." : "Generar informe"}
@@ -435,7 +435,7 @@ export default function AuditReportsClient() {
               <SectionHeading number="4" title="Resultado ejecutivo" />
               <label style={labelStyle}>
                 Estado
-                <input value={draftContent.executiveResult.status} onChange={(event) => updateDraft((content) => ({ ...content, executiveResult: { ...content.executiveResult, status: event.target.value } }))} style={appFieldStyle} />
+                <input value={draftContent.executiveResult.status} onChange={(event) => updateDraft((content) => ({ ...content, executiveResult: { ...content.executiveResult, status: event.target.value } }))} style={editableFieldStyle} />
               </label>
             </div>
 
@@ -486,7 +486,7 @@ function TextInput({ label, value, onChange }: { label: string; value: string; o
   return (
     <label style={labelStyle}>
       {label}
-      <input value={value} onChange={(event) => onChange(event.target.value)} style={appFieldStyle} />
+      <input value={value} onChange={(event) => onChange(event.target.value)} style={editableFieldStyle} />
     </label>
   );
 }
@@ -495,7 +495,7 @@ function TextArea({ label, value, onChange }: { label: string; value: string; on
   return (
     <label style={labelStyle}>
       {label}
-      <textarea value={value} onChange={(event) => onChange(event.target.value)} rows={4} style={appFieldStyle} />
+      <textarea value={value} onChange={(event) => onChange(event.target.value)} rows={4} style={editableFieldStyle} />
     </label>
   );
 }
@@ -504,7 +504,7 @@ function ScoreInput({ label, value, onChange }: { label: string; value: number; 
   return (
     <label style={labelStyle}>
       {label}
-      <input type="number" min={0} max={100} value={value} onChange={(event) => onChange(Number(event.target.value))} style={appFieldStyle} />
+      <input type="number" min={0} max={100} value={value} onChange={(event) => onChange(Number(event.target.value))} style={editableFieldStyle} />
     </label>
   );
 }
@@ -692,6 +692,11 @@ const labelStyle: React.CSSProperties = {
   gap: 6,
 };
 
+const editableFieldStyle: React.CSSProperties = {
+  ...appFieldStyle,
+  fontWeight: 400,
+};
+
 const tableWrapperStyle: React.CSSProperties = {
   overflowX: "auto",
 };
@@ -764,6 +769,7 @@ const readOnlyItemStyle: React.CSSProperties = {
 const editableCardStyle: React.CSSProperties = {
   ...readOnlyItemStyle,
   cursor: "text",
+  fontWeight: 400,
 };
 
 const prominentEditableCardStyle: React.CSSProperties = {
@@ -788,7 +794,7 @@ const editableCardInputStyle: React.CSSProperties = {
   background: "transparent",
   border: 0,
   color: "#0f172a",
-  font: "inherit",
+  fontFamily: "inherit",
   fontSize: 14,
   fontWeight: 400,
   lineHeight: 1.35,
