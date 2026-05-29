@@ -12,6 +12,7 @@ export function generateAuditReportPdf(content: AuditReportContent) {
 
     title(doc, "BAOS");
     title(doc, "Informe de Auditoria ISO 19650", 18);
+    section(doc, "1. Datos generales");
     kv(doc, "Organizacion", content.cover.organizationName);
     kv(doc, "Numero auditoria", content.cover.auditNumber);
     kv(doc, "Numero informe", content.cover.reportNumber);
@@ -20,7 +21,6 @@ export function generateAuditReportPdf(content: AuditReportContent) {
     kv(doc, "Fechas auditoria", content.cover.auditDates);
     kv(doc, "Fecha informe", content.cover.reportDate);
 
-    section(doc, "2. Datos generales");
     kv(doc, "Proyecto", content.generalData.projectName);
     kv(doc, "Codigo", content.generalData.projectCode);
     kv(doc, "Organizacion", content.generalData.organizationName);
@@ -29,10 +29,10 @@ export function generateAuditReportPdf(content: AuditReportContent) {
     kv(doc, "Auditor", `${content.generalData.leadAuditorName} (${content.generalData.leadAuditorInitials})`);
     kv(doc, "Alcance de la certificacion", content.generalData.certificationScope);
 
-    section(doc, "3. Criterios de Auditoria");
+    section(doc, "2. Criterios de Auditoria");
     content.auditCriteria.forEach((criterion) => line(doc, `- ${criterion}`));
 
-    section(doc, "4. Resumen ejecutivo");
+    section(doc, "3. Resumen ejecutivo");
     kv(doc, "Cuestiones generales", content.executiveSummary.generalIssues);
     kv(doc, "Adecuacion del alcance", content.executiveSummary.scopeAdequacy);
     kv(doc, "Objetivos de auditoria", content.executiveSummary.auditObjectives);
@@ -43,7 +43,7 @@ export function generateAuditReportPdf(content: AuditReportContent) {
     kv(doc, "Observaciones", content.executiveSummary.observations);
     kv(doc, "No conformidades", content.executiveSummary.nonConformities);
 
-    section(doc, "5. Resultado ejecutivo");
+    section(doc, "4. Resultado ejecutivo");
     rows(doc, [
       ["Compliance Score", `${content.executiveResult.complianceScore}/100`],
       ["Risk Score", `${content.executiveResult.riskScore}/100`],
@@ -51,11 +51,11 @@ export function generateAuditReportPdf(content: AuditReportContent) {
       ["Estado", content.executiveResult.status],
     ]);
 
-    section(doc, "6. Dictamen final");
+    section(doc, "5. Dictamen final");
     kv(doc, "Dictamen", content.finalOpinion.decision);
     line(doc, content.finalOpinion.rationale);
 
-    section(doc, "7. Anexos");
+    section(doc, "6. Anexos");
     subsection(doc, "Matriz de auditoria");
     rows(doc, content.annexes.auditMatrix.map((row) => [row.requirement, row.status, row.evidence]));
     subsection(doc, "KPIs");

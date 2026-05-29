@@ -389,7 +389,7 @@ export default function AuditReportsClient() {
 
           <div style={editorStackStyle}>
             <div style={editorSectionStyle}>
-              <SectionHeading number="1" title="Portada" />
+              <SectionHeading number="1" title="Datos generales" />
               <ReadOnlyGrid
                 items={[
                   ["Organizacion", draftContent.cover.organizationName],
@@ -401,10 +401,6 @@ export default function AuditReportsClient() {
                   ["Fecha informe", draftContent.cover.reportDate],
                 ]}
               />
-            </div>
-
-            <div style={editorSectionStyle}>
-              <SectionHeading number="2" title="Datos generales" />
               <div style={editableCardGridStyle}>
                 <EditableCard label="Organizacion" value={draftContent.generalData.organizationName} onChange={(value) => updateDraft((content) => ({ ...content, generalData: { ...content.generalData, organizationName: value } }))} />
                 <EditableCard label="Representante" value={draftContent.generalData.organizationRepresentative} onChange={(value) => updateDraft((content) => ({ ...content, generalData: { ...content.generalData, organizationRepresentative: value } }))} />
@@ -414,12 +410,12 @@ export default function AuditReportsClient() {
             </div>
 
             <div style={editorSectionStyle}>
-              <SectionHeading number="3" title="Criterios de auditoria" />
+              <SectionHeading number="2" title="Criterios de auditoria" />
               <TextArea label="Criterios de auditoria" value={draftContent.auditCriteria.join("\n")} onChange={(value) => updateDraft((content) => ({ ...content, auditCriteria: splitLines(value) }))} />
             </div>
 
             <div style={editorSectionStyle}>
-              <SectionHeading number="4" title="Resumen ejecutivo" />
+              <SectionHeading number="3" title="Resumen ejecutivo" />
               {summaryFields.map((field) => (
                 <TextArea
                   key={field.key}
@@ -436,7 +432,7 @@ export default function AuditReportsClient() {
             </div>
 
             <div style={editorSectionStyle}>
-              <SectionHeading number="5" title="Resultado ejecutivo" />
+              <SectionHeading number="4" title="Resultado ejecutivo" />
               <label style={labelStyle}>
                 Estado
                 <input value={draftContent.executiveResult.status} onChange={(event) => updateDraft((content) => ({ ...content, executiveResult: { ...content.executiveResult, status: event.target.value } }))} style={appFieldStyle} />
@@ -444,13 +440,13 @@ export default function AuditReportsClient() {
             </div>
 
             <div style={editorSectionStyle}>
-              <SectionHeading number="6" title="Dictamen final" />
+              <SectionHeading number="5" title="Dictamen final" />
               <TextInput label="Dictamen final" value={draftContent.finalOpinion.decision} onChange={(value) => updateDraft((content) => ({ ...content, finalOpinion: { ...content.finalOpinion, decision: value } }))} />
               <TextArea label="Razonamiento" value={draftContent.finalOpinion.rationale} onChange={(value) => updateDraft((content) => ({ ...content, finalOpinion: { ...content.finalOpinion, rationale: value } }))} />
             </div>
 
             <div style={editorSectionStyle}>
-              <SectionHeading number="7" title="Anexos" />
+              <SectionHeading number="6" title="Anexos" />
               <h4 style={annexTitleStyle}>a. Matriz de auditoria</h4>
               <div style={tableWrapperStyle}>
                 <table style={{ ...appTableStyle, minWidth: 620 }}>

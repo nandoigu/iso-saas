@@ -21,8 +21,8 @@ export async function generateAuditReportDocx(content: AuditReportContent) {
       {
         properties: {},
         children: [
-          ...cover(content),
-          heading("2. Datos generales"),
+          heading("1. Datos generales"),
+          ...generalData(content),
           kv("Proyecto", content.generalData.projectName),
           kv("Codigo", content.generalData.projectCode),
           kv("Organizacion", content.generalData.organizationName),
@@ -30,9 +30,9 @@ export async function generateAuditReportDocx(content: AuditReportContent) {
           kv("Representante", content.generalData.organizationRepresentative),
           kv("Auditor", `${content.generalData.leadAuditorName} (${content.generalData.leadAuditorInitials})`),
           kv("Alcance de la certificacion", content.generalData.certificationScope),
-          heading("3. Criterios de Auditoria"),
+          heading("2. Criterios de Auditoria"),
           ...content.auditCriteria.map((criterion) => bullet(criterion)),
-          heading("4. Resumen ejecutivo"),
+          heading("3. Resumen ejecutivo"),
           subsection("Cuestiones generales", content.executiveSummary.generalIssues),
           subsection("Adecuacion del alcance", content.executiveSummary.scopeAdequacy),
           subsection("Objetivos de auditoria", content.executiveSummary.auditObjectives),
@@ -48,17 +48,17 @@ export async function generateAuditReportDocx(content: AuditReportContent) {
           ),
           subsection("Observaciones", content.executiveSummary.observations),
           subsection("No conformidades", content.executiveSummary.nonConformities),
-          heading("5. Resultado ejecutivo"),
+          heading("4. Resultado ejecutivo"),
           table(["KPI", "Resultado"], [
             ["Compliance Score", `${content.executiveResult.complianceScore}/100`],
             ["Risk Score", `${content.executiveResult.riskScore}/100`],
             ["Confidence Score", `${content.executiveResult.confidenceScore}/100`],
             ["Estado", content.executiveResult.status],
           ]),
-          heading("6. Dictamen final"),
+          heading("5. Dictamen final"),
           kv("Dictamen", content.finalOpinion.decision),
           paragraph(content.finalOpinion.rationale),
-          heading("7. Anexos"),
+          heading("6. Anexos"),
           heading("Matriz de auditoria", 3),
           table(
             ["Requisito", "Estado", "Evidencia"],
@@ -78,7 +78,7 @@ export async function generateAuditReportDocx(content: AuditReportContent) {
   return Packer.toBuffer(doc);
 }
 
-function cover(content: AuditReportContent) {
+function generalData(content: AuditReportContent) {
   return [
     new Paragraph({
       alignment: AlignmentType.CENTER,
