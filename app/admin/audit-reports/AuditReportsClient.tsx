@@ -405,8 +405,8 @@ export default function AuditReportsClient() {
                 <EditableCard label="Organizacion" value={draftContent.generalData.organizationName} onChange={(value) => updateDraft((content) => ({ ...content, generalData: { ...content.generalData, organizationName: value } }))} />
                 <EditableCard label="Representante" value={draftContent.generalData.organizationRepresentative} onChange={(value) => updateDraft((content) => ({ ...content, generalData: { ...content.generalData, organizationRepresentative: value } }))} />
                 <EditableCard label="Auditor jefe" value={draftContent.generalData.leadAuditorName} onChange={(value) => updateDraft((content) => ({ ...content, generalData: { ...content.generalData, leadAuditorName: value } }))} />
-                <EditableCard label="Alcance de la certificacion" value={draftContent.generalData.certificationScope} multiline onChange={(value) => updateDraft((content) => ({ ...content, generalData: { ...content.generalData, certificationScope: value } }))} />
               </div>
+              <EditableCard label="Alcance de la certificacion" value={draftContent.generalData.certificationScope} multiline prominent onChange={(value) => updateDraft((content) => ({ ...content, generalData: { ...content.generalData, certificationScope: value } }))} />
             </div>
 
             <div style={editorSectionStyle}>
@@ -513,22 +513,24 @@ function EditableCard({
   label,
   value,
   multiline = false,
+  prominent = false,
   onChange,
 }: {
   label: string;
   value: string;
   multiline?: boolean;
+  prominent?: boolean;
   onChange: (value: string) => void;
 }) {
   return (
-    <label style={editableCardStyle}>
+    <label style={prominent ? prominentEditableCardStyle : editableCardStyle}>
       <span style={readOnlyLabelStyle}>{label}</span>
       {multiline ? (
         <textarea
           value={value}
           onChange={(event) => onChange(event.target.value)}
-          rows={3}
-          style={editableCardTextareaStyle}
+          rows={prominent ? 4 : 3}
+          style={prominent ? prominentEditableCardTextareaStyle : editableCardTextareaStyle}
         />
       ) : (
         <input
@@ -764,6 +766,12 @@ const editableCardStyle: React.CSSProperties = {
   cursor: "text",
 };
 
+const prominentEditableCardStyle: React.CSSProperties = {
+  ...editableCardStyle,
+  gap: 8,
+  padding: 14,
+};
+
 const readOnlyLabelStyle: React.CSSProperties = {
   color: "#64748b",
   fontSize: 12,
@@ -793,6 +801,11 @@ const editableCardTextareaStyle: React.CSSProperties = {
   ...editableCardInputStyle,
   minHeight: 70,
   resize: "vertical",
+};
+
+const prominentEditableCardTextareaStyle: React.CSSProperties = {
+  ...editableCardTextareaStyle,
+  minHeight: 96,
 };
 
 const annexTitleStyle: React.CSSProperties = {
