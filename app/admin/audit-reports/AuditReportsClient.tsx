@@ -405,10 +405,12 @@ export default function AuditReportsClient() {
 
             <div style={editorSectionStyle}>
               <SectionHeading number="2" title="Datos generales" />
-              <TextInput label="Organizacion" value={draftContent.generalData.organizationName} onChange={(value) => updateDraft((content) => ({ ...content, generalData: { ...content.generalData, organizationName: value } }))} />
-              <TextInput label="Representante" value={draftContent.generalData.organizationRepresentative} onChange={(value) => updateDraft((content) => ({ ...content, generalData: { ...content.generalData, organizationRepresentative: value } }))} />
-              <TextInput label="Auditor jefe" value={draftContent.generalData.leadAuditorName} onChange={(value) => updateDraft((content) => ({ ...content, generalData: { ...content.generalData, leadAuditorName: value } }))} />
-              <TextArea label="Alcance de la certificacion" value={draftContent.generalData.certificationScope} onChange={(value) => updateDraft((content) => ({ ...content, generalData: { ...content.generalData, certificationScope: value } }))} />
+              <div style={editableCardGridStyle}>
+                <EditableCard label="Organizacion" value={draftContent.generalData.organizationName} onChange={(value) => updateDraft((content) => ({ ...content, generalData: { ...content.generalData, organizationName: value } }))} />
+                <EditableCard label="Representante" value={draftContent.generalData.organizationRepresentative} onChange={(value) => updateDraft((content) => ({ ...content, generalData: { ...content.generalData, organizationRepresentative: value } }))} />
+                <EditableCard label="Auditor jefe" value={draftContent.generalData.leadAuditorName} onChange={(value) => updateDraft((content) => ({ ...content, generalData: { ...content.generalData, leadAuditorName: value } }))} />
+                <EditableCard label="Alcance de la certificacion" value={draftContent.generalData.certificationScope} multiline onChange={(value) => updateDraft((content) => ({ ...content, generalData: { ...content.generalData, certificationScope: value } }))} />
+              </div>
             </div>
 
             <div style={editorSectionStyle}>
@@ -507,6 +509,38 @@ function ScoreInput({ label, value, onChange }: { label: string; value: number; 
     <label style={labelStyle}>
       {label}
       <input type="number" min={0} max={100} value={value} onChange={(event) => onChange(Number(event.target.value))} style={appFieldStyle} />
+    </label>
+  );
+}
+
+function EditableCard({
+  label,
+  value,
+  multiline = false,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  multiline?: boolean;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <label style={editableCardStyle}>
+      <span style={readOnlyLabelStyle}>{label}</span>
+      {multiline ? (
+        <textarea
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+          rows={3}
+          style={editableCardTextareaStyle}
+        />
+      ) : (
+        <input
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+          style={editableCardInputStyle}
+        />
+      )}
     </label>
   );
 }
@@ -714,6 +748,12 @@ const readOnlyGridStyle: React.CSSProperties = {
   gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
 };
 
+const editableCardGridStyle: React.CSSProperties = {
+  display: "grid",
+  gap: 10,
+  gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
+};
+
 const readOnlyItemStyle: React.CSSProperties = {
   background: "#f8fafc",
   border: "1px solid #e2e8f0",
@@ -721,6 +761,11 @@ const readOnlyItemStyle: React.CSSProperties = {
   display: "grid",
   gap: 4,
   padding: 12,
+};
+
+const editableCardStyle: React.CSSProperties = {
+  ...readOnlyItemStyle,
+  cursor: "text",
 };
 
 const readOnlyLabelStyle: React.CSSProperties = {
@@ -733,6 +778,25 @@ const readOnlyValueStyle: React.CSSProperties = {
   color: "#0f172a",
   fontSize: 14,
   lineHeight: 1.35,
+};
+
+const editableCardInputStyle: React.CSSProperties = {
+  background: "transparent",
+  border: 0,
+  color: "#0f172a",
+  font: "inherit",
+  fontSize: 14,
+  fontWeight: 700,
+  lineHeight: 1.35,
+  outline: "none",
+  padding: 0,
+  width: "100%",
+};
+
+const editableCardTextareaStyle: React.CSSProperties = {
+  ...editableCardInputStyle,
+  minHeight: 70,
+  resize: "vertical",
 };
 
 const annexTitleStyle: React.CSSProperties = {
