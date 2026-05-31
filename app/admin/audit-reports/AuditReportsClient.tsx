@@ -285,7 +285,7 @@ export default function AuditReportsClient() {
           <span style={appHeroEyebrowStyle}>Informes</span>
           <h1 style={appHeroTitleStyle}>Informes de auditoria ISO 19650</h1>
           <p style={appHeroDescriptionStyle}>
-            Version basica estable: genera un informe desde proyecto y requisitos, permite editar la previsualizacion y exporta DOCX/PDF.
+            Genera, revisa, versiona y exporta informes de auditoria desde la matriz del proyecto.
           </p>
         </div>
         <Link href="/admin" style={secondaryLinkStyle}>
@@ -298,7 +298,10 @@ export default function AuditReportsClient() {
 
       <section style={stackStyle}>
         <div style={panelStyle}>
-          <h2 style={sectionTitleStyle}>Generar informe</h2>
+          <PanelHeader
+            title="Generar informe"
+            description="Crea una nueva version base desde los datos actuales del proyecto."
+          />
           <label style={labelStyle}>
             Proyecto
             <select value={selectedProjectId} onChange={(event) => setSelectedProjectId(event.target.value)} style={appFieldStyle}>
@@ -331,7 +334,10 @@ export default function AuditReportsClient() {
         </div>
 
         <div style={panelStyle}>
-          <h2 style={sectionTitleStyle}>Informes generados</h2>
+          <PanelHeader
+            title="Informes generados"
+            description="Selecciona un informe para revisar su previsualizacion editable."
+          />
           <div style={tableWrapperStyle}>
             <table style={{ ...appTableStyle, minWidth: 760 }}>
               <thead>
@@ -345,15 +351,15 @@ export default function AuditReportsClient() {
               </thead>
               <tbody>
                 {reports.map((report) => (
-                  <tr key={report.id}>
+                  <tr key={report.id} style={report.id === selectedReport?.id ? selectedTableRowStyle : undefined}>
                     <td style={appTableCellStyle}>{report.reportNumber}</td>
                     <td style={appTableCellStyle}>{report.project?.name || report.auditedOrgName}</td>
-                    <td style={appTableCellStyle}>{report.globalStatus}</td>
+                    <td style={appTableCellStyle}><StatusBadge value={report.globalStatus} /></td>
                     <td style={appTableCellStyle}>v{report.version}</td>
                     <td style={appTableCellStyle}>
                       <div style={actionRowStyle}>
                         <button type="button" onClick={() => setSelectedReportId(report.id)} style={smallButtonStyle}>
-                          Ver
+                          {report.id === selectedReport?.id ? "Abierto" : "Ver"}
                         </button>
                         <a href={`/api/admin/audit-reports/${report.id}/export/docx`} style={smallLinkStyle}>DOCX</a>
                         <a href={`/api/admin/audit-reports/${report.id}/export/pdf`} style={smallLinkStyle}>PDF</a>
@@ -381,18 +387,24 @@ export default function AuditReportsClient() {
               <span style={appHeroEyebrowStyle}>Informe editable</span>
               <h2 style={sectionTitleStyle}>{selectedReport.reportNumber} · {draftContent.generalData.projectName}</h2>
               <p style={sectionDescriptionStyle}>
-                Revisa el contenido en orden documental. Los anexos y KPIs quedan al final del informe.
+                Revisa el contenido en orden documental. Los anexos quedan al final del informe.
               </p>
+              <div style={metaRowStyle}>
+                <span style={metaChipStyle}>Version v{selectedReport.version}</span>
+                <StatusBadge value={draftContent.executiveResult.status} />
+                <span style={metaChipStyle}>Cumplimiento {draftContent.annexes.kpis.weightedComplianceScore}/100</span>
+              </div>
             </div>
-            <div style={actionRowStyle}>
+            <div style={previewActionsStyle}>
               <button type="button" onClick={saveDraft} disabled={saving} style={{ ...appPrimaryButtonStyle, ...getActionStateStyle(saving) }}>
                 Guardar version
               </button>
               <button type="button" onClick={regenerate} disabled={saving} style={{ ...appSecondaryButtonStyle, ...getActionStateStyle(saving) }}>
                 Regenerar base
               </button>
-              <a href={`/api/admin/audit-reports/${selectedReport.id}/export/docx`} style={secondaryLinkStyle}>Exportar DOCX</a>
-              <a href={`/api/admin/audit-reports/${selectedReport.id}/export/pdf`} style={secondaryLinkStyle}>Exportar PDF</a>
+              <span style={buttonGroupDividerStyle} />
+              <a href={`/api/admin/audit-reports/${selectedReport.id}/export/docx`} style={secondaryLinkStyle}>DOCX</a>
+              <a href={`/api/admin/audit-reports/${selectedReport.id}/export/pdf`} style={secondaryLinkStyle}>PDF</a>
             </div>
           </div>
 
@@ -487,16 +499,7 @@ export default function AuditReportsClient() {
                 </table>
               </div>
               <h4 style={annexTitleStyle}>b. Indicadores auditables</h4>
-              <ReadOnlyGrid
-                items={[
-                  ["Requisitos auditados", String(draftContent.annexes.kpis.totalRequirements)],
-                  ["Requisitos conformes", String(draftContent.annexes.kpis.compliantRequirements)],
-                  ["Requisitos parciales", String(draftContent.annexes.kpis.partialRequirements)],
-                  ["Requisitos no conformes", String(draftContent.annexes.kpis.nonCompliantRequirements)],
-                  ["Evidencias registradas", String(draftContent.annexes.kpis.evidenceCount)],
-                  ["Cumplimiento ponderado", `${draftContent.annexes.kpis.weightedComplianceScore}/100`],
-                ]}
-              />
+              <AuditIndicators indicators={draftContent.annexes.kpis} />
             </div>
           </div>
         </section>
@@ -520,6 +523,49 @@ function TextArea({ label, value, onChange }: { label: string; value: string; on
       {label}
       <textarea value={value} onChange={(event) => onChange(event.target.value)} rows={4} style={editableFieldStyle} />
     </label>
+  );
+}
+
+function PanelHeader({ title, description }: { title: string; description: string }) {
+  return (
+    <div style={panelHeaderStyle}>
+      <h2 style={sectionTitleStyle}>{title}</h2>
+      <p style={sectionDescriptionStyle}>{description}</p>
+    </div>
+  );
+}
+
+function StatusBadge({ value }: { value: string }) {
+  const normalized = value.toLowerCase();
+  const tone = normalized.includes("no conforme")
+    ? statusBadgeDangerStyle
+    : normalized.includes("observacion") || normalized.includes("accion")
+      ? statusBadgeWarningStyle
+      : statusBadgeSuccessStyle;
+
+  return <span style={{ ...statusBadgeStyle, ...tone }}>{value || "Sin estado"}</span>;
+}
+
+function AuditIndicators({ indicators }: { indicators: ReportContent["annexes"]["kpis"] }) {
+  return (
+    <div style={indicatorGridStyle}>
+      <div style={featuredIndicatorStyle}>
+        <span style={readOnlyLabelStyle}>Cumplimiento ponderado</span>
+        <strong style={featuredIndicatorValueStyle}>{indicators.weightedComplianceScore}/100</strong>
+      </div>
+      {[
+        ["Requisitos auditados", indicators.totalRequirements],
+        ["Conformes", indicators.compliantRequirements],
+        ["Parciales", indicators.partialRequirements],
+        ["No conformes", indicators.nonCompliantRequirements],
+        ["Evidencias", indicators.evidenceCount],
+      ].map(([label, value]) => (
+        <div key={label} style={indicatorItemStyle}>
+          <span style={readOnlyLabelStyle}>{label}</span>
+          <strong style={indicatorValueStyle}>{value}</strong>
+        </div>
+      ))}
+    </div>
   );
 }
 
@@ -686,11 +732,16 @@ const panelStyle: React.CSSProperties = {
   ...appPanelStyle,
   boxSizing: "border-box",
   display: "grid",
-  gap: 14,
+  gap: 16,
   margin: "0 auto",
   maxWidth: 1120,
-  padding: 18,
+  padding: 20,
   width: "100%",
+};
+
+const panelHeaderStyle: React.CSSProperties = {
+  display: "grid",
+  gap: 4,
 };
 
 const sectionTitleStyle: React.CSSProperties = {
@@ -806,6 +857,8 @@ const emptyInlineStyle: React.CSSProperties = {
 };
 
 const tableWrapperStyle: React.CSSProperties = {
+  border: "1px solid #e2e8f0",
+  borderRadius: 8,
   overflowX: "auto",
 };
 
@@ -840,6 +893,62 @@ const previewHeaderStyle: React.CSSProperties = {
   gap: 12,
 };
 
+const previewActionsStyle: React.CSSProperties = {
+  ...actionRowStyle,
+  alignItems: "center",
+};
+
+const buttonGroupDividerStyle: React.CSSProperties = {
+  background: "#e2e8f0",
+  display: "inline-flex",
+  height: 28,
+  width: 1,
+};
+
+const metaRowStyle: React.CSSProperties = {
+  display: "flex",
+  flexWrap: "wrap",
+  gap: 8,
+  marginTop: 10,
+};
+
+const metaChipStyle: React.CSSProperties = {
+  background: "#f8fafc",
+  border: "1px solid #e2e8f0",
+  borderRadius: 999,
+  color: "#334155",
+  display: "inline-flex",
+  fontSize: 12,
+  fontWeight: 600,
+  padding: "5px 9px",
+};
+
+const statusBadgeStyle: React.CSSProperties = {
+  borderRadius: 999,
+  display: "inline-flex",
+  fontSize: 12,
+  fontWeight: 600,
+  padding: "5px 9px",
+};
+
+const statusBadgeSuccessStyle: React.CSSProperties = {
+  background: "#f0fdf4",
+  border: "1px solid #bbf7d0",
+  color: "#166534",
+};
+
+const statusBadgeWarningStyle: React.CSSProperties = {
+  background: "#fff7ed",
+  border: "1px solid #fed7aa",
+  color: "#9a3412",
+};
+
+const statusBadgeDangerStyle: React.CSSProperties = {
+  background: "#fef2f2",
+  border: "1px solid #fecaca",
+  color: "#991b1b",
+};
+
 const editorStackStyle: React.CSSProperties = {
   display: "grid",
   gap: 16,
@@ -851,6 +960,10 @@ const editorSectionStyle: React.CSSProperties = {
   gap: 14,
   minWidth: 0,
   paddingTop: 18,
+};
+
+const selectedTableRowStyle: React.CSSProperties = {
+  background: "#f8fafc",
 };
 
 const readOnlyGridStyle: React.CSSProperties = {
@@ -872,6 +985,35 @@ const readOnlyItemStyle: React.CSSProperties = {
   display: "grid",
   gap: 4,
   padding: 12,
+};
+
+const indicatorGridStyle: React.CSSProperties = {
+  display: "grid",
+  gap: 10,
+  gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))",
+};
+
+const featuredIndicatorStyle: React.CSSProperties = {
+  ...readOnlyItemStyle,
+  background: "#eef4ff",
+  borderColor: "#bfdbfe",
+  gridColumn: "1 / -1",
+};
+
+const indicatorItemStyle: React.CSSProperties = {
+  ...readOnlyItemStyle,
+};
+
+const featuredIndicatorValueStyle: React.CSSProperties = {
+  color: "#002a4e",
+  fontSize: 24,
+  fontWeight: 700,
+};
+
+const indicatorValueStyle: React.CSSProperties = {
+  color: "#0f172a",
+  fontSize: 18,
+  fontWeight: 700,
 };
 
 const editableCardStyle: React.CSSProperties = {
