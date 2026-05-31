@@ -132,6 +132,7 @@ export default function AuditReportsClient() {
   const [leadAuditor, setLeadAuditor] = useState("Auditor jefe BAOS");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [deletingReportId, setDeletingReportId] = useState<string | null>(null);
   const [selectedReportId, setSelectedReportId] = useState<string | null>(null);
   const [draftContent, setDraftContent] = useState<ReportContent | null>(null);
   const [error, setError] = useState("");
@@ -274,6 +275,38 @@ export default function AuditReportsClient() {
     }
   };
 
+  const deleteReport = async (report: AuditReport) => {
+    const confirmed = window.confirm(`Eliminar el informe ${report.reportNumber}? Esta accion no se puede deshacer.`);
+    if (!confirmed) return;
+
+    setDeletingReportId(report.id);
+    setError("");
+    setSuccess("");
+
+    try {
+      const res = await fetch(`/api/admin/audit-reports/${report.id}`, {
+        method: "DELETE",
+        credentials: "same-origin",
+      });
+      const data = await res.json().catch(() => null);
+
+      if (!res.ok) throw new Error(data?.error || "No se pudo eliminar el informe.");
+
+      const remainingReports = reports.filter((current) => current.id !== report.id);
+      setReports(remainingReports);
+      setSelectedReportId((current) =>
+        current === report.id ? remainingReports[0]?.id || null : current
+      );
+      setSuccess(`Informe ${report.reportNumber} eliminado correctamente.`);
+      await loadData();
+    } catch (deleteError) {
+      console.error(deleteError);
+      setError(deleteError instanceof Error ? deleteError.message : "No se pudo eliminar el informe.");
+    } finally {
+      setDeletingReportId(null);
+    }
+  };
+
   const updateDraft = (updater: (content: ReportContent) => ReportContent) => {
     setDraftContent((current) => (current ? updater(current) : current));
   };
@@ -359,7 +392,15 @@ export default function AuditReportsClient() {
                     <td style={appTableCellStyle}>
                       <div style={actionRowStyle}>
                         <button type="button" onClick={() => setSelectedReportId(report.id)} style={smallButtonStyle}>
-                          {report.id === selectedReport?.id ? "Abierto" : "Ver"}
+                          {report.id === selectedReport?.id ? "Editando" : "Editar"}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => deleteReport(report)}
+                          disabled={deletingReportId === report.id}
+                          style={{ ...smallDangerButtonStyle, ...getActionStateStyle(deletingReportId === report.id) }}
+                        >
+                          {deletingReportId === report.id ? "Eliminando..." : "Eliminar"}
                         </button>
                         <a href={`/api/admin/audit-reports/${report.id}/export/docx`} style={smallLinkStyle}>DOCX</a>
                         <a href={`/api/admin/audit-reports/${report.id}/export/pdf`} style={smallLinkStyle}>PDF</a>
@@ -488,7 +529,7 @@ export default function AuditReportsClient() {
                     </tr>
                   </thead>
                   <tbody>
-                    {draftContent.annexes.auditMatrix.slice(0, 12).map((row) => (
+                    {draftContent.annexes.auditMatrix.map((row) => (
                       <tr key={row.requirementId}>
                         <td style={appTableCellStyle}>{row.requirement}</td>
                         <td style={appTableCellStyle}>{row.status}</td>
@@ -501,6 +542,11 @@ export default function AuditReportsClient() {
               <h4 style={annexTitleStyle}>b. Indicadores auditables</h4>
               <AuditIndicators indicators={draftContent.annexes.kpis} />
             </div>
+          </div>
+          <div style={bottomActionBarStyle}>
+            <button type="button" onClick={saveDraft} disabled={saving} style={{ ...appPrimaryButtonStyle, ...getActionStateStyle(saving) }}>
+              Guardar version
+            </button>
           </div>
         </section>
       )}
@@ -880,6 +926,13 @@ const smallLinkStyle: React.CSSProperties = {
   textDecoration: "none",
 };
 
+const smallDangerButtonStyle: React.CSSProperties = {
+  ...smallButtonStyle,
+  background: "#fffafa",
+  borderColor: "#fecaca",
+  color: "#b91c1c",
+};
+
 const secondaryLinkStyle: React.CSSProperties = {
   ...appSecondaryButtonStyle,
   alignItems: "center",
@@ -952,6 +1005,13 @@ const statusBadgeDangerStyle: React.CSSProperties = {
 const editorStackStyle: React.CSSProperties = {
   display: "grid",
   gap: 16,
+};
+
+const bottomActionBarStyle: React.CSSProperties = {
+  borderTop: "1px solid #dbe3f1",
+  display: "flex",
+  justifyContent: "flex-end",
+  paddingTop: 16,
 };
 
 const editorSectionStyle: React.CSSProperties = {

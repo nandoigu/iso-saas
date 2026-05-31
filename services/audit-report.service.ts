@@ -33,6 +33,18 @@ export async function getAuditReport(reportId: string) {
   return report ? withNormalizedGeneratedContent(report) : null;
 }
 
+export async function deleteAuditReport(reportId: string) {
+  const report = await prisma.auditReport.findUnique({
+    where: { id: reportId },
+    select: { id: true },
+  });
+
+  if (!report) return null;
+
+  await prisma.auditReport.delete({ where: { id: reportId } });
+  return report;
+}
+
 export async function createAuditReport(input: AuditReportInput, createdById: string) {
   const project = await prisma.project.findUnique({
     where: { id: input.projectId },

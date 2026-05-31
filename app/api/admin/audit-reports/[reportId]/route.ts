@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { forbidden, getAuthSession, isAdminRole, unauthorized } from "@/app/lib/auth";
 import {
+  deleteAuditReport,
   getAuditReport,
   regenerateAuditReport,
   saveAuditReportContent,
@@ -61,5 +62,29 @@ export async function PATCH(
   } catch (error) {
     console.error("ERROR PATCH /api/admin/audit-reports/[reportId]:", error);
     return NextResponse.json({ error: "No se pudo guardar o versionar el informe." }, { status: 500 });
+  }
+}
+
+export async function DELETE(
+  req: Request,
+  { params }: { params: Promise<{ reportId: string }> }
+) {
+  try {
+    const user = await getAuthSession(req);
+
+    if (!user) return unauthorized();
+    if (!isAdminRole(user.role)) return forbidden();
+
+    const { reportId } = await params;
+    const deleted = await deleteAuditReport(reportId);
+
+    if (!deleted) {
+      return NextResponse.json({ error: "Informe no encontrado." }, { status: 404 });
+    }
+
+    return NextResponse.json({ data: { id: deleted.id } });
+  } catch (error) {
+    console.error("ERROR DELETE /api/admin/audit-reports/[reportId]:", error);
+    return NextResponse.json({ error: "No se pudo eliminar el informe." }, { status: 500 });
   }
 }
