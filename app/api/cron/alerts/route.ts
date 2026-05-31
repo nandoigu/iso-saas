@@ -41,6 +41,19 @@ export async function GET(req: Request) {
 
     const url = new URL(req.url);
     const dryRun = url.searchParams.get("dryRun") === "1";
+    const prepareAdminEmailTest =
+      url.searchParams.get("prepareAdminEmailTest") === "1";
+
+    if (prepareAdminEmailTest) {
+      const email = url.searchParams.get("email") || "figual@eficax.com";
+      const testCondition = await prepareAdminAlertEmailTest(email);
+
+      return NextResponse.json({
+        success: true,
+        prepared: true,
+        ...testCondition,
+      });
+    }
 
     const users = await prisma.user.findMany({
       where: {
@@ -378,6 +391,138 @@ function flattenProjectRequirements(
       projectName: project.name,
     }))
   );
+}
+
+async function prepareAdminAlertEmailTest(email: string) {
+  const admin = await prisma.user.findFirst({
+    where: {
+      email,
+      role: "admin",
+      status: ACTIVE_USER_STATUS,
+    },
+    select: {
+      id: true,
+      email: true,
+      name: true,
+      role: true,
+      notifyAlerts: true,
+      projects: {
+        select: {
+          id: true,
+          name: true,
+          code: true,
+        },
+        take: 1,
+      },
+    },
+  });
+
+  if (!admin) {
+    return {
+      adminFound: false,
+      message: `No se encontro un Admin activo con email ${email}.`,
+    };
+  }
+
+  const project =
+    admin.projects[0] ||
+    (await prisma.project.create({
+      data: {
+        name: "Proyecto prueba alertas Admin",
+        code: "ADMIN-ALERT-TEST",
+        role: "adjudicatario",
+        userId: admin.id,
+      },
+      select: {
+        id: true,
+        name: true,
+        code: true,
+      },
+    }));
+
+  const deadline = new Date();
+  deadline.setDate(deadline.getDate() - 1);
+  deadline.setHours(0, 0, 0, 0);
+
+  const item = "ALERTA-ADMIN-TEST";
+  const existingRequirement = await prisma.requirement.findFirst({
+    where: {
+      projectId: project.id,
+      norma: "TEST",
+      item,
+    },
+    select: {
+      id: true,
+    },
+  });
+
+  const requirement = existingRequirement
+    ? await prisma.requirement.update({
+        where: {
+          id: existingRequirement.id,
+        },
+        data: getAdminEmailTestRequirementData(deadline),
+        select: getRequirementTestSelect(),
+      })
+    : await prisma.requirement.create({
+        data: {
+          projectId: project.id,
+          ...getAdminEmailTestRequirementData(deadline),
+        },
+        select: getRequirementTestSelect(),
+      });
+
+  const updatedAdmin = await prisma.user.update({
+    where: {
+      id: admin.id,
+    },
+    data: {
+      notifyAlerts: true,
+      lastAlertEmailAt: null,
+    },
+    select: {
+      email: true,
+      role: true,
+      status: true,
+      notifyAlerts: true,
+      lastAlertEmailAt: true,
+    },
+  });
+
+  return {
+    adminFound: true,
+    admin: updatedAdmin,
+    project,
+    requirement,
+  };
+}
+
+function getAdminEmailTestRequirementData(deadline: Date) {
+  return {
+    name: "Prueba controlada de alerta por email Admin",
+    titulo: "Prueba alerta email Admin",
+    descripcion:
+      "Requisito creado para verificar el envio automatico de alertas al usuario Admin.",
+    norma: "TEST",
+    item: "ALERTA-ADMIN-TEST",
+    evidencia: "Condicion de prueba: requisito no conforme vencido ayer.",
+    status: "no_conforme",
+    completed: false,
+    deadline,
+    lastNotifiedAt: null,
+  };
+}
+
+function getRequirementTestSelect() {
+  return {
+    id: true,
+    norma: true,
+    item: true,
+    name: true,
+    status: true,
+    deadline: true,
+    lastNotifiedAt: true,
+  };
 }
 
 function getReportSubject(frequency: string, compliance: number) {
