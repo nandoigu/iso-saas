@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getAuthSession, unauthorized } from "@/app/lib/auth";
+import { getAuthSession, isAdminRole, unauthorized } from "@/app/lib/auth";
 import {
   buildComplianceReport,
   normalizeStatus,
@@ -19,6 +19,20 @@ export const runtime = "nodejs";
 const UPCOMING_DAYS = 7;
 const ACTIVE_USER_STATUS = "active";
 
+type ProjectWithRequirements = {
+  id: string;
+  name: string;
+  requirements: Array<{
+    id: string;
+    norma: string | null;
+    item: string | null;
+    name: string;
+    status: string;
+    deadline: Date | null;
+    lastNotifiedAt: Date | null;
+  }>;
+};
+
 export async function GET(req: Request) {
   try {
     if (!isAuthorizedCronRequest(req)) {
@@ -37,6 +51,7 @@ export async function GET(req: Request) {
         id: true,
         email: true,
         name: true,
+        role: true,
         notifyAlerts: true,
         notifyReports: true,
         reportFrequency: true,
@@ -61,6 +76,8 @@ export async function GET(req: Request) {
         },
       },
     });
+    const adminProjects =
+      users.some((user) => isAdminRole(user.role)) ? await getAllProjects() : null;
 
     const startOfToday = getStartOfToday();
     const endOfUpcomingWindow = getUpcomingLimit(startOfToday, UPCOMING_DAYS);
@@ -73,9 +90,15 @@ export async function GET(req: Request) {
     let alertRequirementsReady = 0;
     let reportRequirementsReady = 0;
 
-    for (const user of users) {
+    const orderedUsers = [...users].sort(
+      (a, b) => Number(isAdminRole(a.role)) - Number(isAdminRole(b.role))
+    );
+
+    for (const user of orderedUsers) {
       try {
-        const allRequirements = flattenUserRequirements(user.projects);
+        const isAdminUser = isAdminRole(user.role);
+        const projectScope = isAdminUser && adminProjects ? adminProjects : user.projects;
+        const allRequirements = flattenProjectRequirements(projectScope);
         const overdueRequirements: AlertRequirement[] = [];
         const upcomingRequirements: AlertRequirement[] = [];
 
@@ -93,7 +116,10 @@ export async function GET(req: Request) {
             continue;
           }
 
-          if (wasNotifiedToday(requirement.lastNotifiedAt, startOfToday)) {
+          if (
+            !isAdminUser &&
+            wasNotifiedToday(requirement.lastNotifiedAt, startOfToday)
+          ) {
             continue;
           }
 
@@ -231,6 +257,7 @@ export async function POST(req: Request) {
         id: true,
         email: true,
         name: true,
+        role: true,
         projects: {
           select: {
             id: true,
@@ -255,7 +282,10 @@ export async function POST(req: Request) {
       return unauthorized();
     }
 
-    const allRequirements = flattenUserRequirements(fullUser.projects);
+    const projectScope = isAdminRole(fullUser.role)
+      ? await getAllProjects()
+      : fullUser.projects;
+    const allRequirements = flattenProjectRequirements(projectScope);
     const report = buildComplianceReport(allRequirements, UPCOMING_DAYS);
 
     if (allRequirements.length === 0) {
@@ -319,19 +349,28 @@ function isAuthorizedCronRequest(req: Request) {
   return authorization === `Bearer ${cronSecret}`;
 }
 
-function flattenUserRequirements(
-  projects: Array<{
-    name: string;
-    requirements: Array<{
-      id: string;
-      norma: string | null;
-      item: string | null;
-      name: string;
-      status: string;
-      deadline: Date | null;
-      lastNotifiedAt: Date | null;
-    }>;
-  }>
+async function getAllProjects(): Promise<ProjectWithRequirements[]> {
+  return prisma.project.findMany({
+    select: {
+      id: true,
+      name: true,
+      requirements: {
+        select: {
+          id: true,
+          norma: true,
+          item: true,
+          name: true,
+          status: true,
+          deadline: true,
+          lastNotifiedAt: true,
+        },
+      },
+    },
+  });
+}
+
+function flattenProjectRequirements(
+  projects: Array<Pick<ProjectWithRequirements, "name" | "requirements">>
 ): AlertRequirement[] {
   return projects.flatMap((project) =>
     project.requirements.map((requirement) => ({
