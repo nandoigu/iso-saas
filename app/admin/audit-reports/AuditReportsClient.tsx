@@ -142,6 +142,11 @@ export default function AuditReportsClient() {
     () => reports.find((report) => report.id === selectedReportId) || reports[0] || null,
     [reports, selectedReportId]
   );
+  const hasUnsavedChanges = useMemo(() => {
+    if (!selectedReport?.generatedContent || !draftContent) return false;
+
+    return JSON.stringify(selectedReport.generatedContent) !== JSON.stringify(draftContent);
+  }, [draftContent, selectedReport]);
 
   useEffect(() => {
     setDraftContent(selectedReport?.generatedContent ? cloneContent(selectedReport.generatedContent) : null);
@@ -390,7 +395,7 @@ export default function AuditReportsClient() {
                     <td style={appTableCellStyle}>{report.project?.name || report.auditedOrgName}</td>
                     <td style={appTableCellStyle}><StatusBadge value={report.globalStatus} /></td>
                     <td style={appTableCellStyle}>
-                      <EditingStatusBadge isEditing={report.id === selectedReport?.id} />
+                      <EditingStatusBadge isEditing={report.id === selectedReport?.id && hasUnsavedChanges} />
                     </td>
                     <td style={appTableCellStyle}>v{report.version}</td>
                     <td style={appTableCellStyle}>
@@ -398,10 +403,12 @@ export default function AuditReportsClient() {
                         <button
                           type="button"
                           onClick={saveDraft}
-                          disabled={report.id !== selectedReport?.id || saving || !draftContent}
+                          disabled={report.id !== selectedReport?.id || saving || !draftContent || !hasUnsavedChanges}
                           style={{
                             ...smallPrimaryButtonStyle,
-                            ...getActionStateStyle(report.id !== selectedReport?.id || saving || !draftContent),
+                            ...getActionStateStyle(
+                              report.id !== selectedReport?.id || saving || !draftContent || !hasUnsavedChanges
+                            ),
                           }}
                         >
                           Guardar
@@ -452,7 +459,12 @@ export default function AuditReportsClient() {
               </div>
             </div>
             <div style={previewActionsStyle}>
-              <button type="button" onClick={saveDraft} disabled={saving} style={{ ...appPrimaryButtonStyle, ...getActionStateStyle(saving) }}>
+              <button
+                type="button"
+                onClick={saveDraft}
+                disabled={saving || !hasUnsavedChanges}
+                style={{ ...appPrimaryButtonStyle, ...getActionStateStyle(saving || !hasUnsavedChanges) }}
+              >
                 Guardar version
               </button>
               <button type="button" onClick={regenerate} disabled={saving} style={{ ...appSecondaryButtonStyle, ...getActionStateStyle(saving) }}>
@@ -559,7 +571,12 @@ export default function AuditReportsClient() {
             </div>
           </div>
           <div style={bottomActionBarStyle}>
-            <button type="button" onClick={saveDraft} disabled={saving} style={{ ...appPrimaryButtonStyle, ...getActionStateStyle(saving) }}>
+            <button
+              type="button"
+              onClick={saveDraft}
+              disabled={saving || !hasUnsavedChanges}
+              style={{ ...appPrimaryButtonStyle, ...getActionStateStyle(saving || !hasUnsavedChanges) }}
+            >
               Guardar version
             </button>
           </div>
