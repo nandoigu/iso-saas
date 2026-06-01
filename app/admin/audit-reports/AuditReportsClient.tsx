@@ -377,6 +377,7 @@ export default function AuditReportsClient() {
                 <tr>
                   <th style={appTableHeaderStyle}>Informe</th>
                   <th style={appTableHeaderStyle}>Proyecto</th>
+                  <th style={appTableHeaderStyle}>Resultado</th>
                   <th style={appTableHeaderStyle}>Estado</th>
                   <th style={appTableHeaderStyle}>Version</th>
                   <th style={appTableHeaderStyle}>Acciones</th>
@@ -388,11 +389,25 @@ export default function AuditReportsClient() {
                     <td style={appTableCellStyle}>{report.reportNumber}</td>
                     <td style={appTableCellStyle}>{report.project?.name || report.auditedOrgName}</td>
                     <td style={appTableCellStyle}><StatusBadge value={report.globalStatus} /></td>
+                    <td style={appTableCellStyle}>
+                      <EditingStatusBadge isEditing={report.id === selectedReport?.id} />
+                    </td>
                     <td style={appTableCellStyle}>v{report.version}</td>
                     <td style={appTableCellStyle}>
                       <div style={actionRowStyle}>
+                        <button
+                          type="button"
+                          onClick={saveDraft}
+                          disabled={report.id !== selectedReport?.id || saving || !draftContent}
+                          style={{
+                            ...smallPrimaryButtonStyle,
+                            ...getActionStateStyle(report.id !== selectedReport?.id || saving || !draftContent),
+                          }}
+                        >
+                          Guardar
+                        </button>
                         <button type="button" onClick={() => setSelectedReportId(report.id)} style={smallButtonStyle}>
-                          {report.id === selectedReport?.id ? "Editando" : "Editar"}
+                          Editar
                         </button>
                         <button
                           type="button"
@@ -410,7 +425,7 @@ export default function AuditReportsClient() {
                 ))}
                 {!loading && reports.length === 0 && (
                   <tr>
-                    <td colSpan={5} style={{ ...appTableCellStyle, textAlign: "center", color: "#64748b" }}>
+                    <td colSpan={6} style={{ ...appTableCellStyle, textAlign: "center", color: "#64748b" }}>
                       Todavia no hay informes generados.
                     </td>
                   </tr>
@@ -590,6 +605,19 @@ function StatusBadge({ value }: { value: string }) {
       : statusBadgeSuccessStyle;
 
   return <span style={{ ...statusBadgeStyle, ...tone }}>{value || "Sin estado"}</span>;
+}
+
+function EditingStatusBadge({ isEditing }: { isEditing: boolean }) {
+  return (
+    <span
+      style={{
+        ...statusBadgeStyle,
+        ...(isEditing ? editingStatusBadgeStyle : savedStatusBadgeStyle),
+      }}
+    >
+      {isEditing ? "Editando" : "Guardado"}
+    </span>
+  );
 }
 
 function AuditIndicators({ indicators }: { indicators: ReportContent["annexes"]["kpis"] }) {
@@ -920,6 +948,12 @@ const smallButtonStyle: React.CSSProperties = {
   padding: "5px 9px",
 };
 
+const smallPrimaryButtonStyle: React.CSSProperties = {
+  ...appPrimaryButtonStyle,
+  minHeight: 32,
+  padding: "5px 9px",
+};
+
 const smallLinkStyle: React.CSSProperties = {
   ...smallButtonStyle,
   color: "#0f172a",
@@ -1000,6 +1034,18 @@ const statusBadgeDangerStyle: React.CSSProperties = {
   background: "#fef2f2",
   border: "1px solid #fecaca",
   color: "#991b1b",
+};
+
+const editingStatusBadgeStyle: React.CSSProperties = {
+  background: "#eef4ff",
+  border: "1px solid #bfdbfe",
+  color: "#0025df",
+};
+
+const savedStatusBadgeStyle: React.CSSProperties = {
+  background: "#f8fafc",
+  border: "1px solid #dbe3f1",
+  color: "#475569",
 };
 
 const editorStackStyle: React.CSSProperties = {
