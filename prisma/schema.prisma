@@ -12,8 +12,10 @@ model Company {
   name      String
   createdAt DateTime  @default(now())
 
-  users     User[]
-  projects  Project[]
+  users      User[]
+  projects   Project[]
+  auditors   Auditor[]
+  auditTeams AuditTeam[]
 }
 
 model User {
@@ -35,6 +37,7 @@ model User {
   projects            Project[]
   passwordResetTokens PasswordResetToken[]
   auditReports        AuditReport[]
+  auditorProfile      Auditor?
 }
 
 model Project {
@@ -52,6 +55,7 @@ model Project {
 
   requirements Requirement[]
   auditReports AuditReport[]
+  auditTeams   AuditTeam[]
 }
 
 model Requirement {
@@ -144,6 +148,9 @@ model AuditReport {
   createdById String
   createdBy   User   @relation(fields: [createdById], references: [id], onDelete: Restrict)
 
+  auditTeamId String?
+  auditTeam   AuditTeam? @relation(fields: [auditTeamId], references: [id], onDelete: SetNull)
+
   versions AuditReportVersion[]
 
   @@unique([reportNumber, version])
@@ -173,4 +180,76 @@ model AuditReportVersion {
 
   @@unique([reportId, version])
   @@index([createdById])
+}
+
+model Auditor {
+  id                  String   @id @default(cuid())
+  companyId           String
+  userId              String?  @unique
+  name                String
+  email               String
+  phone               String?
+  certificationBody   String?
+  certificationNumber String?
+  certificationLevel  String?
+  qualifications      String[] @default([])
+  isExternal          Boolean  @default(false)
+  status              String   @default("active")
+  notes               String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  createdById         String
+
+  company     Company           @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  user        User?             @relation(fields: [userId], references: [id], onDelete: SetNull)
+  assignments AuditTeamMember[]
+
+  @@unique([companyId, email])
+  @@index([companyId])
+  @@index([userId])
+}
+
+model AuditTeam {
+  id          String   @id @default(cuid())
+  companyId   String
+  projectId   String
+  auditId     String
+  name        String?
+  status      String   @default("forming")
+  formedAt    DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  createdById String
+
+  company  Company           @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  project  Project           @relation(fields: [projectId], references: [id], onDelete: Restrict)
+  members  AuditTeamMember[]
+  reports  AuditReport[]
+
+  @@index([companyId])
+  @@index([projectId])
+  @@index([auditId])
+}
+
+model AuditTeamMember {
+  id              String    @id @default(cuid())
+  auditTeamId     String
+  auditorId       String
+  role            String
+  status          String    @default("invited")
+  assignedAt      DateTime  @default(now())
+  confirmedAt     DateTime?
+  withdrawnAt     DateTime?
+  withdrawnReason String?
+  notes           String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  createdById     String
+
+  auditTeam AuditTeam @relation(fields: [auditTeamId], references: [id], onDelete: Cascade)
+  auditor   Auditor   @relation(fields: [auditorId], references: [id], onDelete: Restrict)
+
+  @@unique([auditTeamId, auditorId])
+  @@index([auditTeamId])
+  @@index([auditorId])
 }
