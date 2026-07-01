@@ -16,7 +16,7 @@ export default defineConfig({
       exclude: ["app/api/auth/**", "app/api/cron/**"],
     },
     pool: "forks",
-    poolOptions: { forks: { singleFork: true } },
+    singleFork: true,
   },
   resolve: {
     alias: {
