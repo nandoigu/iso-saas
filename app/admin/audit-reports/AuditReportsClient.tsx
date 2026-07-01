@@ -110,13 +110,13 @@ type AuditReport = {
   generatedContent?: ReportContent;
 };
 
-const auditTypes = ["Fase 1", "Fase 2", "Seguimiento", "Renovacion", "Extraordinaria"];
+const auditTypes = ["Fase 1", "Fase 2", "Seguimiento", "Renovación", "Extraordinaria"];
 type SummaryTextKey = Exclude<keyof ReportContent["executiveSummary"], "nonConformities">;
 const summaryFields: Array<{ key: SummaryTextKey; label: string }> = [
   { key: "generalIssues", label: "Cuestiones generales" },
-  { key: "scopeAdequacy", label: "Adecuacion del alcance" },
-  { key: "auditObjectives", label: "Objetivos de auditoria" },
-  { key: "auditContext", label: "Contexto de la auditoria" },
+  { key: "scopeAdequacy", label: "Adecuación del alcance" },
+  { key: "auditObjectives", label: "Objetivos de auditoría" },
+  { key: "auditContext", label: "Contexto de la auditoría" },
   { key: "auditorGeneralConsiderations", label: "Consideraciones generales del auditor" },
   { key: "strengths", label: "Puntos fuertes" },
   { key: "weaknessesAndImprovements", label: "Debilidades y oportunidades de mejora" },
@@ -175,7 +175,7 @@ export default function AuditReportsClient() {
       if (loadErrors.length > 0) setError(loadErrors.join(" "));
     } catch (loadError) {
       console.error(loadError);
-      setError("No se pudo cargar el modulo de informes.");
+      setError("No se pudo cargar el módulo de informes.");
     } finally {
       setLoading(false);
     }
@@ -242,7 +242,7 @@ export default function AuditReportsClient() {
 
       await loadData();
       setSelectedReportId(selectedReport.id);
-      setSuccess(`Informe guardado como version v${data.data.version}.`);
+      setSuccess(`Informe guardado como versión v${data.data.version}.`);
     } catch (saveError) {
       console.error(saveError);
       setError(saveError instanceof Error ? saveError.message : "No se pudo guardar el informe.");
@@ -321,9 +321,9 @@ export default function AuditReportsClient() {
       <section style={heroStyle}>
         <div style={appHeroCopyStyle}>
           <span style={appHeroEyebrowStyle}>Informes</span>
-          <h1 style={appHeroTitleStyle}>Informes de auditoria ISO 19650</h1>
+          <h1 style={appHeroTitleStyle}>Informes de auditoría ISO 19650</h1>
           <p style={appHeroDescriptionStyle}>
-            Genera, revisa, versiona y exporta informes de auditoria desde la matriz del proyecto.
+            Genera, revisa, versiona y exporta informes de auditoría desde la matriz del proyecto.
           </p>
         </div>
         <Link href="/admin" style={secondaryLinkStyle}>
@@ -338,7 +338,7 @@ export default function AuditReportsClient() {
         <div style={panelStyle}>
           <PanelHeader
             title="Generar informe"
-            description="Crea una nueva version base desde los datos actuales del proyecto."
+            description="Crea una nueva versión base desde los datos actuales del proyecto."
           />
           <label style={labelStyle}>
             Proyecto
@@ -351,7 +351,7 @@ export default function AuditReportsClient() {
             </select>
           </label>
           <label style={labelStyle}>
-            Tipo de auditoria
+            Tipo de auditoría
             <select value={auditType} onChange={(event) => setAuditType(event.target.value)} style={appFieldStyle}>
               {auditTypes.map((type) => (
                 <option key={type} value={type}>{type}</option>
@@ -363,7 +363,7 @@ export default function AuditReportsClient() {
             <input value={leadAuditor} onChange={(event) => setLeadAuditor(event.target.value)} style={editableFieldStyle} />
           </label>
           <label style={labelStyle}>
-            Alcance de la certificacion
+            Alcance de la certificación
             <textarea value={scope} onChange={(event) => setScope(event.target.value)} rows={4} style={editableFieldStyle} />
           </label>
           <button type="button" onClick={createReport} disabled={saving || loading} style={{ ...appPrimaryButtonStyle, ...getActionStateStyle(saving || loading) }}>
@@ -374,7 +374,7 @@ export default function AuditReportsClient() {
         <div style={panelStyle}>
           <PanelHeader
             title="Informes generados"
-            description="Selecciona un informe para revisar su previsualizacion editable."
+            description="Selecciona un informe para revisar su previsualización editable."
           />
           <div style={tableWrapperStyle}>
             <table style={{ ...appTableStyle, minWidth: 760 }}>
@@ -481,26 +481,26 @@ export default function AuditReportsClient() {
               <SectionHeading number="1" title="Datos generales" />
               <ReadOnlyGrid
                 items={[
-                  ["Organizacion", draftContent.cover.organizationName],
-                  ["Numero auditoria", draftContent.cover.auditNumber],
-                  ["Numero informe", draftContent.cover.reportNumber],
-                  ["Tipo auditoria", draftContent.cover.auditType],
+                  ["Organización", draftContent.cover.organizationName],
+                  ["Número auditoría", draftContent.cover.auditNumber],
+                  ["Número informe", draftContent.cover.reportNumber],
+                  ["Tipo auditoría", draftContent.cover.auditType],
                   ["Norma aplicable", draftContent.cover.standards.join(", ")],
-                  ["Fechas auditoria", draftContent.cover.auditDates],
+                  ["Fechas auditoría", draftContent.cover.auditDates],
                   ["Fecha informe", draftContent.cover.reportDate],
                 ]}
               />
               <div style={editableCardGridStyle}>
-                <EditableCard label="Organizacion" value={draftContent.generalData.organizationName} onChange={(value) => updateDraft((content) => ({ ...content, generalData: { ...content.generalData, organizationName: value } }))} />
+                <EditableCard label="Organización" value={draftContent.generalData.organizationName} onChange={(value) => updateDraft((content) => ({ ...content, generalData: { ...content.generalData, organizationName: value } }))} />
                 <EditableCard label="Representante" value={draftContent.generalData.organizationRepresentative} onChange={(value) => updateDraft((content) => ({ ...content, generalData: { ...content.generalData, organizationRepresentative: value } }))} />
                 <EditableCard label="Auditor jefe" value={draftContent.generalData.leadAuditorName} onChange={(value) => updateDraft((content) => ({ ...content, generalData: { ...content.generalData, leadAuditorName: value } }))} />
               </div>
-              <EditableCard label="Alcance de la certificacion" value={draftContent.generalData.certificationScope} multiline prominent onChange={(value) => updateDraft((content) => ({ ...content, generalData: { ...content.generalData, certificationScope: value } }))} />
+              <EditableCard label="Alcance de la certificación" value={draftContent.generalData.certificationScope} multiline prominent onChange={(value) => updateDraft((content) => ({ ...content, generalData: { ...content.generalData, certificationScope: value } }))} />
             </div>
 
             <div style={editorSectionStyle}>
               <SectionHeading number="2" title="Criterios de auditoria" />
-              <TextArea label="Criterios de auditoria" value={draftContent.auditCriteria.join("\n")} onChange={(value) => updateDraft((content) => ({ ...content, auditCriteria: splitLines(value) }))} />
+              <TextArea label="Criterios de auditoría" value={draftContent.auditCriteria.join("\n")} onChange={(value) => updateDraft((content) => ({ ...content, auditCriteria: splitLines(value) }))} />
             </div>
 
             <div style={editorSectionStyle}>
@@ -545,7 +545,7 @@ export default function AuditReportsClient() {
 
             <div style={editorSectionStyle}>
               <SectionHeading number="6" title="Anexos" />
-              <h4 style={annexTitleStyle}>a. Matriz de auditoria</h4>
+              <h4 style={annexTitleStyle}>a. Matriz de auditoría</h4>
               <div style={tableWrapperStyle}>
                 <table style={{ ...appTableStyle, minWidth: 620 }}>
                   <thead>
@@ -681,7 +681,7 @@ function NonConformitiesEditor({
               <span style={statusPillStyle}>{getRequirementStatusLabel(item.status)}</span>
             </div>
             <label style={nonConformityReasonStyle}>
-              Razon de la valoracion
+              Razón de la valoración
               <textarea
                 value={item.reason}
                 onChange={(event) => {

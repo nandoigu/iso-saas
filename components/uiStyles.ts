@@ -158,7 +158,8 @@ export const appDangerButtonStyle: CSSProperties = {
 export function getActionStateStyle(disabled: boolean): CSSProperties {
   return {
     cursor: disabled ? "not-allowed" : "pointer",
-    opacity: disabled ? 0.6 : 1,
+    opacity: disabled ? 0.4 : 1,
+    pointerEvents: disabled ? "none" : undefined,
   };
 }
 
