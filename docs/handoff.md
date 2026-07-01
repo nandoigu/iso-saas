@@ -10,6 +10,112 @@
 
 La aplicacion ya tiene una base SaaS funcional avanzada y esta en fase de pulido final, QA visual/accesibilidad y preparacion de producto. La construccion funcional principal, produccion y auditoria critica estan cerradas.
 
+## Ultima sesion retomada - 2026-06-01
+
+- Repo correcto confirmado: `C:\Users\ferna\prueba-app`.
+- Rama activa: `main`.
+- Remoto: `origin/main`.
+- Produccion principal: `https://iso-saas-gamma.vercel.app`.
+- Arbol de trabajo limpio al retomar esta sesion.
+- Head actual revisado:
+  - `23e1da4 Show saved state after audit report save`
+
+### Estado reciente no reflejado en el handoff anterior
+
+- Se incorporo un modulo admin de informes de auditoria ISO 19650:
+  - vista protegida en `/admin/audit-reports`
+  - acceso desde el panel de administracion con `Generador de informes`
+  - generacion de informe desde un proyecto existente
+  - seleccion de tipo de auditoria, auditor jefe y alcance
+  - editor de contenido del informe con secciones documentales
+  - versionado al guardar cambios
+  - regeneracion de base desde datos del proyecto
+  - eliminacion de informes
+  - exportacion DOCX y PDF
+- Persistencia nueva:
+  - modelos `AuditReport` y `AuditReportVersion`
+  - migracion `prisma/migrations/20260529110000_add_audit_report_generator/migration.sql`
+- Servicios principales:
+  - `services/audit-report.service.ts`
+  - `services/audit-report.generator.ts`
+  - `services/audit-report.docx.ts`
+  - `services/audit-report.pdf.ts`
+  - `services/audit-report.types.ts`
+- APIs principales:
+  - `GET/POST /api/admin/audit-reports`
+  - `GET/PATCH/DELETE /api/admin/audit-reports/[reportId]`
+  - `GET /api/admin/audit-reports/[reportId]/export/[format]`
+- Exportacion PDF migrada a `jsPDF`/`jspdf-autotable` tras iteraciones con fuentes y estructura.
+- Las acciones de fila del listado de informes se aclararon:
+  - estado `Guardado` / `Editando`
+  - boton `Guardar` solo activo con cambios sin guardar
+  - mensaje de exito tras guardar indicando version.
+- Alertas cron/admin:
+  - corregido el alcance de alertas cron para administradores
+  - se anadio y retiro una configuracion temporal de test admin, dejando el endpoint limpio.
+
+### Commits recientes de esta fase
+
+- `6e8d77c Replace abstract report KPIs with audit indicators`
+- `752b73b Derive report nonconformities from audit matrix`
+- `c1e0b9b Polish audit reports admin UX`
+- `de1636b Add audit report edit delete actions`
+- `c5e4851 Bundle PDFKit font data for exports`
+- `f59c3fd Use jsPDF for audit report exports`
+- `4435832 Improve audit report PDF structure`
+- `6fee04e Fix admin cron alert scope`
+- `598deea Add guarded admin alert email test setup`
+- `5f05415 Remove temporary admin alert test setup`
+- `259eaaa Clarify audit report row status actions`
+- `23e1da4 Show saved state after audit report save`
+
+### Siguiente paso recomendado
+
+Continuar con una verificacion funcional y visual del modulo de informes de auditoria:
+
+- ejecutar `cmd /c npm run lint`
+- ejecutar `cmd /c npm run build`
+- abrir `/admin/audit-reports` con sesion admin
+- generar un informe desde un proyecto demo
+- editar un texto del informe y confirmar que aparece `Editando`
+- guardar y confirmar incremento de version
+- exportar DOCX y PDF y revisar estructura basica
+- si todo pasa, desplegar/verificar en produccion y actualizar este handoff con el resultado.
+
+### Validacion ejecutada al retomar - 2026-06-01
+
+- `cmd /c npm run lint` pasa.
+- `cmd /c npm run build` pasa.
+- Servidor local iniciado en `http://127.0.0.1:3000`.
+- Validacion autenticada con cookie local firmada para admin activo, sin usar ni cambiar contrasenas reales.
+- `/admin/audit-reports` responde `200` autenticado y contiene el titulo `Informes de auditoria ISO 19650`.
+- Proyecto demo usado:
+  - `Auditoria UI ISO 19650`
+  - codigo `AUD-UI`
+  - id `cmozn75mk00n19opnjg8i36a0`
+- Informe generado:
+  - `BAOS-AR-00001`
+  - id `cmpv2extd0002fvpn8tejbeeo`
+  - creado con HTTP `201`
+  - version inicial `1`
+- Edicion guardada:
+  - se anadio una observacion QA al resumen ejecutivo
+  - `PATCH /api/admin/audit-reports/[reportId]` responde `200`
+  - version resultante `2`
+  - estado global `No conforme`
+  - dictamen `Certificacion no recomendada`
+- Exportaciones verificadas:
+  - DOCX responde `200`
+  - `Content-Type`: `application/vnd.openxmlformats-officedocument.wordprocessingml.document`
+  - tamano aproximado: `11002` bytes
+  - cabecera ZIP Office valida: `504b0304`
+  - PDF responde `200`
+  - `Content-Type`: `application/pdf`
+  - tamano aproximado: `67199` bytes
+  - cabecera PDF valida: `%PDF-`
+- Limitacion:
+  - el navegador integrado no pudo abrirse por el mismo fallo de sandbox en Windows visto en sesiones anteriores (`windows sandbox failed: spawn setup refresh`), por lo que la comprobacion visual interactiva queda pendiente de Chrome normal o de una sesion real manual.
+
 ## Ultima sesion de estilo y navegacion - 2026-05-28
 
 - Repo correcto de trabajo confirmado: `C:\Users\ferna\prueba-app`.
