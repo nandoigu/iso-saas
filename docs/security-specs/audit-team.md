@@ -212,7 +212,7 @@ Si este componente causa un problema en producción:
 - [x] Mensajes de error al cliente en español genérico — sin detalles de Prisma ni IDs internos
 - [x] Sin nuevas variables de entorno requeridas
 - [x] Migración debe ejecutarse antes del deploy de código
-- [ ] Decisión de cifrado de `certificationNumber` pendiente (ver Open Questions)
+- [x] Cifrado de `certificationNumber`: cifrado en reposo de Neon suficiente — no es categoría especial RGPD
 - [ ] Tests TENANT-01/02/03 de aislamiento pendientes (cubiertos por test-plan)
 - [ ] Acceso de auditor externo a sus propias asignaciones — fuera de scope en Phase 1, requiere ADR en Phase 2
 
@@ -221,10 +221,8 @@ Si este componente causa un problema en producción:
 ## Open Questions
 
 1. **¿Cifrado de `certificationNumber` en base de datos?**
-   El número de certificación profesional de un auditor puede caer bajo RGPD artículo 9 (datos relativos a habilitaciones profesionales reguladas) dependiendo de la jurisdicción del cliente. Opciones:
-   - **Opción A**: Cifrado a nivel de aplicación antes de persistir (requiere gestión de clave de cifrado adicional)
-   - **Opción B**: Confiar en el cifrado en reposo de Neon (AES-256 a nivel de disco) — suficiente si no se clasifica como categoría especial
-   - **Decisión requerida antes de implementar** — si se elige cifrado a nivel de aplicación, crear ADR y añadir variable de entorno `ENCRYPTION_KEY`
+   ✅ **Resuelto (2026-07-01)**: Confiar en el cifrado en reposo de Neon (AES-256 a nivel de disco).
+   `certificationNumber` es un identificador administrativo profesional — no es categoría especial bajo RGPD art. 9. La protección real viene del control de acceso (solo `admin`) y del aislamiento de tenant, ya definidos en este spec. El cifrado a nivel de aplicación añadiría complejidad (gestión de clave, campo no buscable) sin beneficio proporcional para este tipo de dato. Si un cliente específico exige cifrado adicional en el futuro, se añade como extensión por tenant.
 
 2. **¿Acceso de auditores externos a sus propias asignaciones en fases posteriores?**
    En Phase 1 no existe. Si se implementa en Phase 2, requiere un mecanismo de invitación por token temporal (sin crear un `User` completo en el sistema). Registrar como ADR cuando se decida.
