@@ -3,8 +3,8 @@
 > BAOS Component: Evidence Graph
 > API Contract: docs/api-contracts/evidence-graph.md
 > Domain Model: docs/domain-models/evidence-graph.md
-> ADR: docs/adr/ADR-003-evidence-graph-phase1-scoping.md
-> Date: 2026-07-01
+> ADR: docs/adr/ADR-003-evidence-graph-phase1-scoping.md · docs/adr/ADR-004-evidence-graph-implementation-decisions.md
+> Date: 2026-07-01 (revisado 2026-08-05 — ADR-004)
 > Status: Draft
 
 ---
@@ -18,15 +18,19 @@
 | `GET /api/evidence/[evidenceId]` | Sí | Ídem |
 | `PATCH /api/evidence/[evidenceId]` | Sí | Ídem |
 | `DELETE /api/evidence/[evidenceId]` | Sí | Ídem |
-| `POST /api/evidence/[evidenceId]/requirement-links` | Sí | Ídem |
-| `DELETE /api/evidence/[evidenceId]/requirement-links/[linkId]` | Sí | Ídem |
+| `POST /api/projects/[projectId]/evidence/upload-token` | Sí | Ídem |
+| `POST /api/evidence/[evidenceId]/submit` | Sí | Ídem |
+| `GET /api/evidence/[evidenceId]/file` | Sí | Ídem |
+| `POST /api/admin/evidence/[evidenceId]/requirement-links` | Sí | Ídem |
+| `DELETE /api/admin/evidence/[evidenceId]/requirement-links/[linkId]` | Sí | Ídem |
 | `POST /api/admin/evidence/[evidenceId]/validate` | Sí | Ídem |
 | `POST /api/admin/evidence/[evidenceId]/report-links` | Sí | Ídem |
-| `GET /api/admin/evidence/[evidenceId]/file` | Sí | Ídem |
 
 **Sin sesión válida**: devolver `401` inmediatamente — nunca revelar si el recurso existe.
 
-**Diferencia clave con Audit Team**: este componente no es admin-only en su totalidad. El dueño del proyecto sube y gestiona su propia evidencia (`draft`/`submitted`); solo las acciones que comprometen la integridad certificable de la auditoría (vínculo normativo, validación, cita en informe, acceso al archivo firmado) exigen `admin`.
+**Diferencia clave con Audit Team**: este componente no es admin-only en su totalidad. El dueño del proyecto sube, presenta y gestiona su propia evidencia (`draft`/`submitted`) y puede abrir su propio archivo; solo las acciones que comprometen la integridad certificable de la auditoría (vínculo normativo, validación, cita en informe) exigen `admin`.
+
+**Convención de rutas (ADR-004, decisión #2)**: toda ruta bajo `/api/admin/` exige `role === 'admin'`, sin excepciones; una ruta fuera de ese prefijo no lo exige. El control sigue aplicándose en el handler — el prefijo no es el mecanismo, es la garantía legible de un vistazo. Las rutas de esta tabla ya reflejan la realineación: `file` salió de `/api/admin/` y `requirement-links` entró.
 
 ---
 
@@ -36,6 +40,8 @@
 |--------|:---:|:---:|-------|
 | Listar evidencia del proyecto | ✅ | ✅ | Scoped a `project.userId`; admin ve todo |
 | Crear evidencia (`draft`) | ✅ | ✅ | `projectId` de la ruta, `createdBy` de sesión |
+| Obtener token de subida al Blob | ✅ | ✅ | Punto crítico: verifica sesión, rol y pertenencia del proyecto ANTES de firmar |
+| Presentar evidencia (`draft → submitted`) | ✅ | ✅ | Acto del auditado — bloqueado si `status ≠ draft` |
 | Ver detalle de evidencia | ✅ | ✅ | 404 si no pertenece al tenant |
 | Editar evidencia | ✅ | ✅ | Bloqueado si `status ∈ {validated, archived}` |
 | Eliminar evidencia | ✅ | ✅ | Bloqueado si tiene `EvidenceReportLink` |
@@ -157,9 +163,11 @@ Estas reglas se aplican en `evidence.service.ts`, no en el route handler ni en e
 |----------|----------|--------|-------|
 | `DATABASE_URL` | Sí | ✅ Ya configurada en Vercel | Conexión Neon PostgreSQL |
 | `AUTH_SECRET` | Sí | ✅ Ya configurada en Vercel | Firma de cookies de sesión |
-| `BLOB_READ_WRITE_TOKEN` | Sí | ⚠️ Nueva — pendiente de crear | Token del store de Vercel Blob. Se genera al crear el store (`vercel blob store add` o desde el dashboard del proyecto) y se añade automáticamente como env var vinculada |
+| `BLOB_READ_WRITE_TOKEN` | Sí | ✅ Aprovisionada (2026-07-01) | Store privado `iso-saas-evidence` (`store_SPJ4WiRGmr7N39TV`, región iad1), vinculado al proyecto `iso-saas`. Token seteado en Production, Preview y Development |
 
-**Acción requerida antes de implementar**: crear el store de Vercel Blob en modo privado desde el dashboard de `iso-saas-gamma` (o `vercel blob store add`), confirmar que `BLOB_READ_WRITE_TOKEN` queda vinculado al proyecto en Production y Preview, y hacer `vercel env pull` para reflejarlo en `.env.local`.
+**Acción requerida antes de implementar**: instalar la dependencia `@vercel/blob` — el store y el token existen, pero el paquete **no está en `package.json`** (verificado 2026-08-05). Sin él no hay ni emisión de token de subida ni generación de signed URL.
+
+⚠️ **Gotcha documentado**: `vercel blob create-store --yes` dispara un `vercel env pull` que **sobrescribe `.env.local` entero** con las vars scoped a `development`. Hacer copia de seguridad de `.env.local` antes de ejecutar cualquier comando `vercel blob` o `vercel env`.
 
 ---
 
@@ -174,7 +182,8 @@ Estas reglas se aplican en `evidence.service.ts`, no en el route handler ni en e
 | Timeout | 10s por defecto — suficiente; la generación de signed URL es una operación rápida, no hace proxy del archivo |
 | Migración | `prisma migrate deploy` requerida antes del primer deploy — añade `EvidenceItem`, `EvidenceRequirementLink`, `EvidenceReportLink`, `EvidenceValidation`, `EvidenceItemVersion` y back-relations |
 | Cron | No requerido para este componente |
-| Orden de deploy | 1) Crear store de Vercel Blob + configurar `BLOB_READ_WRITE_TOKEN` → 2) Migración Prisma → 3) Deploy de código → 4) Smoke test |
+| Dependencia | `@vercel/blob` — pendiente de instalar (`npm i @vercel/blob`) |
+| Orden de deploy | 1) Store de Blob + `BLOB_READ_WRITE_TOKEN` (✅ hecho) → 2) Instalar `@vercel/blob` → 3) Migración Prisma → 4) Deploy de código → 5) Smoke test |
 
 ---
 
@@ -223,7 +232,9 @@ Resultado esperado: `Count` igual al número de evidencias registradas en ese pr
 - [x] Invariants de negocio aplicadas en la capa de servicio, con transacción donde aplica
 - [x] Datos sensibles (`sourceRef`, `snapshot`, `description`, `notes`, `changeReason`) excluidos de logs
 - [x] Mensajes de error al cliente sin detalles de Prisma ni de Blob
-- [x] Nueva variable de entorno (`BLOB_READ_WRITE_TOKEN`) documentada — pendiente de aprovisionar antes de implementar
+- [x] Nueva variable de entorno (`BLOB_READ_WRITE_TOKEN`) documentada y aprovisionada — falta solo instalar `@vercel/blob`
+- [x] Prefijo `/api/admin/` = admin-only sin excepciones (ADR-004 #2)
+- [x] La ruta emisora del token de subida se trata como endpoint de escritura de pleno derecho, con sus propios tests de aislamiento de tenant (ADR-004 #3)
 - [x] Migración debe ejecutarse antes del deploy de código, y el store de Blob antes de la migración
 - [x] Cifrado de `sourceRef`/`snapshot`: resuelto — Neon at-rest + Vercel Blob at-rest suficiente para Phase 1 (ver Open Questions)
 - [ ] Tests TENANT-01/02/03 de aislamiento pendientes (cubiertos por test-plan)

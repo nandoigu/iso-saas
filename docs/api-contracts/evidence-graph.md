@@ -3,16 +3,20 @@
 > BAOS Component: Evidence Graph
 > Domain Model: docs/domain-models/evidence-graph.md
 > Component Spec: docs/component-specs/evidence-graph.md
-> ADR: docs/adr/ADR-003-evidence-graph-phase1-scoping.md
+> ADR: docs/adr/ADR-003-evidence-graph-phase1-scoping.md · docs/adr/ADR-004-evidence-graph-implementation-decisions.md
 > Phase: Phase 1 — Technological Foundation
-> Date: 2026-07-01
+> Date: 2026-07-01 (revisado 2026-08-05 — ADR-004)
 > Status: Draft
 
 ## Summary
 
 Esta API expone el registro, edición, validación y vinculación de evidencias (`EvidenceItem`) que sustentan el cumplimiento ISO 19650 de un proyecto. El propietario del proyecto sube y mantiene sus evidencias; solo `admin` puede validarlas, vincularlas a un requisito normativo específico, o citarlas como base de conclusión en un `AuditReport`. Sin esta separación, una evidencia no validada podría filtrarse a un informe firmado, violando el principio evidence-first.
 
-El acceso a los binarios (`sourceRef`) se sirve exclusivamente vía signed URL de corta duración (ADR-003, decisión #1) — nunca como URL pública directa.
+El acceso a los binarios (`sourceRef`) se sirve exclusivamente vía signed URL de corta duración (ADR-003, decisión #1) — nunca como URL pública directa. La escritura del binario ocurre por client upload directo al store, autorizada por un token que emite el servidor (ADR-004, decisión #3).
+
+**Convención de rutas (ADR-004, decisión #2)**: toda ruta bajo `/api/admin/` exige `role === 'admin'`, sin excepciones. Una ruta que no cuelga de ese prefijo no lo exige. El control se sigue aplicando en el route handler; el prefijo es una garantía estructural legible, no el mecanismo.
+
+Son 12 endpoints en total.
 
 ---
 
@@ -237,7 +241,71 @@ type DeleteEvidenceResponse = {
 
 ---
 
-### `POST /api/evidence/[evidenceId]/requirement-links`
+### `POST /api/evidence/[evidenceId]/submit`
+
+**Purpose**: Declarar una evidencia lista para revisión — transición `draft → submitted` (ADR-004, decisión #1).
+**Auth**: Required
+**RBAC**: `user` (dueño) | `admin` — presentar la evidencia es un acto del auditado, no del auditor
+**Tenant scope**: Verifica pertenencia de la evidencia al tenant
+
+#### Request Body
+
+Sin body.
+
+#### Validation Rules
+
+- `status` debe ser `draft` — cualquier otro estado devuelve 409. La reentrada al flujo desde `rejected` la gestiona `PATCH` como efecto lateral, no este endpoint.
+
+#### Side Effects
+
+- `EvidenceItem.status → submitted`. No crea `EvidenceItemVersion`: no cambia el contenido, solo su disponibilidad para revisión.
+
+#### Response — 200 OK
+
+```typescript
+type SubmitEvidenceResponse = {
+  data: EvidenceItemSummary;
+};
+```
+
+#### Error Responses
+
+| Status | Condition |
+|--------|-----------|
+| 401 | Sin sesión válida |
+| 404 | Evidencia no encontrada en el tenant |
+| 409 | `status` distinto de `draft` |
+
+---
+
+### `POST /api/projects/[projectId]/evidence/upload-token`
+
+**Purpose**: Emitir el token firmado que autoriza al cliente a subir un binario directamente al store de Vercel Blob (ADR-004, decisión #3).
+**Auth**: Required
+**RBAC**: `user` (dueño del proyecto) | `admin` — misma autorización que `POST .../evidence`
+**Tenant scope**: `project.userId === user.id`, o cualquier proyecto si `admin`
+
+Este endpoint es el punto crítico de seguridad del flujo de subida: es donde se verifican sesión, rol y pertenencia del proyecto **antes** de conceder escritura en el store. El binario nunca atraviesa la función serverless, evitando el límite de ~4,5 MB del body.
+
+#### Request Body
+
+El payload del handshake de client upload de `@vercel/blob/client`. La firma exacta se fija en implementación contra la documentación del paquete; el contrato exige únicamente que el `pathname` autorizado quede bajo un prefijo que incluya el `projectId`, para que un archivo huérfano sea siempre atribuible a su proyecto.
+
+#### Response — 200 OK
+
+La respuesta del handshake de client upload. El cliente recibe el `pathname` resultante al completar la subida y lo envía como `sourceRef` a `POST .../evidence` o `PATCH /api/evidence/[evidenceId]`.
+
+#### Error Responses
+
+| Status | Condition |
+|--------|-----------|
+| 401 | Sin sesión válida |
+| 404 | Proyecto no encontrado en el tenant del usuario |
+| 500 | `BLOB_READ_WRITE_TOKEN` ausente o inválido |
+
+---
+
+### `POST /api/admin/evidence/[evidenceId]/requirement-links`
 
 **Purpose**: Vincular una evidencia a un requisito ISO 19650, tipando la naturaleza del vínculo.
 **Auth**: Required
@@ -282,7 +350,7 @@ type AddRequirementLinkResponse = {
 
 ---
 
-### `DELETE /api/evidence/[evidenceId]/requirement-links/[linkId]`
+### `DELETE /api/admin/evidence/[evidenceId]/requirement-links/[linkId]`
 
 **Purpose**: Eliminar un vínculo evidencia-requisito.
 **Auth**: Required
@@ -399,11 +467,11 @@ type AddReportLinkResponse = {
 
 ---
 
-### `GET /api/admin/evidence/[evidenceId]/file`
+### `GET /api/evidence/[evidenceId]/file`
 
 **Purpose**: Obtener una signed URL de corta duración para acceder al archivo fuente de la evidencia (ADR-003, decisión #1).
 **Auth**: Required
-**RBAC**: `user` (dueño) | `admin`
+**RBAC**: `user` (dueño) | `admin` — un dueño que no pudiera abrir su propio documento no tendría forma de verificar qué presentó. Por eso esta ruta no cuelga de `/api/admin/` (ADR-004, decisión #2)
 **Tenant scope**: Verifica pertenencia de la evidencia al tenant
 
 #### Response — 200 OK
@@ -545,24 +613,30 @@ export type CreateEvidenceValidationInput = {
 - [x] `DELETE` bloqueado si existen `EvidenceReportLink` (invariant #3)
 - [x] Acceso a archivo fuente solo vía signed URL de corta duración, nunca URL pública (ADR-003)
 - [x] Respuestas de error usan 404 (no 403) para recursos fuera del tenant del usuario
-- [ ] Cifrado adicional de `sourceRef`/`snapshot` — pendiente decisión en security-spec
+- [x] Toda ruta bajo `/api/admin/` es admin-only sin excepción (ADR-004 #2)
+- [x] La emisión del token de subida verifica sesión, rol y pertenencia del proyecto antes de firmar (ADR-004 #3)
+- [x] Cifrado adicional de `sourceRef`/`snapshot` — resuelto en security-spec (open question #1): sin cifrado a nivel de aplicación en Phase 1; Neon y Blob cifran en reposo y la protección efectiva es el control de acceso
 
 ---
 
 ## Service Layer
 
 ```
-app/api/projects/[projectId]/evidence/route.ts                       ← GET (list), POST (create)
-app/api/evidence/[evidenceId]/route.ts                                ← GET, PATCH, DELETE
-app/api/evidence/[evidenceId]/requirement-links/route.ts             ← POST
-app/api/evidence/[evidenceId]/requirement-links/[linkId]/route.ts    ← DELETE
-app/api/admin/evidence/[evidenceId]/validate/route.ts                 ← POST
-app/api/admin/evidence/[evidenceId]/report-links/route.ts             ← POST
-app/api/admin/evidence/[evidenceId]/file/route.ts                     ← GET (signed URL)
+app/api/projects/[projectId]/evidence/route.ts                             ← GET (list), POST (create)
+app/api/projects/[projectId]/evidence/upload-token/route.ts                ← POST (token de client upload)
+app/api/evidence/[evidenceId]/route.ts                                      ← GET, PATCH, DELETE
+app/api/evidence/[evidenceId]/submit/route.ts                               ← POST (draft → submitted)
+app/api/evidence/[evidenceId]/file/route.ts                                 ← GET (signed URL)
+app/api/admin/evidence/[evidenceId]/requirement-links/route.ts             ← POST
+app/api/admin/evidence/[evidenceId]/requirement-links/[linkId]/route.ts    ← DELETE
+app/api/admin/evidence/[evidenceId]/validate/route.ts                       ← POST
+app/api/admin/evidence/[evidenceId]/report-links/route.ts                   ← POST
 
 services/evidence.service.ts    ← Toda la lógica de negocio + Prisma calls + invariants
 services/evidence.types.ts      ← Tipos TypeScript canónicos (ver sección anterior)
 ```
+
+9 ficheros de ruta, 12 endpoints. Las rutas bajo `app/api/admin/` son admin-only sin excepción.
 
 Los route handlers son thin: autentican, validan el shape del input y delegan al servicio. Las invariants del domain model (#1–#8) se aplican exclusivamente en `evidence.service.ts`, siguiendo el mismo patrón que `audit-team.service.ts`.
 
@@ -578,7 +652,7 @@ Los route handlers son thin: autentican, validan el shape del input y delegan al
 
 **AuditReport**: `EvidenceReportLink.auditReportId → AuditReport.id`. Esta API no reemplaza el campo `AuditReport.traceability Json` existente en Phase 1 — coexisten hasta el backfill de Phase 2.
 
-**Storage**: `EvidenceItem.sourceRef` almacena el `pathname` de Vercel Blob (store privado). La subida del binario ocurre fuera de este contrato (flujo de upload directo a Blob desde el cliente o una ruta de upload dedicada, a definir en implementación); este contrato solo persiste la referencia y sirve el acceso vía `GET .../file`.
+**Storage**: `EvidenceItem.sourceRef` almacena el `pathname` de Vercel Blob (store privado `iso-saas-evidence`, ya aprovisionado con `BLOB_READ_WRITE_TOKEN` vinculado al proyecto). La escritura del binario es client upload autorizado por `POST /api/projects/[projectId]/evidence/upload-token`; la lectura, signed URL vía `GET /api/evidence/[evidenceId]/file`. El binario nunca atraviesa una función serverless en ninguno de los dos sentidos. Requiere `@vercel/blob` como dependencia — **no instalada todavía**.
 
 **Frontend**: En Phase 1 no existe UI dedicada de Evidence Graph. `/projects/[id]` es el candidato natural para listar/subir evidencia del proyecto; `/admin/audit-reports` es el candidato para las acciones de validación y vinculación a informe.
 
@@ -586,5 +660,5 @@ Los route handlers son thin: autentican, validan el shape del input y delegan al
 
 ## Open Questions
 
-1. **Endpoint de upload del binario** — este contrato asume que el cliente sube el archivo directamente a Vercel Blob (client upload) y luego envía el `pathname` resultante a `POST .../evidence` o `PATCH .../evidence/[id]`. Falta definir si se usa `handleUpload` de `@vercel/blob/client` con un token de cliente, o una ruta server-side intermedia. Se resuelve en implementación, no bloquea el contrato.
+1. **Endpoint de upload del binario** — ✅ **Resuelto (2026-08-05, ADR-004 decisión #3)**: client upload directo a Vercel Blob, autorizado por `POST /api/projects/[projectId]/evidence/upload-token`, que es donde se aplican sesión, RBAC y tenant. El cliente envía después el `pathname` resultante como `sourceRef`. Se descartó la ruta server-side que recibe el fichero por el límite de ~4,5 MB del body en funciones serverless, incompatible con planos BIM e informes de proyecto. La firma exacta de la API de `@vercel/blob` se verifica en implementación.
 2. **Notificación efectiva al Contradiction Engine** — el contrato deja el side effect de `linkType = contradictory` como una simple transición de estado (ADR-003). Cuando el Contradiction Engine exista, puede requerir un campo adicional de correlación; no se anticipa aquí.
