@@ -8,9 +8,9 @@ datasource db {
 }
 
 model Company {
-  id        String    @id @default(cuid())
+  id        String   @id @default(cuid())
   name      String
-  createdAt DateTime  @default(now())
+  createdAt DateTime @default(now())
 
   users      User[]
   projects   Project[]
@@ -19,17 +19,17 @@ model Company {
 }
 
 model User {
-  id              String    @id @default(cuid())
-  email           String    @unique
-  name            String?
-  password        String
-  role            String    @default("user")
-  status          String    @default("active")
-  createdAt       DateTime  @default(now())
-  notifyAlerts    Boolean   @default(true)
-  notifyReports   Boolean   @default(false)
-  reportFrequency String    @default("weekly")
-  lastAlertEmailAt DateTime?
+  id                String    @id @default(cuid())
+  email             String    @unique
+  name              String?
+  password          String
+  role              String    @default("user")
+  status            String    @default("active")
+  createdAt         DateTime  @default(now())
+  notifyAlerts      Boolean   @default(true)
+  notifyReports     Boolean   @default(false)
+  reportFrequency   String    @default("weekly")
+  lastAlertEmailAt  DateTime?
   lastReportEmailAt DateTime?
 
   companyId           String?
@@ -38,6 +38,12 @@ model User {
   passwordResetTokens PasswordResetToken[]
   auditReports        AuditReport[]
   auditorProfile      Auditor?
+
+  evidenceItemsCreated     EvidenceItem[]            @relation("EvidenceCreator")
+  evidenceLinksAdded       EvidenceRequirementLink[] @relation("EvidenceLinkAdder")
+  evidenceReportLinksAdded EvidenceReportLink[]      @relation("ReportLinkAdder")
+  evidenceValidations      EvidenceValidation[]      @relation("EvidenceValidator")
+  evidenceVersionsCreated  EvidenceItemVersion[]     @relation("EvidenceVersionCreator")
 }
 
 model Project {
@@ -47,36 +53,39 @@ model Project {
   role      String   @default("adjudicatario")
   createdAt DateTime @default(now())
 
-  userId    String
-  user      User     @relation(fields: [userId], references: [id])
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
 
   companyId String?
   company   Company? @relation(fields: [companyId], references: [id])
 
-  requirements Requirement[]
-  auditReports AuditReport[]
-  auditTeams   AuditTeam[]
+  requirements  Requirement[]
+  auditReports  AuditReport[]
+  auditTeams    AuditTeam[]
+  evidenceItems EvidenceItem[]
 }
 
 model Requirement {
-  id        String    @id @default(cuid())
-  name      String
-  titulo    String    @default("")
-  descripcion String  @default("")
-  norma     String?
-  item      String?
-  evidencia String?
-  status    String
-  completed Boolean   @default(false)
-  deadline  DateTime?
+  id             String    @id @default(cuid())
+  name           String
+  titulo         String    @default("")
+  descripcion    String    @default("")
+  norma          String?
+  item           String?
+  evidencia      String?
+  status         String
+  completed      Boolean   @default(false)
+  deadline       DateTime?
   lastNotifiedAt DateTime?
-  createdAt DateTime  @default(now())
+  createdAt      DateTime  @default(now())
 
   projectId String
   project   Project @relation(fields: [projectId], references: [id])
 
   templateId String?
   template   RequirementTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
+
+  evidenceLinks EvidenceRequirementLink[]
 
   @@unique([projectId, templateId])
 }
@@ -94,7 +103,7 @@ model RequirementTemplate {
   deadline      DateTime?
   createdAt     DateTime  @default(now())
 
-  requirements  Requirement[]
+  requirements Requirement[]
 
   @@unique([norma, item, titulo, descripcion, role])
 }
@@ -113,34 +122,34 @@ model PasswordResetToken {
 }
 
 model AuditReport {
-  id                 String   @id @default(cuid())
-  auditId            String
-  reportNumber       String
-  version            Int      @default(1)
-  status             String   @default("draft")
-  auditType          String
-  scope              String
-  auditedOrgName     String
-  auditedOrgAddress  String?
-  auditedOrgRep      String?
-  leadAuditor        String
-  auditors           Json
-  technicalExperts   Json
-  auditStartDate     DateTime
-  auditEndDate       DateTime
-  reportDate         DateTime
+  id                  String   @id @default(cuid())
+  auditId             String
+  reportNumber        String
+  version             Int      @default(1)
+  status              String   @default("draft")
+  auditType           String
+  scope               String
+  auditedOrgName      String
+  auditedOrgAddress   String?
+  auditedOrgRep       String?
+  leadAuditor         String
+  auditors            Json
+  technicalExperts    Json
+  auditStartDate      DateTime
+  auditEndDate        DateTime
+  reportDate          DateTime
   applicableStandards Json
-  sourceData         Json
-  generatedContent   Json
-  traceability       Json
-  complianceScore    Int
-  maturityScore      Int
-  riskScore          Int
-  confidenceScore    Int
-  globalStatus       String
-  finalOpinion       String
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
+  sourceData          Json
+  generatedContent    Json
+  traceability        Json
+  complianceScore     Int
+  maturityScore       Int
+  riskScore           Int
+  confidenceScore     Int
+  globalStatus        String
+  finalOpinion        String
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
 
   projectId String
   project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
@@ -151,7 +160,8 @@ model AuditReport {
   auditTeamId String?
   auditTeam   AuditTeam? @relation(fields: [auditTeamId], references: [id], onDelete: SetNull)
 
-  versions AuditReportVersion[]
+  versions      AuditReportVersion[]
+  evidenceLinks EvidenceReportLink[]
 
   @@unique([reportNumber, version])
   @@index([projectId])
@@ -160,18 +170,18 @@ model AuditReport {
 }
 
 model AuditReportVersion {
-  id               String   @id @default(cuid())
-  version          Int
-  status           String
-  snapshot         Json
-  traceability     Json
-  complianceScore  Int
-  maturityScore    Int
-  riskScore        Int
-  confidenceScore  Int
-  globalStatus     String
-  finalOpinion     String
-  createdAt        DateTime @default(now())
+  id              String   @id @default(cuid())
+  version         Int
+  status          String
+  snapshot        Json
+  traceability    Json
+  complianceScore Int
+  maturityScore   Int
+  riskScore       Int
+  confidenceScore Int
+  globalStatus    String
+  finalOpinion    String
+  createdAt       DateTime @default(now())
 
   reportId String
   report   AuditReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
@@ -221,10 +231,10 @@ model AuditTeam {
   updatedAt   DateTime @updatedAt
   createdById String
 
-  company  Company           @relation(fields: [companyId], references: [id], onDelete: Restrict)
-  project  Project           @relation(fields: [projectId], references: [id], onDelete: Restrict)
-  members  AuditTeamMember[]
-  reports  AuditReport[]
+  company Company           @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  project Project           @relation(fields: [projectId], references: [id], onDelete: Restrict)
+  members AuditTeamMember[]
+  reports AuditReport[]
 
   @@index([companyId])
   @@index([projectId])
@@ -252,4 +262,115 @@ model AuditTeamMember {
   @@unique([auditTeamId, auditorId])
   @@index([auditTeamId])
   @@index([auditorId])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// EVIDENCE GRAPH — Core entity
+// ─────────────────────────────────────────────────────────────────────────────
+
+model EvidenceItem {
+  id          String   @id @default(cuid())
+  projectId   String // tenant isolation via project → company
+  title       String
+  description String   @default("")
+  type        String // "document" | "record" | "declaration"
+  sourceRef   String? // URL, file path, or external reference ID
+  status      String   @default("draft") // "draft" | "submitted" | "under_review" | "validated" | "rejected" | "archived"
+  version     Int      @default(1) // incremented on each content change
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  createdBy   String // userId
+  updatedBy   String? // userId — last modifier
+
+  project          Project                   @relation(fields: [projectId], references: [id], onDelete: Restrict)
+  creator          User                      @relation("EvidenceCreator", fields: [createdBy], references: [id], onDelete: Restrict)
+  requirementLinks EvidenceRequirementLink[]
+  reportLinks      EvidenceReportLink[]
+  validations      EvidenceValidation[]
+  versions         EvidenceItemVersion[]
+
+  @@index([projectId])
+  @@index([createdBy])
+  @@index([status])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// EVIDENCE GRAPH — Many-to-many: EvidenceItem ↔ Requirement
+// ─────────────────────────────────────────────────────────────────────────────
+
+model EvidenceRequirementLink {
+  id             String   @id @default(cuid())
+  evidenceItemId String
+  requirementId  String
+  linkType       String   @default("supporting") // "primary" | "supporting" | "contradictory"
+  addedAt        DateTime @default(now())
+  addedBy        String // userId
+
+  evidenceItem EvidenceItem @relation(fields: [evidenceItemId], references: [id], onDelete: Cascade)
+  requirement  Requirement  @relation(fields: [requirementId], references: [id], onDelete: Cascade)
+  addedByUser  User         @relation("EvidenceLinkAdder", fields: [addedBy], references: [id], onDelete: Restrict)
+
+  @@unique([evidenceItemId, requirementId])
+  @@index([evidenceItemId])
+  @@index([requirementId])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// EVIDENCE GRAPH — Many-to-many: EvidenceItem ↔ AuditReport (traceability)
+// ─────────────────────────────────────────────────────────────────────────────
+
+model EvidenceReportLink {
+  id             String   @id @default(cuid())
+  evidenceItemId String
+  auditReportId  String
+  usedAs         String   @default("supporting") // "supporting" | "conclusion_basis" | "referenced"
+  addedAt        DateTime @default(now())
+  addedBy        String // userId
+
+  evidenceItem EvidenceItem @relation(fields: [evidenceItemId], references: [id], onDelete: Cascade)
+  auditReport  AuditReport  @relation(fields: [auditReportId], references: [id], onDelete: Cascade)
+  addedByUser  User         @relation("ReportLinkAdder", fields: [addedBy], references: [id], onDelete: Restrict)
+
+  @@unique([evidenceItemId, auditReportId])
+  @@index([evidenceItemId])
+  @@index([auditReportId])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// EVIDENCE GRAPH — Human-in-the-loop validation trail
+// ─────────────────────────────────────────────────────────────────────────────
+
+model EvidenceValidation {
+  id             String   @id @default(cuid())
+  evidenceItemId String
+  outcome        String // "approved" | "rejected" | "pending_clarification"
+  notes          String   @default("")
+  validatedAt    DateTime @default(now())
+  validatedBy    String // userId
+
+  evidenceItem EvidenceItem @relation(fields: [evidenceItemId], references: [id], onDelete: Cascade)
+  validator    User         @relation("EvidenceValidator", fields: [validatedBy], references: [id], onDelete: Restrict)
+
+  @@index([evidenceItemId])
+  @@index([validatedBy])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// EVIDENCE GRAPH — Governance snapshot (follows AuditReport/AuditReportVersion pattern)
+// ─────────────────────────────────────────────────────────────────────────────
+
+model EvidenceItemVersion {
+  id             String   @id @default(cuid())
+  evidenceItemId String
+  version        Int
+  snapshot       Json // full EvidenceItem state at this version
+  changeReason   String   @default("") // why this version was created
+  createdAt      DateTime @default(now())
+  createdBy      String // userId
+
+  evidenceItem EvidenceItem @relation(fields: [evidenceItemId], references: [id], onDelete: Cascade)
+  creator      User         @relation("EvidenceVersionCreator", fields: [createdBy], references: [id], onDelete: Restrict)
+
+  @@unique([evidenceItemId, version])
+  @@index([evidenceItemId])
 }
