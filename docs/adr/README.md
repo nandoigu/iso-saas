@@ -11,3 +11,4 @@ ADRs follow the Nygard format enriched with BAOS governance fields.
 | ADR-002 | Use tenant_id Column for Multi-Tenant Isolation in Prisma | Accepted | 2026-06-30 |
 | ADR-003 | Evidence Graph Phase 1 Scoping Decisions | Accepted | 2026-07-01 |
 | ADR-004 | Evidence Graph Implementation Decisions — Lifecycle, Route Convention and Binary Upload | Accepted | 2026-08-05 |
+| ADR-005 | Ciclo de cierre de auditoría — exportar, purgar y liberar espacio | Accepted | 2026-08-06 |
