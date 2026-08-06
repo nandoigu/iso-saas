@@ -93,7 +93,7 @@ Este componente añade fixtures nuevas a `tests/helpers/db.ts` (`createEvidenceI
 | HP-06 | `POST .../requirement-links` (admin) con `linkType: supporting` | 201 |
 | HP-07 | `DELETE .../requirement-links/[linkId]` (admin) | 200 |
 | HP-08 | `POST .../validate` (admin) con `outcome: approved` | 201 + evidencia pasa a `status: validated` |
-| HP-09 | `POST .../report-links` (admin) sobre evidencia `validated` y report no `final` | 201 |
+| HP-09 | `POST .../report-links` (admin) sobre evidencia `validated` y report abierto (`draft`) | 201 |
 | HP-10 | `GET .../file` (dueño o admin) con `sourceRef` presente | 200 + `url` + `expiresAt` |
 
 ### VAL — Validación de entrada
@@ -120,7 +120,8 @@ Este componente añade fixtures nuevas a `tests/helpers/db.ts` (`createEvidenceI
 | INV-04 | Dos `PATCH` consecutivos sobre la misma evidencia crean versiones `2` y `3` sin colisión | `EvidenceItemVersion.version` estrictamente creciente | #4 |
 | INV-05 | Tras un `PATCH`, `EvidenceItem.version` coincide con el `version` más alto en `EvidenceItemVersion` | Igual | #5 |
 | INV-06 | `POST .../requirement-links` con `linkType: contradictory` | `EvidenceItem.status → under_review` | #6 |
-| INV-07 | `POST .../report-links` sobre `AuditReport.status: final` | 409 | #7 |
+| INV-07a | `POST .../report-links` sobre `AuditReport.status: signed` | 409 | #7 |
+| INV-07b | `POST .../report-links` sobre `AuditReport.status: finalizado` | 409 | #7 |
 | INV-08 | Eliminar un `Requirement` que tiene `EvidenceRequirementLink` asociado | El link se elimina en cascada; el `EvidenceItem` NO se elimina (queda huérfano, revisable) | #8 |
 | INV-09 | `PATCH /api/evidence/[id]` cuando `status ∈ {validated, archived}` | 409 | api-contract, regla de inmutabilidad |
 | INV-10 | `POST .../validate` con `outcome: rejected` sobre evidencia `status: submitted` | `status → rejected`, evidencia vuelve a ser editable | Domain model — flujo de rechazo |

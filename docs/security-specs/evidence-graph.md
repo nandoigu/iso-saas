@@ -138,7 +138,7 @@ Estas reglas se aplican en `evidence.service.ts`, no en el route handler ni en e
 | `EvidenceItemVersion.version` monotónico, no reutilizable (#4) | `PATCH /api/evidence/[id]` — dentro de transacción Prisma | Error 500 si se detecta colisión (no debería ocurrir con lógica correcta) |
 | `EvidenceItem.version` = máximo `EvidenceItemVersion.version` (#5) | Igual que arriba | Igual |
 | `linkType = contradictory` fuerza `status = under_review` (#6) | `POST .../requirement-links` | Side effect automático, no bloqueante |
-| `EvidenceReportLink` bloqueado si `AuditReport.status = final` (#7) | `POST .../report-links` | `409 Conflict` |
+| `EvidenceReportLink` bloqueado si el informe está cerrado — `AuditReport.status = signed` o `finalizado` (#7) | `POST .../report-links` | `409 Conflict` |
 | Evidencia con status `validated`/`archived` inmutable por `PATCH` | `PATCH /api/evidence/[id]` | `409 Conflict` |
 
 **Las verificaciones de #1, #2 y #7 deben ejecutarse dentro de una transacción Prisma** cuando implican leer un estado y escribir en la misma operación (evita race conditions entre dos admins operando sobre la misma evidencia).
@@ -204,7 +204,7 @@ Resultado esperado: `Count` igual al número de evidencias registradas en ese pr
 1. **401 inesperado**: verificar que la cookie `bmo_session` está presente y no ha expirado
 2. **403 en endpoints admin-only**: verificar `role = admin` en BD para el usuario
 3. **404 en `GET .../file`**: revisar que `sourceRef` no esté vacío y que el `pathname` exista en el store de Vercel Blob
-4. **409 en `POST .../report-links`**: revisar que `EvidenceItem.status = validated` y que el `AuditReport` destino no esté `final`
+4. **409 en `POST .../report-links`**: revisar que `EvidenceItem.status = validated` y que el `AuditReport` destino no esté cerrado (`signed`/`finalizado`)
 5. **500 en `GET .../file`**: probable fallo de `BLOB_READ_WRITE_TOKEN` ausente o expirado — revisar variables de entorno en Vercel
 6. **500 en queries generales**: revisar logs de Vercel Functions — buscar `ERROR POST /api/evidence` o `ERROR PATCH /api/evidence`
 7. **Prisma error en producción**: la migración probablemente no se ejecutó — verificar con `prisma migrate status`

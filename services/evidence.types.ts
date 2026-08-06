@@ -50,12 +50,13 @@ export const EVIDENCE_VALIDATION_OUTCOMES: EvidenceValidationOutcome[] = [
 export const IMMUTABLE_EVIDENCE_STATUSES: EvidenceStatus[] = ["validated", "archived"];
 
 /**
- * Invariant #7 del domain model: un informe finalizado no admite citas nuevas.
+ * Invariant #7 del domain model: un informe cerrado no admite citas nuevas.
  *
- * El domain model nombra ese estado `final`, pero ese valor NO existe en este
- * codigo: los estados que marcan un informe cerrado son `signed` y `finalizado`
- * (ver audit-team.service.ts, que bloquea contra esos dos). Se cubren los tres
- * para que la invariante no quede muerta si el contrato se corrige mas adelante.
+ * Los estados reales que cierran un informe son `signed` y `finalizado` (ver
+ * audit-team.service.ts, que bloquea contra esos dos). El api-contract definia la
+ * invariante contra un `final` inexistente; corregido el 2026-08-06. `final` se
+ * mantiene en la lista por si algun dia se introduce: cubrir de mas no puede
+ * romper nada, quedarse corto dejaria pasar citas a un informe firmado.
  */
 export const IMMUTABLE_AUDIT_REPORT_STATUSES = ["final", "signed", "finalizado"];
 

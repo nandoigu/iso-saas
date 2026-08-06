@@ -232,7 +232,7 @@ evidenceVersionsCreated  EvidenceItemVersion[]     @relation("EvidenceVersionCre
 
 6. `EvidenceRequirementLink.linkType = "contradictory"` triggers a mandatory review: the item's status must be reset to `"under_review"` and the contradiction flagged to the Contradiction Engine.
 
-7. An `EvidenceReportLink` cannot be added to an `AuditReport` with `status = "final"` — final reports are immutable.
+7. An `EvidenceReportLink` cannot be added to a closed `AuditReport` — `status = "signed"` or `"finalizado"`. Closed reports are immutable. *(Corregido 2026-08-06: este punto decía `status = "final"`, valor inexistente en la implementación. Los estados reales de cierre son los que ya recoge `docs/domain-models/audit-team.md` y comprueba `audit-team.service.ts`.)*
 
 8. Deleting a `Requirement` cascades to `EvidenceRequirementLink` but NOT to `EvidenceItem` itself. An evidence item linked to a deleted requirement is not automatically deleted; it becomes an orphan evidence that must be reviewed.
 

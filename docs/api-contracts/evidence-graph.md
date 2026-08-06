@@ -5,8 +5,16 @@
 > Component Spec: docs/component-specs/evidence-graph.md
 > ADR: docs/adr/ADR-003-evidence-graph-phase1-scoping.md · docs/adr/ADR-004-evidence-graph-implementation-decisions.md
 > Phase: Phase 1 — Technological Foundation
-> Date: 2026-07-01 (revisado 2026-08-05 — ADR-004)
+> Date: 2026-07-01 (revisado 2026-08-05 — ADR-004; corregido 2026-08-06 — invariant #7)
 > Status: Draft
+
+> **Corrección 2026-08-06 (invariant #7)**: este contrato definía el bloqueo de citas
+> contra `AuditReport.status = "final"`. **Ese valor no existe en la implementación**:
+> los estados que marcan un informe cerrado son `signed` y `finalizado`, como ya
+> recogía `docs/domain-models/audit-team.md` y como comprueba `audit-team.service.ts`.
+> Escrita al pie de la letra, la invariante nunca se habría disparado y un informe
+> firmado habría aceptado citas nuevas mientras la checklist afirmaba lo contrario.
+> Corregido aquí; ver `IMMUTABLE_AUDIT_REPORT_STATUSES` en `services/evidence.types.ts`.
 
 ## Summary
 
@@ -444,7 +452,7 @@ type AddReportLinkRequest = {
 #### Validation Rules
 
 - `evidenceItem.status` debe ser `validated` (invariant #2) — 409 en caso contrario
-- `auditReport.status` no puede ser `final` (invariant #7) — 409 en caso contrario
+- `auditReport.status` no puede ser `signed` ni `finalizado` (invariant #7) — 409 en caso contrario
 - Único por `[evidenceItemId, auditReportId]` — 409 si ya existe el vínculo
 
 #### Response — 201 Created
@@ -463,7 +471,7 @@ type AddReportLinkResponse = {
 | 401 | Sin sesión válida |
 | 403 | Usuario no es admin |
 | 404 | Evidencia o informe no encontrado en el tenant |
-| 409 | Evidencia no validada, informe `final`, o vínculo ya existente |
+| 409 | Evidencia no validada, informe cerrado (`signed`/`finalizado`), o vínculo ya existente |
 
 ---
 
@@ -609,7 +617,7 @@ export type CreateEvidenceValidationInput = {
 - [x] `projectId`/`createdBy`/`validatedBy` nunca aceptados desde el body cuando deben inyectarse desde sesión o ruta
 - [x] Mutaciones de contenido (`PATCH`) crean snapshot en `EvidenceItemVersion` (governance-first)
 - [x] Ninguna transición a `validated`/`rejected` ocurre sin un `EvidenceValidation` con `validatedBy` humano (invariant #1)
-- [x] `EvidenceReportLink` bloqueado si la evidencia no está `validated` o el informe es `final` (invariants #2, #7)
+- [x] `EvidenceReportLink` bloqueado si la evidencia no está `validated` o el informe está cerrado — `signed`/`finalizado` (invariants #2, #7)
 - [x] `DELETE` bloqueado si existen `EvidenceReportLink` (invariant #3)
 - [x] Acceso a archivo fuente solo vía signed URL de corta duración, nunca URL pública (ADR-003)
 - [x] Respuestas de error usan 404 (no 403) para recursos fuera del tenant del usuario

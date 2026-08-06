@@ -13,6 +13,24 @@ import {
   type UpdateEvidenceItemInput,
 } from "@/services/evidence.types";
 
+/**
+ * Opciones para las transacciones que leen un estado y escriben en funcion de el.
+ *
+ * El security-spec exige transaccion en las invariantes #1, #2 y #7 para evitar
+ * carreras entre dos admins operando sobre la misma evidencia. Se aplica tambien a
+ * la #3, que comparte el patron y tiene la peor consecuencia: entre el recuento de
+ * citas y el borrado, otro admin puede citar la evidencia, y como el vinculo cae en
+ * cascada, la cita desapareceria de un informe sin dejar rastro.
+ *
+ * `Serializable` es necesario, no decorativo: con el nivel por defecto de Postgres
+ * (READ COMMITTED) leer dentro de la transaccion no bloquea la fila, y la carrera
+ * seguiria abierta. Bajo contencion Postgres aborta una de las dos transacciones en
+ * vez de permitir el resultado inconsistente.
+ */
+const GUARDED_TRANSACTION = {
+  isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
+} as const;
+
 const EVIDENCE_SUMMARY_SELECT = {
   id: true,
   projectId: true,
@@ -186,21 +204,26 @@ export async function updateEvidenceItem(
  * Los vinculos a requisito, validaciones y versiones caen en cascada por schema.
  */
 export async function deleteEvidenceItem(evidenceId: string, actor: EvidenceActor) {
-  const evidence = await prisma.evidenceItem.findFirst({
-    where: { id: evidenceId, ...evidenceTenantWhere(actor) },
-    select: { id: true, _count: { select: { reportLinks: true } } },
-  });
-  if (!evidence) return { notFound: true as const };
+  return prisma.$transaction(
+    async (tx) => {
+      const evidence = await tx.evidenceItem.findFirst({
+        where: { id: evidenceId, ...evidenceTenantWhere(actor) },
+        select: { id: true, _count: { select: { reportLinks: true } } },
+      });
+      if (!evidence) return { notFound: true as const };
 
-  if (evidence._count.reportLinks > 0) {
-    return {
-      conflict:
-        "La evidencia esta citada en un informe de auditoria y no se puede eliminar. Archivala en su lugar." as const,
-    };
-  }
+      if (evidence._count.reportLinks > 0) {
+        return {
+          conflict:
+            "La evidencia esta citada en un informe de auditoria y no se puede eliminar. Archivala en su lugar." as const,
+        };
+      }
 
-  await prisma.evidenceItem.delete({ where: { id: evidenceId } });
-  return { deleted: true as const, id: evidenceId };
+      await tx.evidenceItem.delete({ where: { id: evidenceId } });
+      return { deleted: true as const, id: evidenceId };
+    },
+    GUARDED_TRANSACTION
+  );
 }
 
 /**
@@ -308,41 +331,44 @@ export async function removeEvidenceRequirementLink(evidenceId: string, linkId: 
  * para que no pueda existir uno sin el otro.
  */
 export async function createEvidenceValidation(input: CreateEvidenceValidationInput) {
-  const evidence = await prisma.evidenceItem.findUnique({
-    where: { id: input.evidenceItemId },
-    select: { id: true, status: true },
-  });
-  if (!evidence) return { notFound: true as const };
+  return prisma.$transaction(
+    async (tx) => {
+      const evidence = await tx.evidenceItem.findUnique({
+        where: { id: input.evidenceItemId },
+        select: { id: true, status: true },
+      });
+      if (!evidence) return { notFound: true as const };
 
-  if (evidence.status === "archived") {
-    return { conflict: "Una evidencia archivada no se puede validar." as const };
-  }
+      if (evidence.status === "archived") {
+        return { conflict: "Una evidencia archivada no se puede validar." as const };
+      }
 
-  const nextStatus: EvidenceStatus =
-    input.outcome === "approved"
-      ? "validated"
-      : input.outcome === "rejected"
-        ? "rejected"
-        : "under_review";
+      const nextStatus: EvidenceStatus =
+        input.outcome === "approved"
+          ? "validated"
+          : input.outcome === "rejected"
+            ? "rejected"
+            : "under_review";
 
-  return prisma.$transaction(async (tx) => {
-    const validation = await tx.evidenceValidation.create({
-      data: {
-        evidenceItemId: input.evidenceItemId,
-        outcome: input.outcome,
-        notes: input.notes ?? "",
-        validatedBy: input.validatedBy,
-      },
-    });
+      const validation = await tx.evidenceValidation.create({
+        data: {
+          evidenceItemId: input.evidenceItemId,
+          outcome: input.outcome,
+          notes: input.notes ?? "",
+          validatedBy: input.validatedBy,
+        },
+      });
 
-    const updated = await tx.evidenceItem.update({
-      where: { id: input.evidenceItemId },
-      data: { status: nextStatus },
-      select: { status: true },
-    });
+      const updated = await tx.evidenceItem.update({
+        where: { id: input.evidenceItemId },
+        data: { status: nextStatus },
+        select: { status: true },
+      });
 
-    return { validation, evidenceStatus: updated.status };
-  });
+      return { validation, evidenceStatus: updated.status };
+    },
+    GUARDED_TRANSACTION
+  );
 }
 
 // ─── EvidenceReportLink (admin) ──────────────────────────────────────────────
@@ -356,41 +382,44 @@ export async function createEvidenceValidation(input: CreateEvidenceValidationIn
  *   IMMUTABLE_AUDIT_REPORT_STATUSES sobre el desajuste de nombres con el contrato.
  */
 export async function addEvidenceReportLink(input: AddEvidenceReportLinkInput) {
-  const evidence = await prisma.evidenceItem.findUnique({
-    where: { id: input.evidenceItemId },
-    select: { id: true, projectId: true, status: true },
-  });
-  if (!evidence) return { notFound: "evidence" as const };
-
-  const report = await prisma.auditReport.findFirst({
-    where: { id: input.auditReportId, projectId: evidence.projectId },
-    select: { id: true, status: true },
-  });
-  if (!report) return { notFound: "report" as const };
-
-  if (evidence.status !== "validated") {
-    return {
-      conflict:
-        "Solo se puede citar en un informe una evidencia validada." as const,
-    };
-  }
-
-  if (IMMUTABLE_AUDIT_REPORT_STATUSES.includes(report.status)) {
-    return {
-      conflict: "El informe esta cerrado y no admite citas nuevas." as const,
-    };
-  }
-
   try {
-    const link = await prisma.evidenceReportLink.create({
-      data: {
-        evidenceItemId: input.evidenceItemId,
-        auditReportId: input.auditReportId,
-        usedAs: input.usedAs ?? "supporting",
-        addedBy: input.addedBy,
+    return await prisma.$transaction(
+      async (tx) => {
+        const evidence = await tx.evidenceItem.findUnique({
+          where: { id: input.evidenceItemId },
+          select: { id: true, projectId: true, status: true },
+        });
+        if (!evidence) return { notFound: "evidence" as const };
+
+        const report = await tx.auditReport.findFirst({
+          where: { id: input.auditReportId, projectId: evidence.projectId },
+          select: { id: true, status: true },
+        });
+        if (!report) return { notFound: "report" as const };
+
+        if (evidence.status !== "validated") {
+          return {
+            conflict: "Solo se puede citar en un informe una evidencia validada." as const,
+          };
+        }
+
+        if (IMMUTABLE_AUDIT_REPORT_STATUSES.includes(report.status)) {
+          return { conflict: "El informe esta cerrado y no admite citas nuevas." as const };
+        }
+
+        const link = await tx.evidenceReportLink.create({
+          data: {
+            evidenceItemId: input.evidenceItemId,
+            auditReportId: input.auditReportId,
+            usedAs: input.usedAs ?? "supporting",
+            addedBy: input.addedBy,
+          },
+        });
+
+        return { link };
       },
-    });
-    return { link };
+      GUARDED_TRANSACTION
+    );
   } catch (e: unknown) {
     if (isPrismaUniqueError(e)) {
       return { conflict: "Esa evidencia ya esta citada en ese informe." as const };
