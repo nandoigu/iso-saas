@@ -1,3 +1,4 @@
+import { Prisma } from "@prisma/client";
 import { NextResponse } from "next/server";
 import {
   BLOCKED_ACCOUNT_MESSAGE,
@@ -119,7 +120,16 @@ export async function DELETE(req: Request, context: RouteContext) {
       return forbidden("No tienes permisos para eliminar este proyecto.");
     }
 
-    await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx) => {
+      // `EvidenceItem` y `AuditTeam` son `onDelete: Restrict`: el borrado del
+      // proyecto rebota en la clave foranea. Se comprueba antes para poder explicar
+      // que bloquea, en vez de devolver un 500 opaco. El recuento va dentro de la
+      // transaccion para que no cambie entre la comprobacion y el borrado.
+      const blockers = await getDeletionBlockers(tx, projectId);
+      if (blockers.length > 0) {
+        return { deleted: false as const, blockers };
+      }
+
       await tx.requirement.deleteMany({
         where: {
           projectId,
@@ -131,18 +141,85 @@ export async function DELETE(req: Request, context: RouteContext) {
           id: projectId,
         },
       });
+
+      return { deleted: true as const, blockers: [] as DeletionBlocker[] };
     });
+
+    if (!result.deleted) {
+      return NextResponse.json(
+        { error: buildBlockedMessage(result.blockers), blockedBy: result.blockers },
+        { status: 409 }
+      );
+    }
 
     return NextResponse.json({
       success: true,
     });
   } catch (error) {
+    // Red de seguridad: si algo se crea entre la comprobacion y el borrado, Postgres
+    // rechaza por clave foranea. Se traduce al mismo 409 en vez de a un 500.
+    if (isForeignKeyError(error)) {
+      return NextResponse.json(
+        {
+          error:
+            "No se puede eliminar el proyecto porque tiene informacion asociada que debe conservarse.",
+        },
+        { status: 409 }
+      );
+    }
+
     console.error("ERROR DELETE /api/projects/[id]:", error);
     return NextResponse.json(
       { error: "No se pudo eliminar el proyecto." },
       { status: 500 }
     );
   }
+}
+
+type DeletionBlocker = "evidence" | "auditTeam";
+
+async function getDeletionBlockers(
+  tx: Prisma.TransactionClient,
+  projectId: string
+): Promise<DeletionBlocker[]> {
+  const [evidenceCount, auditTeamCount] = await Promise.all([
+    tx.evidenceItem.count({ where: { projectId } }),
+    tx.auditTeam.count({ where: { projectId } }),
+  ]);
+
+  const blockers: DeletionBlocker[] = [];
+  if (evidenceCount > 0) blockers.push("evidence");
+  if (auditTeamCount > 0) blockers.push("auditTeam");
+  return blockers;
+}
+
+/**
+ * El mensaje explica el bloqueo y la salida real; no ofrece forzar el borrado.
+ *
+ * Borrar evidencia de una auditoria es precisamente lo que el principio
+ * evidence-first impide. La via prevista para retirar un proyecto cerrado es el
+ * ciclo de cierre (exportar → purgar → liberar) descrito en ADR-005, que todavia
+ * no esta implementado.
+ */
+function buildBlockedMessage(blockers: DeletionBlocker[]) {
+  const partes: string[] = [];
+  if (blockers.includes("evidence")) {
+    partes.push("evidencias registradas");
+  }
+  if (blockers.includes("auditTeam")) {
+    partes.push("equipos de auditoria asignados");
+  }
+
+  return `No se puede eliminar el proyecto porque tiene ${partes.join(" y ")}. Esa informacion sustenta la trazabilidad de la auditoria y no se descarta con el proyecto.`;
+}
+
+function isForeignKeyError(error: unknown): boolean {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    (error as { code: string }).code === "P2003"
+  );
 }
 
 export async function PUT(req: Request, context: RouteContext) {
