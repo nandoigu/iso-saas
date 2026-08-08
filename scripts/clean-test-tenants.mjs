@@ -15,7 +15,9 @@ import { PrismaClient } from "@prisma/client";
 
 config({ path: ".env.test", override: true });
 
-const TEST_HOST = "ep-round-lab-abx9w83m-pooler.eu-west-2.aws.neon.tech";
+// Rama Test de BAOS-produccion-fra (Frankfurt). Si se recrea la rama, el endpoint
+// cambia y hay que actualizarlo aqui: la guarda debe fallar en cerrado, no abrirse.
+const TEST_HOST = "ep-jolly-resonance-b2y3s9ni-pooler.c-6.eu-central-1.aws.neon.tech";
 const url = process.env.DATABASE_URL ?? "";
 if (!url.includes(TEST_HOST)) {
   console.error(`ABORTADO: DATABASE_URL no apunta a la rama de test (${TEST_HOST}).`);
