@@ -13,3 +13,4 @@ ADRs follow the Nygard format enriched with BAOS governance fields.
 | ADR-004 | Evidence Graph Implementation Decisions — Lifecycle, Route Convention and Binary Upload | Accepted | 2026-08-05 |
 | ADR-005 | Ciclo de cierre de auditoría — exportar, purgar y liberar espacio | Accepted | 2026-08-06 |
 | ADR-006 | El snapshot de versión describe el estado resultante, no el previo | Accepted | 2026-08-08 |
+| ADR-007 | Ubicar datos y cómputo en Frankfurt (UE) por jurisdicción | Accepted | 2026-08-08 |
