@@ -84,6 +84,12 @@ export async function PATCH(req: Request, context: RouteContext) {
     if ("notFound" in result) {
       return NextResponse.json({ error: "Evidencia no encontrada." }, { status: 404 });
     }
+    // Inalcanzable mientras la comprobacion de campos de arriba siga en su sitio; se
+    // mapea igualmente para que el servicio pueda endurecerse sin dejar el handler
+    // devolviendo un 500 por una rama no contemplada.
+    if ("invalid" in result) {
+      return NextResponse.json({ error: result.invalid }, { status: 400 });
+    }
     if ("conflict" in result) {
       return NextResponse.json({ error: result.conflict }, { status: 409 });
     }

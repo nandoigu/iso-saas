@@ -149,19 +149,38 @@ export async function createEvidenceItem(
  * Actualiza el contenido y deja constancia versionada del cambio.
  *
  * - Invariante #4/#5: incrementa `version` y fotografia el estado YA actualizado,
- *   de modo que los numeros de version son monotonos y nunca se reutilizan.
+ *   de modo que los numeros de version son monotonos y nunca se reutilizan (ADR-006).
  * - api-contract: bloqueado si la evidencia es `validated` o `archived`.
  * - api-contract: si estaba `rejected`, reingresa al flujo como `submitted`.
+ * - api-contract: exige al menos un campo de contenido. Sin esa guarda, una entrada
+ *   vacia incrementaria `version` y escribiria un snapshot identico al anterior:
+ *   ruido en el audit trail y una via para inflar el numero de version sin cambio
+ *   real. El handler ya lo corta antes, pero la regla vive tambien aqui porque este
+ *   es el limite donde se aplican las demas invariantes del componente.
  */
 export async function updateEvidenceItem(
   evidenceId: string,
   input: UpdateEvidenceItemInput,
   actor: EvidenceActor
 ) {
+  // El corte de tenant va primero, como en el resto del servicio: nada se decide
+  // sobre una evidencia que el actor no puede ver.
   const current = await prisma.evidenceItem.findFirst({
     where: { id: evidenceId, ...evidenceTenantWhere(actor) },
   });
   if (!current) return { notFound: true as const };
+
+  const hasContentChange =
+    input.title !== undefined ||
+    input.description !== undefined ||
+    input.sourceRef !== undefined;
+
+  if (!hasContentChange) {
+    return {
+      invalid:
+        "No hay nada que actualizar. Indica titulo, descripcion o archivo." as const,
+    };
+  }
 
   if (IMMUTABLE_EVIDENCE_STATUSES.includes(current.status as EvidenceStatus)) {
     return {

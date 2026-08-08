@@ -5,8 +5,8 @@
 > API Contract: docs/api-contracts/evidence-graph.md
 > Domain Model: docs/domain-models/evidence-graph.md
 > Security Spec: docs/security-specs/evidence-graph.md
-> Date: 2026-07-01
-> Status: Draft
+> Date: 2026-07-01 (implementado el 2026-08-08)
+> Status: Implementado — 74 tests en `tests/services/evidence.service.test.ts` (31) y `tests/api/evidence.test.ts` (43)
 
 ---
 
@@ -135,7 +135,7 @@ Este componente añade fixtures nuevas a `tests/helpers/db.ts` (`createEvidenceI
 | TRAIL-03 | `EvidenceValidation.validatedBy` = ID del admin que valida | Nunca aceptado del body — TENANT/AUTH test cruzado |
 | TRAIL-04 | `EvidenceRequirementLink.addedBy` / `EvidenceReportLink.addedBy` = ID del admin que crea el vínculo | Campo poblado |
 | VER-01 | `PATCH` con cambio de `title` crea un snapshot en `EvidenceItemVersion` | Count `EvidenceItemVersion` +1 |
-| VER-02 | El `snapshot` de la versión contiene el estado previo completo (no el nuevo) | Snapshot coincide con estado pre-PATCH |
+| VER-02 | El `snapshot` de la versión N contiene el estado resultante de esa versión (ADR-006) | Snapshot coincide con el estado post-PATCH, y `snapshot.version` == N |
 
 ### FILE — Acceso a archivo (Vercel Blob mockeado)
 
@@ -230,7 +230,15 @@ Pasos que no se automatizan en Phase 1 — requieren el store real de Vercel Blo
 
 ---
 
-## Open Questions
+## Open Questions — cerradas el 2026-08-08 al implementar
 
-1. **¿`PATCH` con body vacío responde 200 no-op o 400?** — Ver VAL-09. Se decide en implementación; no bloquea el resto del plan.
-2. **¿Se necesita una fixture `createAuditReportFixture` nueva o se reutiliza la de Audit Team?** — Revisar `tests/helpers/db.ts` al implementar; si ya existe un helper de `AuditReport` de otra suite, reutilizarlo en vez de duplicar.
+1. **¿`PATCH` con body vacío responde 200 no-op o 400?** — **Resuelto: 400.** Un no-op incrementaría `version` y crearía un snapshot sin cambio de contenido: ruido en el audit trail y una vía para inflar el número de versión. La regla se aplica en el handler y en el servicio.
+2. **¿Se necesita una fixture `createAuditReportFixture` nueva o se reutiliza la de Audit Team?** — **Resuelto: se generalizó la existente.** `createSignedReport` pasó a delegar en `createAuditReport(projectId, auditTeamId, createdById, status)`, que admite cualquier estado. Sin duplicar.
+3. **¿El snapshot guarda el estado previo o el resultante?** — **Resuelto: el resultante (ADR-006).** El caso VER-02 de este plan afirmaba lo contrario y estaba equivocado; queda corregido arriba.
+
+## Desviaciones conocidas respecto a este plan
+
+| Caso | Estado |
+|------|--------|
+| HP-10, FILE-02 | **Pendientes de la Fase D.** Esperan 200 + signed URL; hoy el endpoint devuelve 501 porque `@vercel/blob` no es dependencia todavía. Hay tests que fijan el 501 provisional para que el cambio sea visible al integrar Blob. |
+| Nº de endpoints | El plan dice 10; la implementación son **12** (añade `POST .../submit` y el desglose de métodos por ruta). Todos cubiertos. |

@@ -1,6 +1,16 @@
 import { prisma } from "@/app/lib/prisma";
 import { hashPassword } from "@/app/lib/auth";
 
+/**
+ * Sufijo unico para fixtures. `Date.now()` a secas colisiona entre dos registros
+ * creados en el mismo milisegundo, que es lo normal dentro de un mismo test.
+ */
+let fixtureCounter = 0;
+function uid() {
+  fixtureCounter += 1;
+  return `${Date.now()}-${fixtureCounter}`;
+}
+
 // ─── Tenant setup ────────────────────────────────────────────────────────────
 
 export async function createTenant(suffix: string) {
@@ -50,7 +60,7 @@ export async function createAuditor(
     data: {
       companyId,
       name: "Test Auditor",
-      email: overrides.email ?? `auditor-${Date.now()}@test.local`,
+      email: overrides.email ?? `auditor-${uid()}@test.local`,
       isExternal: false,
       status: overrides.status ?? "active",
       createdById,
@@ -67,7 +77,7 @@ export async function createAuditTeam(
     data: {
       companyId,
       projectId,
-      auditId: `AUDIT-${Date.now()}`,
+      auditId: `AUDIT-${uid()}`,
       createdById,
     },
   });
@@ -85,17 +95,18 @@ export async function createMember(
   });
 }
 
-export async function createSignedReport(
+export async function createAuditReport(
   projectId: string,
   auditTeamId: string,
-  createdById: string
+  createdById: string,
+  status: string
 ) {
   return prisma.auditReport.create({
     data: {
-      auditId: `AUDIT-${Date.now()}`,
-      reportNumber: `RPT-${Date.now()}`,
+      auditId: `AUDIT-${uid()}`,
+      reportNumber: `RPT-${uid()}`,
       version: 1,
-      status: "signed",
+      status,
       auditType: "inicial",
       scope: "Test scope",
       auditedOrgName: "Test Org",
@@ -122,10 +133,91 @@ export async function createSignedReport(
   });
 }
 
+export async function createSignedReport(
+  projectId: string,
+  auditTeamId: string,
+  createdById: string
+) {
+  return createAuditReport(projectId, auditTeamId, createdById, "signed");
+}
+
+// ─── Evidence Graph fixtures ─────────────────────────────────────────────────
+
+export async function createRequirement(projectId: string, name = "Test Requirement") {
+  return prisma.requirement.create({
+    data: { projectId, name, status: "pendiente" },
+  });
+}
+
+export async function createEvidenceItem(
+  projectId: string,
+  createdById: string,
+  overrides: { title?: string; type?: string; status?: string; sourceRef?: string } = {}
+) {
+  return prisma.evidenceItem.create({
+    data: {
+      projectId,
+      title: overrides.title ?? "Test Evidence",
+      type: overrides.type ?? "document",
+      status: overrides.status ?? "draft",
+      sourceRef: overrides.sourceRef ?? null,
+      createdBy: createdById,
+    },
+  });
+}
+
+export async function createRequirementLink(
+  evidenceItemId: string,
+  requirementId: string,
+  addedById: string,
+  linkType = "supporting"
+) {
+  return prisma.evidenceRequirementLink.create({
+    data: { evidenceItemId, requirementId, linkType, addedBy: addedById },
+  });
+}
+
+/**
+ * Crea la validacion y aplica la transicion de estado que le corresponde, para que
+ * la fixture deje la evidencia en un estado coherente con la invariante #1.
+ */
+export async function createEvidenceValidation(
+  evidenceItemId: string,
+  validatedById: string,
+  outcome: string
+) {
+  const nextStatus =
+    outcome === "approved" ? "validated" : outcome === "rejected" ? "rejected" : "under_review";
+
+  const validation = await prisma.evidenceValidation.create({
+    data: { evidenceItemId, outcome, notes: "", validatedBy: validatedById },
+  });
+  await prisma.evidenceItem.update({
+    where: { id: evidenceItemId },
+    data: { status: nextStatus },
+  });
+  return validation;
+}
+
+export async function createReportLink(
+  evidenceItemId: string,
+  auditReportId: string,
+  addedById: string,
+  usedAs = "supporting"
+) {
+  return prisma.evidenceReportLink.create({
+    data: { evidenceItemId, auditReportId, usedAs, addedBy: addedById },
+  });
+}
+
 // ─── Cleanup ─────────────────────────────────────────────────────────────────
 
 export async function cleanupTenant(companyId: string) {
-  // Delete in dependency order
+  // Delete in dependency order.
+  // EvidenceItem va primero: su relacion con Project es `onDelete: Restrict`, asi que
+  // dejarla viva bloquearia el borrado del proyecto. Links, validaciones y versiones
+  // caen en cascada desde EvidenceItem.
+  await prisma.evidenceItem.deleteMany({ where: { project: { companyId } } });
   await prisma.auditTeamMember.deleteMany({
     where: { auditTeam: { companyId } },
   });

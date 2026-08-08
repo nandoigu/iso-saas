@@ -195,6 +195,8 @@ type UpdateEvidenceRequest = Partial<{
 #### Validation Rules
 
 - Bloqueado si `status ∈ {validated, archived}` — evidencia validada o archivada es inmutable por esta vía (409). Para corregir una evidencia validada, debe pasar primero por una nueva validación con `outcome = rejected` o `pending_clarification`.
+- **Al menos uno de `title`, `description` o `sourceRef` debe venir en el body (400).** Un `PATCH` sin campos de contenido no es un no-op inocuo: incrementaría `version` y escribiría un snapshot idéntico al anterior, ensuciando el audit trail e inflando el número de versión sin cambio real. La regla se aplica en el handler y también en el servicio, que es donde viven las demás invariantes del componente.
+- `title`, si viene, no puede quedar vacío tras `trim()` (400), ni superar 255 caracteres (400).
 
 #### Side Effects
 

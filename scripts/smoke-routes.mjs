@@ -33,6 +33,16 @@ const apiChecks = [
     expectedStatus: 401,
     name: "audit-teams list without session",
   },
+  {
+    path: "/api/projects/test-project-id/evidence",
+    expectedStatus: 401,
+    name: "evidence list without session",
+  },
+  {
+    path: "/api/evidence/nonexistent-id",
+    expectedStatus: 401,
+    name: "evidence detail without session",
+  },
 ];
 
 const failures = [];

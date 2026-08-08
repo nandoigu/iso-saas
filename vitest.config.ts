@@ -16,6 +16,11 @@ export default defineConfig({
       exclude: ["app/api/auth/**", "app/api/cron/**"],
     },
     pool: "forks",
+    // Los ficheros comparten una unica rama de Neon. En paralelo, cada fork abre su
+    // propio pool y las transacciones Serializable del Evidence Graph se bloquean
+    // entre si: la suite pasaba de ~45s a ~460s y Neon acababa cerrando conexiones
+    // en mitad del cleanup. En serie es determinista y mas rapida.
+    fileParallelism: false,
   },
   resolve: {
     alias: {
