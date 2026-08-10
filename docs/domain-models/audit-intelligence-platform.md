@@ -155,7 +155,7 @@ model AnalysisDocument {
 model AnalysisRun {
   id              String    @id @default(cuid())
   projectId       String // tenant isolation via project → company
-  status          String    @default("draft") // "draft" | "submitted" | "processing" | "completed" | "failed" | "expired" | "cancelled"
+  status          String    @default("draft") // "draft" | "submitted" | "processing" | "completed" | "closed" | "failed" | "expired" | "cancelled"
   modelId          String // p. ej. "claude-opus-5" — solicitado; el servido se registra en AiInference
   promptVersion    String // versión del prompt: un cambio de prompt es un cambio de sistema
   lessonSetVersion Int? // fijado AL ENVIAR y ya inmutable, aunque el lote tarde horas (ADR-009 D2)
@@ -166,12 +166,19 @@ model AnalysisRun {
   failureReason   String?
   requirementCount Int      @default(0) // requisitos incluidos en el run
   findingCount    Int       @default(0) // hallazgos efectivamente producidos
+
+  // ── Cierre: único momento en que las decisiones llegan al Requirement ──
+  closedAt        DateTime? // null hasta el cierre; una vez puesto, el run es inmutable
+  closedBy        String? // userId del auditor que cerró y propagó
+  propagatedCount Int       @default(0) // requisitos cuyo status cambió al cerrar
+
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
   requestedBy     String // userId
 
   project   Project           @relation(fields: [projectId], references: [id], onDelete: Restrict)
   requester User              @relation("AnalysisRunRequester", fields: [requestedBy], references: [id], onDelete: Restrict)
+  closer    User?             @relation("AnalysisRunCloser", fields: [closedBy], references: [id], onDelete: Restrict)
   findings  AnalysisFinding[]
   inferences AiInference[]
 
@@ -179,6 +186,7 @@ model AnalysisRun {
   @@index([status])
   @@index([providerBatchId])
   @@index([requestedBy])
+  @@index([closedBy])
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -425,7 +433,7 @@ model LessonSet {
 2. **La conformidad nunca se concluye del vacío.** `proposedClassification = "conforme"` exige `basis = "cited"`. Que un documento no diga lo contrario no demuestra que el requisito se cumpla; solo una cita puede sostener una conformidad.
 3. **Sin humano no hay decisión.** `AnalysisFinding.status` solo abandona `proposed` mediante una `FindingDecision` con `decidedBy` no nulo. `finalClassification` es null mientras el hallazgo siga en `proposed`, y después refleja siempre la decisión más reciente.
 4. **La obligación de plan correctivo se deriva y se congela.** Al registrar una decisión, `requiresCorrectiveAction` se calcula desde `finalClassification` —cierto para `no_conformidad_mayor` y `no_conformidad_menor`, falso para las otras tres— y no se vuelve a recalcular. Un cambio futuro de política no reescribe hallazgos históricos.
-5. **El sistema nunca escribe `Requirement.status`.** Propagar una decisión al requisito es una acción explícita y separada del auditor. Ninguna ruta de código del análisis puede modificar ese campo.
+5. **El sistema nunca escribe `Requirement.status` por su cuenta.** Propagar al requisito es una acción explícita del auditor y ocurre **únicamente en el cierre del run** (invariantes #24-26). Ninguna ruta del análisis —creación de hallazgos, reconciliación del lote, registro de decisiones— puede tocar ese campo.
 6. **Sin provenance no hay cita en informe.** Todo `AnalysisFinding` procede de al menos una `AiInference` con `modelId`, `modelVersion`, `promptVersion`, `inputDigest` y `parameters` no vacíos. Un hallazgo sin ella no puede vincularse a un `AuditReport`.
 7. **`citedText` es verbatim.** Se persiste exactamente como lo devuelve la API: sin normalizar espacios, sin recortar, sin reescribir. Toda su utilidad depende de que coincida literalmente con el documento.
 8. **Páginas coherentes.** `startPage >= 1` y `endPage >= startPage`. Base 1, como la API.
@@ -447,6 +455,15 @@ model LessonSet {
 21. **Retirar no reescribe el pasado.** Retirar una lección crea una versión nueva del set; los hallazgos producidos con versiones anteriores conservan su `lessonSetVersion` y siguen siendo reconstruibles. Se puede listar exactamente a qué hallazgos afectó una lección que resultó equivocada.
 22. **Solo un admin retira.** Promover es acto del auditor; retirar es acto de admin. Son dos permisos distintos sobre la misma entidad.
 23. **Solo lecciones activas se inyectan.** El snapshot de un `LessonSet` contiene únicamente lecciones en `status = active` en el momento de congelarlo.
+
+### Invariantes del cierre y la propagación
+
+Decisión del usuario (2026-08-10): la propagación al requisito ocurre **en bloque al cerrar el run**, no hallazgo a hallazgo.
+
+24. **No se cierra un run a medias.** Un `AnalysisRun` solo pasa a `closed` si **cero** de sus hallazgos siguen en `status = "proposed"`. El motivo es concreto: si el estado del proyecto se actualizase parcialmente, un informe generado durante la revisión mezclaría la auditoría anterior con la actual y no sería ninguna de las dos.
+25. **La propagación es atómica.** El cierre escribe `AnalysisRun.status`, `closedAt`, `closedBy`, `propagatedCount` y **todos** los `Requirement.status` afectados en una única transacción. No existe estado intermedio observable: o propaga entero o no propaga nada.
+26. **Cerrar es irreversible.** Con `closedAt` escrito, el run no admite decisiones nuevas, ni reapertura, ni cambio de estado. Re-evaluar exige un run nuevo, coherente con la invariante #12. Que el auditor cambie después el estado de un requisito a mano es legítimo y queda registrado como edición del requisito, no como decisión del run.
+27. **La correspondencia entre ejes es una tabla fija, no una heurística.** El cierre traduce `finalClassification` a `Requirement.status` por la tabla confirmada por el usuario (ver *Propagación al `Requirement`*, más abajo). Los hallazgos `rejected` no propagan nada: rechazar la propuesta deja el requisito exactamente como estaba.
 
 ---
 
@@ -498,6 +515,38 @@ Dos consecuencias, ninguna resuelta en este modelo:
 
 Queda **fuera del alcance de este componente** y anotado como trabajo del módulo de informes.
 
+### Propagación al `Requirement`
+
+**Cerrada por decisión del usuario el 2026-08-10.** La propagación ocurre **en bloque al cerrar el run**, en una sola transacción, y solo la ejecuta el auditor (invariantes #24-27).
+
+Correspondencia entre los dos ejes:
+
+| `finalClassification` | `Requirement.status` |
+|---|---|
+| `conforme` | `conforme` |
+| `no_conformidad_mayor` | `no_conforme` |
+| `no_conformidad_menor` | `no_conforme` |
+| `observacion` | `parcial` |
+| `oportunidad_mejora` | `conforme` |
+| *(hallazgo `rejected`)* | **sin cambio** |
+
+`observacion → parcial` es criterio expreso del usuario: **`parcial` es más objetivo que «menor»**. `oportunidad_mejora → conforme` se sigue de que la oportunidad de mejora presupone conformidad. Un hallazgo rechazado no propaga: rechazar la propuesta de la IA deja el requisito exactamente como estaba.
+
+`propagatedCount` guarda cuántos requisitos cambiaron efectivamente de estado, que no es lo mismo que cuántos se propagaron: un requisito ya `conforme` que recibe un hallazgo `conforme` no cuenta como cambio.
+
+### Vínculo con el Evidence Graph
+
+**Cerrada por decisión del usuario el 2026-08-10.** Al aceptar o corregir un hallazgo, el auditor puede crear el `EvidenceRequirementLink` en el mismo gesto.
+
+La cadena es directa y no exige datos nuevos: `FindingCitation.analysisDocumentId → AnalysisDocument.evidenceItemId → EvidenceRequirementLink(evidenceItemId, requirementId)`. Como `AnalysisDocument.evidenceItemId` es obligatorio y único, todo documento analizado **ya es** un `EvidenceItem` del proyecto.
+
+Reglas:
+
+- El vínculo entra con `linkType = "primary"`: la cita es la base textual directa de la conclusión.
+- **Nunca pisa un vínculo existente.** `EvidenceRequirementLink` tiene `@@unique([evidenceItemId, requirementId])`; si ya existe, se conserva tal cual —incluido su `linkType`— y la operación lo reporta sin fallar.
+- `addedBy` es el auditor que decide, no el sistema.
+- Un hallazgo `rejected` no crea vínculo: si la propuesta se rechaza, su cita no sostiene nada.
+
 ### Knowledge Graph
 
 No se añade `Requirement.knowledgeNodeId`. ADR-008 lo prevé como campo opcional futuro; introducirlo ahora sería adelantar un componente de Phase 3 sin necesidad.
@@ -506,22 +555,12 @@ No se añade `Requirement.knowledgeNodeId`. ADR-008 lo prevé como campo opciona
 
 ## Open Questions
 
-1. **Propagación al `Requirement`.** Falta definir *cómo* la ejecuta el auditor (acción por hallazgo o aceptación en bloque al cerrar el run). Afecta al api-contract, no al schema — la invariante #5 sigue prohibiendo que la escriba el sistema. La **correspondencia entre los dos ejes está CONFIRMADA por el usuario** (2026-08-10):
-
-   | `finalClassification` | `Requirement.status` |
-   |---|---|
-   | `conforme` | `conforme` |
-   | `no_conformidad_mayor` | `no_conforme` |
-   | `no_conformidad_menor` | `no_conforme` |
-   | `observacion` | `parcial` |
-   | `oportunidad_mejora` | `conforme` |
-
-   `observacion → parcial` es criterio expreso del usuario: **`parcial` es más objetivo que «menor»**. `oportunidad_mejora → conforme` se sigue de que la oportunidad de mejora presupone conformidad.
-2. **Hallazgo aceptado → `EvidenceRequirementLink`.** ¿Debe el auditor poder crear el vínculo de evidencia desde el hallazgo en un solo gesto? Sería el punto donde el análisis alimenta de verdad al Evidence Graph.
+1. ~~**Propagación al `Requirement`.**~~ ✅ **RESUELTA** el 2026-08-10: en bloque al cerrar el run. Ver *Propagación al `Requirement`* e invariantes #24-27.
+2. ~~**Hallazgo aceptado → `EvidenceRequirementLink`.**~~ ✅ **RESUELTA** el 2026-08-10: sí, en el mismo gesto que la decisión. Ver *Vínculo con el Evidence Graph*.
 3. **Caducidad de `providerFileId`.** El modelo prevé `providerExpiresAt`, pero falta decidir la política: re-subir bajo demanda al lanzar un run, o mantener un proceso de refresco. Depende de la política real de retención del proveedor, que hay que verificar.
 4. **Granularidad del run.** Hoy un run cubre un proyecto entero. ¿Hace falta un run parcial —unos pocos requisitos, un documento nuevo— sin re-analizar todo? El schema lo admite (`requirementCount` es un contador, no una restricción); la decisión es de producto.
 5. **`confidence` como enumerado.** Se elige `high|medium|low` en lugar de un número porque no existe calibración que respalde una probabilidad, y un `0.87` invita a leerse como precisión que no hay. Reconsiderable cuando el Benchmark Framework aporte datos reales.
 6. **Tope de lecciones por requisito.** Cada lección inyectada suma tokens en **cada** análisis de ese requisito. Sin un techo, el coste por auditoría crece de forma silenciosa a medida que el corpus madura. Falta decidir el límite y qué se hace al alcanzarlo (descartar las más antiguas, exigir consolidación, avisar al admin).
 7. **Contradicción entre lecciones.** Nada impide hoy que el corpus acumule dos criterios opuestos sobre el mismo requisito. Detectarlo es competencia del Contradiction Engine, que no existe. Mientras tanto, el único control es que el corpus sea pequeño y revisable a ojo.
 8. **Consolidación del corpus.** Varias correcciones parecidas producirán lecciones casi duplicadas. ¿Se permite fusionarlas? Fusionar crea una lección nueva y retira las originales, así que encaja con el versionado, pero falta decidir si es una operación de producto o basta con retirar a mano.
-9. **Deriva respecto al component-spec.** El spec dice que este componente «extrae el contenido textual y estructural [...] y lo persiste como proyección legible por máquina». ADR-008 (D5) lo supera: el PDF viaja nativo y las citas las produce la API, así que **no se persiste el texto extraído**. `AnalysisDocument` guarda referencia y metadatos, no contenido. El spec debe corregirse para que ambos documentos digan lo mismo.
+9. ~~**Deriva respecto al component-spec.**~~ ✅ **RESUELTA** el 2026-08-10: el spec afirmaba que el componente persistía el texto extraído; ADR-008 (D5) lo supera —el PDF viaja nativo y las citas las produce la API— y el spec ya está corregido con nota de trazabilidad. `AnalysisDocument` guarda referencia y metadatos, nunca contenido.

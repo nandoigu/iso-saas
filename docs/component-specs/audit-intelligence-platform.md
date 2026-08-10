@@ -22,7 +22,7 @@ Es el componente que materializa el objetivo del producto. Todo lo construido ha
 |-----------|-------|
 | BAOS layer | Intelligence |
 | Implementation phase | Slice inicial sobre Phase 1 Foundation |
-| Entry point | `app/api/projects/[id]/analysis/*` (lanzar y consultar), `app/api/admin/analysis/*` (revisión y decisión), `services/analysis.service.ts`, `services/extraction.service.ts` |
+| Entry point | Fijado en `docs/api-contracts/audit-intelligence-platform.md`: `app/api/analysis-runs/*` (ciclo del run y cierre), `app/api/findings/*` (revisión y decisión), `app/api/cron/analysis-reconcile` (reconciliación del lote), `app/api/admin/audit-lessons/*` y `app/api/admin/lesson-sets/*` (corpus). Servicios: `analysis-run`, `analysis-finding`, `audit-lesson`, y `ai-provider` como único módulo autorizado a importar el SDK. ⚠️ **Corregido el 2026-08-10**: ya no hay `extraction.service.ts` — ADR-008 (D5) elimina el extractor propio. |
 | Persistence | Modelos Prisma fijados en `docs/domain-models/audit-intelligence-platform.md`: `AnalysisDocument`, `AnalysisRun`, `AnalysisFinding`, `FindingCitation`, `FindingDecision`, `AiInference`, más `AuditLesson` y `LessonSet` para el aprendizaje gobernado (ADR-009) |
 | Boundary | Posee la extracción de contenido de los documentos de evidencia, el análisis IA que los confronta con los requisitos, los hallazgos propuestos y la provenance de toda inferencia. NO posee el ciclo de vida de la evidencia, ni el veredicto final de cumplimiento, ni la redacción del informe. |
 
@@ -136,8 +136,8 @@ Son dos motores distintos que se prueban, se auditan y fallan de forma distinta.
 
 - [x] **ADR-008** — frontera Audit Intelligence Platform ↔ Rule Engine, proveedor/modelo, citación y ejecución asíncrona (`docs/adr/ADR-008-audit-intelligence-platform-frontera-y-proveedor.md`, Accepted)
 - [x] **ADR-009** — aprendizaje gobernado por corpus de lecciones versionado (`docs/adr/ADR-009-aprendizaje-gobernado-por-corpus-de-lecciones.md`, Accepted)
-- [x] Domain model documentado (`docs/domain-models/audit-intelligence-platform.md`) — 8 entidades, 23 invariantes
-- [ ] API contract definido (`docs/api-contracts/audit-intelligence-platform.md`)
+- [x] Domain model documentado (`docs/domain-models/audit-intelligence-platform.md`) — 8 entidades, **27 invariantes**
+- [x] API contract definido (`docs/api-contracts/audit-intelligence-platform.md`) — 14 endpoints; propagación al requisito **en bloque al cerrar el run** y vínculo con el Evidence Graph en el mismo gesto que la decisión (decisiones del usuario, 2026-08-10)
 - [ ] Security spec definido (`docs/security-specs/audit-intelligence-platform.md`)
 - [ ] Migración Prisma escrita y aplicada
 - [ ] Abstracción `AIProvider` implementada, sin SDK de proveedor en el dominio
