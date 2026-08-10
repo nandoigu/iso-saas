@@ -279,9 +279,10 @@ ADR-007 puso datos y cómputo en la UE: Neon en `eu-central-1` y Vercel en `fra1
 
 Obligaciones que se derivan, ninguna resuelta hoy:
 
-1. **Verificar la jurisdicción de procesado** del proveedor y si existe opción de residencia UE. Ya estaba abierto como pregunta #8 del component-spec; aquí pasa a ser bloqueante para dar el componente por certificable.
-2. **Política de borrado de `providerFileId`**. `AnalysisDocument.providerExpiresAt` está previsto en el modelo, pero **no hay proceso** que borre nada en el proveedor.
-3. **Encaje con ADR-005** (exportar → purgar → liberar). Purgar una auditoría hoy **no borraría** las copias que estén en el proveedor. El recibo sellado del ciclo de cierre estaría afirmando una purga incompleta.
+1. ✅ **Jurisdicción verificada el 2026-08-10 — no existe opción UE.** `inference_geo` solo admite `"us"` y `"global"`; el *workspace geo* solo `"us"`, e inmutable. Con la API directa la inferencia **no puede ocurrir en la UE**. Ya no es una comprobación pendiente sino una decisión de producto entre aceptar la transferencia con base legal o mover la superficie a Bedrock UE. Ver pregunta abierta #2.
+2. ⚠️ **La retención declarada acota qué funciones se pueden usar.** ADR-005 declara **30 días** en el recibo. La **Files API retiene indefinidamente hasta borrado explícito** —lo dice su documentación: «files persist until you delete them»—, así que **excede el plazo declarado**. O se descarta la Files API y el PDF viaja en línea en cada petición, o hay que borrar cada fichero activamente antes de emitir el recibo. `AnalysisDocument.providerExpiresAt` da soporte a la segunda vía, pero un borrado que falle en silencio convierte el recibo en falso: la primera vía es más segura porque no hay nada que borrar.
+3. ~~**Encaje con ADR-005**~~ ✅ **RESUELTO el 2026-08-10 por decisión del usuario**: el recibo **declara el plazo** en lugar de perseguir el cero. ADR-005 gana `providerRetentionUntil` (calculado desde la **última inferencia**, no desde el cierre), `providerRetentionDays` (30 por defecto), `providerName` y `providerRegion`; y su texto separa «purgado en BAOS» de «copias del proveedor expiradas».
+   ⚠️ **Obligación recíproca que recae sobre este componente**: **ninguna función del proveedor con retención superior a la declarada**, o el recibo vuelve a mentir. Verificado: la **Files API retiene indefinidamente hasta borrado explícito** —no caduca sola—, así que o se descarta o se borra activamente antes de emitir el recibo. Toda función nueva debe comprobarse antes de adoptarla: el plazo del recibo es un compromiso, no una etiqueta.
 4. **Contrato de tratamiento de datos** con el proveedor, y garantía de no entrenamiento sobre los datos enviados.
 
 > Esto no bloquea prototipar con datos propios. **Bloquea el uso con documentación real de un cliente**, y conviene decidirlo antes de que el primer PDF real se suba, no después.
@@ -390,8 +391,8 @@ Esperado: `total` con el número de runs del proyecto, y `401` en la segunda.
 - [x] El cron no acepta parámetros del llamante y solo escribe propuestas
 - [x] `ANTHROPIC_API_KEY` confinada a `services/ai-provider.ts`, nunca `NEXT_PUBLIC_`
 - [~] **Aislamiento multi-tenant** — excepción deliberada y acotada en el corpus de lecciones (ADR-009 D4). Riesgo de paráfrasis aceptado y documentado
-- [ ] **Jurisdicción del procesado de inferencia sin verificar** — bloqueante para documentación real de cliente
-- [ ] **Sin política de borrado en el proveedor** — ADR-005 no se puede cumplir hasta resolverlo
+- [~] **Jurisdicción del procesado verificada: NO hay opción UE** en la API directa (`inference_geo` solo `us`/`global`; *workspace geo* solo `us`). Deja de ser una comprobación pendiente y pasa a ser decisión de producto: transferencia con base legal, o Bedrock UE. No bloquea ADR-005; bloquea la promesa comercial de procesamiento en la UE
+- [x] **Encaje con ADR-005** — el recibo declara la retención del proveedor (30 días por defecto) en vez de fingir que no existe. ⚠️ Condiciona el diseño: prohibida toda función con retención mayor a la declarada
 - [ ] **Sin control de gasto** — aceptable con un solo propietario del sistema, no con un segundo cliente
 - [x] **Store de Blob en la UE** — `iso-saas-evidence-fra` en `fra1` desde el 2026-08-10; el de `iad1` borrado vacío
 - [ ] Tests TENANT-01/02/03 pendientes (test-plan)
@@ -402,9 +403,15 @@ Esperado: `total` con el número de runs del proyecto, y `401` en la segunda.
 
 1. **Techo de gasto por run.** Bloqueo duro por importe, aviso, o presupuesto por proyecto. Exige primero una cifra real medida con `count_tokens` sobre documentos de verdad. **Disparador para dejar de posponerlo: el segundo usuario con cuenta propia.**
 
-2. **Jurisdicción y retención en el proveedor.** ¿Dónde se procesa? ¿Hay residencia UE? ¿Cuánto retiene la Files API? ¿Hay garantía contractual de no entrenamiento? Sin esto, ADR-007 queda incompleto y ADR-005 no se puede cumplir: purgar una auditoría no borraría las copias del proveedor, y el recibo sellado estaría afirmando una purga que no ocurrió.
+2. **Jurisdicción — verificado el 2026-08-10, y la respuesta es que NO hay opción UE.** El parámetro `inference_geo` admite solo `"us"` y `"global"`; el *workspace geo*, que rige el almacenamiento en reposo, admite **solo `"us"`** y es inmutable tras crear el workspace. Con la API directa de Anthropic **la inferencia no puede ocurrir en la UE**, y ninguna configuración lo cambia. Quedan dos vías, y es decisión de producto:
+   - ✅ **A) Aceptar la transferencia con base legal** (DPA + cláusulas contractuales tipo) — **ELEGIDA por el usuario el 2026-08-10** como la respuesta más lógica en el estado actual del proyecto. Sin clientes reales todavía, montar un contrato con otro proveedor cloud sería coste sin beneficio presente.
+   - **B) Cambiar de superficie de proveedor** a Bedrock `eu-central-1` o Vertex UE, donde el procesador es el proveedor cloud y la región la fija el endpoint. **Descartada ahora, conservada como vía de vuelta.** ✅ Verificado que **las citas están disponibles en Bedrock y Google Cloud**, así que ADR-008 D3 sobreviviría al cambio y la vuelta es viable. La abstracción `AIProvider` es lo que la mantiene barata.
 
-3. **Borrado activo de `providerFileId`.** `providerExpiresAt` existe en el modelo pero no hay proceso. ¿Borrado al cerrar el run, al cerrar la auditoría (ADR-005), o por caducidad pasiva?
+   ⚠️ Esto **ya no bloquea ADR-005** (resuelto declarando el plazo). Lo que la vía A deja sin poder decirse es la frase *«sus documentos no salen de la UE»*: **es falsa** con la API directa. El producto se puede vender igual, pero esa promesa concreta no se puede hacer, y conviene que quien redacte material comercial lo sepa.
+
+   **Lo que la vía A exige tener antes de tratar documentación real de cliente**: DPA firmado con el proveedor, mecanismo de transferencia (cláusulas contractuales tipo), y la transferencia declarada en el registro de actividades de tratamiento. Es trabajo jurídico, no de ingeniería, y no lo resuelve este documento.
+
+3. **Retención cero (ZDR), si se quisiera además del plazo declarado.** Verificado: Messages API, PDF **en línea**, citations, prompt caching y `count_tokens` **sí** son elegibles; **Files API y Batches API NO** —29 días por diseño la segunda, indefinida la primera—. Es decir, el diseño quedaría en retención cero renunciando a las dos optimizaciones. Se negocia con ventas y es para clientes comerciales. **No es urgente**: con el plazo declarado en el recibo, el sistema ya es honesto.
 
 4. **¿Hace falta un rol `auditor`?** Con `user` | `admin`, el auditor es admin, así que la separación de ADR-009 D5 entre «promueve el auditor» y «retira el admin» es hoy de momento y pantalla, no de permiso. Un tercer rol la haría real, a cambio de tocar el modelo de roles de toda la app.
 

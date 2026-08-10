@@ -48,6 +48,31 @@ Se eliminan las evidencias, los binarios del store y el contenido de la auditor�
 
 El recibo es la pieza que reconcilia la purga con *evidence-first*. La evidencia deja de estar, pero **no desaparece la prueba de que estuvo**, ni la capacidad de verificar la integridad de lo entregado. El coste en espacio es despreciable: unos bytes por auditoría frente a los gigabytes que libera.
 
+#### El recibo declara la retención del proveedor de inferencia
+
+*Añadido el 2026-08-10, tras el security-spec de la Audit Intelligence Platform.*
+
+Desde que existe análisis con IA (ADR-008), parte de la documentación auditada **ha salido de nuestra infraestructura**: viaja al proveedor de inferencia, que conserva entradas y salidas **hasta 30 días** por su política estándar. La purga que ejecuta BAOS no alcanza esas copias.
+
+Un recibo que dijera «esta auditoría ha sido purgada» sin más **estaría afirmando algo que no es cierto** en ese plazo. La solución **no es perseguir el cero**, sino declarar el plazo: es lo que hace cualquier contrato de tratamiento de datos, y es lo que mantiene el recibo verificable.
+
+El recibo incorpora por tanto:
+
+| Campo | Contenido |
+|---|---|
+| `providerRetentionUntil` | Fecha a partir de la cual el proveedor ya no conserva copia. Se calcula desde la **última inferencia de esa auditoría**, no desde el cierre — son fechas distintas y la que cuenta es la primera |
+| `providerRetentionDays` | Plazo declarado por el proveedor (30 por defecto), parametrizable como el de conservación |
+| `providerName` y `providerRegion` | Qué proveedor y en qué jurisdicción se procesó |
+
+Y su texto distingue las dos cosas sin ambigüedad: **purgado en BAOS** el día X; **copias en el proveedor expiradas** el día Y.
+
+⚠️ **Dos condiciones sin las cuales esta declaración vuelve a ser falsa:**
+
+1. **No se puede usar ninguna función del proveedor con retención superior a la declarada.** La Files API conserva los ficheros **indefinidamente, hasta que se borran de forma explícita** — no caducan solos. Si se usa, o se borran activamente antes de emitir el recibo, o el plazo de 30 días es mentira. Lo mismo obliga a comprobar cualquier función futura antes de adoptarla: el plazo del recibo es un compromiso, no una etiqueta.
+2. **El contenido marcado por los sistemas de seguridad del proveedor se retiene hasta 2 años**, con acuerdo de retención o sin él. Es un residuo irreducible y el recibo debe recogerlo como excepción declarada, no omitirlo.
+
+Ninguna de las dos se resuelve aquí: la primera es una restricción de diseño para ADR-008, la segunda es una excepción que se declara y ya está.
+
 ### 3. Liberar
 
 El espacio queda efectivamente disponible, tanto en base de datos como en el store de binarios.
@@ -60,8 +85,9 @@ El espacio queda efectivamente disponible, tanto en base de datos como en el sto
 | Cuándo se permite | Solo con la auditoría cerrada — informe `signed` o `finalizado` | Purgar una auditoría en curso destruye trabajo vivo, no archivo |
 | Plazo mínimo de conservación | **Parametrizable**, por defecto **6 años** desde el cierre | No se conoce todavía la obligación real. El defecto es el plazo mercantil habitual en España, conservador a propósito |
 | Exportación previa | Obligatoria. No se purga lo que no se ha exportado y verificado | Sin ella la purga es pérdida, no cierre |
+| Retención declarada del proveedor de inferencia | **Parametrizable**, por defecto **30 días** desde la última inferencia | La purga de BAOS no alcanza al proveedor. El recibo declara el plazo en vez de fingir que no existe |
 
-El plazo es configuración, no constante en código: cuando se confirme la obligación real con un organismo certificador o con asesoría, se ajusta sin tocar el diseño.
+Ambos plazos son configuración, no constantes en código: el de conservación se ajustará cuando se confirme la obligación real con un organismo certificador o con asesoría, y el del proveedor debe seguir a la política vigente de quien preste la inferencia en cada momento.
 
 ## Alternatives Considered
 
@@ -120,3 +146,5 @@ El componente resultante no sustituye a ningún Core Component existente. Su rel
 - **ADR-003**: Evidence Graph Phase 1 Scoping Decisions — fija Vercel Blob como storage. La purga debe liberar también el binario en el store, no solo la fila en base de datos.
 - **ADR-004**: Evidence Graph Implementation Decisions — establece que el binario nunca atraviesa la función serverless. La exportación de paquetes grandes deberá respetar la misma restricción de tamaño.
 - **ADR-002**: Multi-Tenant Isolation — la exportación y la purga son operaciones cross-entidad sobre un proyecto completo; el aislamiento por tenant debe verificarse en ambas.
+- **ADR-008**: Audit Intelligence Platform — frontera y proveedor. Es lo que hace que parte de la documentación auditada salga de nuestra infraestructura, y por tanto el origen de la declaración de retención del proveedor añadida el 2026-08-10. La restricción recíproca vive allí: **ninguna función del proveedor con retención superior a la declarada** (verificado: la Files API retiene indefinidamente hasta borrado explícito).
+- **ADR-007**: Jurisdicción UE — el recibo declara `providerRegion` porque *dónde* se procesó y *cuánto* se conserva son dos preguntas distintas, y el recibo debe responder a las dos.

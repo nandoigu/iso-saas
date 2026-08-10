@@ -38,6 +38,23 @@ El inventario previo confirmó que la ventana estaba abierta de par en par: la b
   ✅ **Ejecutado el 2026-08-10.** `iso-saas-evidence-fra` (`store_wyhryJCIVwjFEuMw`) en `fra1`, privado, vinculado a `iso-saas` en Production, Preview y Development. El store de `iad1` (`store_SPJ4WiRGmr7N39TV`) se borró **con 0 ficheros y 0 B**: la ventana que este ADR describía seguía abierta y el coste fue cero, como estaba previsto. Script: `scripts/blob-a-frankfurt.ps1`. **Con esto ADR-007 queda ejecutado en sus tres patas.**
   ⚠️ El store se creó en `iad1` en julio **por el valor por defecto de `--region` en el CLI**, no por un flag mal escrito: omitir el flag es suficiente para acabar en Washington.
 
+### ⚠️ Alcance acotado el 2026-08-10: la inferencia IA queda fuera
+
+Cuando se escribió este ADR, BAOS no llamaba a ningún modelo. Con ADR-008 sí lo hace, y eso obliga a precisar hasta dónde llega esta decisión.
+
+**Verificado el 2026-08-10 en la documentación del proveedor**: la API de Anthropic **no ofrece inferencia en la UE**. El parámetro `inference_geo` admite únicamente `"us"` y `"global"`; el *workspace geo*, que gobierna el almacenamiento en reposo, admite **solo `"us"`** y es inmutable tras crear el workspace. No es una configuración pendiente de encontrar: la opción no existe.
+
+**Decisión del usuario (2026-08-10): aceptar la transferencia con base legal** (DPA y cláusulas contractuales tipo), en lugar de mover la superficie de inferencia a Amazon Bedrock `eu-central-1` o Vertex UE. Motivo: sin clientes reales todavía, un contrato con otro proveedor cloud es coste sin beneficio presente.
+
+Consecuencias que hay que asumir con los ojos abiertos:
+
+- **Este ADR cubre el dato en reposo y el cómputo de BAOS, no la inferencia.** Neon, las funciones de Vercel y el store de Blob están en Frankfurt. El documento que se analiza **sale de la UE** durante el análisis.
+- **La frase «sus documentos no salen de la UE» es falsa** y no puede aparecer en material comercial ni en un pliego.
+- **La vía de vuelta queda abierta y verificada**: las citas —de las que depende ADR-008 D3— **están disponibles en Bedrock y Google Cloud**, así que cambiar de superficie no obligaría a rediseñar el componente. La abstracción `AIProvider` es lo que mantiene ese cambio barato.
+- **Disparador para reconsiderarlo**: el primer cliente que pregunte dónde se procesan sus datos, o el primer pliego que lo exija.
+
+La retención en el proveedor es una cuestión **distinta de la jurisdicción** y se resuelve aparte, en ADR-005: el recibo de purga declara el plazo de 30 días en vez de fingir que no existe.
+
 **Los tres van juntos, no se parten.** Se descartó explícitamente la opción de mover solo el Blob a la UE dejando Neon en Londres: resolver la jurisdicción del binario y dejar sus metadatos —quién lo subió, a qué requisito responde, quién lo validó— bajo otra jurisdicción no resuelve nada y produce una respuesta ambigua a la única pregunta que importa.
 
 La migración fue **selectiva, no un volcado**: se copiaron las 177 `RequirementTemplate` del catálogo global, los 3 usuarios reales con su hash de contraseña intacto y sus empresas. El residuo de pruebas se quedó en Londres. Producción arranca sin proyectos, decisión consciente del responsable de producto.
