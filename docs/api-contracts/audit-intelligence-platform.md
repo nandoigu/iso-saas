@@ -2,7 +2,8 @@
 
 > BAOS Component: Audit Intelligence Platform
 > Domain Model: `docs/domain-models/audit-intelligence-platform.md`
-> ADRs: ADR-008 (frontera y proveedor), ADR-009 (aprendizaje gobernado), ADR-006 (semántica de snapshot)
+> ADRs: ADR-008 (frontera y proveedor), ADR-009 (aprendizaje gobernado), ADR-006 (semántica de snapshot), ADR-004 (convención `/api/admin/`)
+> Security Spec: `docs/security-specs/audit-intelligence-platform.md` — ⚠️ **corrige el RBAC de dos endpoints de este contrato**; manda el security-spec
 > Phase: Phase 1 Technological Foundation
 > Date: 2026-08-10
 > Status: Draft
@@ -50,7 +51,9 @@ Nunca se acepta `projectId` como prueba de propiedad: se acepta como entrada y s
 
 ## Endpoints
 
-Catorce endpoints en cuatro grupos: ciclo del run, revisión humana, cierre, y gestión del corpus.
+Catorce endpoints en cinco grupos: ciclo del run, revisión humana, cierre, reconciliación, y gestión del corpus.
+
+**Frontera de permiso**, fijada por el security-spec: componer, lanzar y **consultar** un análisis son actos del dueño del proyecto; **decidir un hallazgo y cerrar el run son admin-only**, porque fijan una conclusión de auditoría y crean vínculos de evidencia.
 
 ---
 
@@ -353,10 +356,12 @@ type GetFindingResponse = FindingWithCitations & {
 
 ---
 
-### `POST /api/findings/[id]/decisions`
+### `POST /api/admin/findings/[id]/decisions`
 
 **Propósito**: el punto de control humano. Registra la decisión del auditor y, opcionalmente y en el mismo gesto, promueve una lección y crea el vínculo de evidencia.
-**Auth**: requerida. **RBAC**: propietario del proyecto o `admin`.
+**Auth**: requerida. **RBAC**: ⚠️ **solo `admin`**.
+
+> **Corregido el 2026-08-10 por el security-spec.** La primera versión de este contrato lo abría al dueño del proyecto. Es incompatible con la gobernanza ya aceptada por dos motivos: crea un `EvidenceRequirementLink`, que es **admin-only** en el Evidence Graph —dejarlo abierto sería una puerta trasera al mismo efecto sin el mismo permiso—, y fija una conclusión de auditoría, que es la clase de acto que el precedente del Evidence Graph reserva a `admin`. La ruta se mueve bajo `/api/admin/` por la convención de ADR-004 #2.
 
 #### Request Body
 
@@ -473,10 +478,10 @@ Devuelve las ocho piezas que exige la regla de provenance de `CLAUDE.md`. `rawOu
 
 ## Grupo 3 — Cierre y propagación
 
-### `POST /api/analysis-runs/[id]/close`
+### `POST /api/admin/analysis-runs/[id]/close`
 
 **Propósito**: el único momento en que las conclusiones del análisis llegan al estado de los requisitos. Decisión del usuario del 2026-08-10: **en bloque, no hallazgo a hallazgo**.
-**Auth**: requerida. **RBAC**: propietario del proyecto o `admin`.
+**Auth**: requerida. **RBAC**: ⚠️ **solo `admin`** — corregido el 2026-08-10 por el security-spec. Es la única ruta de todo el componente que escribe `Requirement.status`.
 
 #### Request Body
 
@@ -760,7 +765,7 @@ export const REQUIRES_CORRECTIVE_ACTION: Record<FindingClassification, boolean> 
 
 - [x] **Sesión válida en todos los endpoints** — `getAuthSession`; la única excepción es el cron, autenticado por `CRON_SECRET` igual que `/api/cron/alerts`.
 - [x] **Scope de tenant en toda consulta** — vía `project.userId`, nunca desde el body. 404 en vez de 403 al salirse del ámbito.
-- [x] **Endpoints de admin comprobados** — `isAdminRole` en los tres del grupo 5.
+- [x] **Endpoints de admin comprobados** — `isAdminRole` en los cinco bajo `/api/admin/`: decisión, cierre y los tres del corpus.
 - [x] **Mutaciones auditables versionadas** — `FindingDecision` acumulativa; alta o retirada de lección crea `LessonSet` nuevo.
 - [x] **Sin transición autónoma de estado** — ninguna ruta escribe `Requirement.status` salvo `close`, que exige `confirm` explícito de un humano identificado.
 - [x] **Errores sin filtración** — `{ error: string }`; el error de sanitización dice qué control falló, no repite el dato sensible.
@@ -776,11 +781,11 @@ app/api/analysis-runs/route.ts                     → POST, GET
 app/api/analysis-runs/[id]/route.ts                → GET
 app/api/analysis-runs/[id]/submit/route.ts         → POST
 app/api/analysis-runs/[id]/cancel/route.ts         → POST
-app/api/analysis-runs/[id]/close/route.ts          → POST
 app/api/analysis-runs/[id]/findings/route.ts       → GET
 app/api/findings/[id]/route.ts                     → GET
-app/api/findings/[id]/decisions/route.ts           → POST
 app/api/findings/[id]/provenance/route.ts          → GET
+app/api/admin/analysis-runs/[id]/close/route.ts    → POST   (admin-only)
+app/api/admin/findings/[id]/decisions/route.ts     → POST   (admin-only)
 app/api/cron/analysis-reconcile/route.ts           → GET
 app/api/admin/audit-lessons/route.ts               → GET
 app/api/admin/audit-lessons/[id]/retire/route.ts   → POST

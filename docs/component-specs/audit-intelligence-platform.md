@@ -138,7 +138,7 @@ Son dos motores distintos que se prueban, se auditan y fallan de forma distinta.
 - [x] **ADR-009** — aprendizaje gobernado por corpus de lecciones versionado (`docs/adr/ADR-009-aprendizaje-gobernado-por-corpus-de-lecciones.md`, Accepted)
 - [x] Domain model documentado (`docs/domain-models/audit-intelligence-platform.md`) — 8 entidades, **27 invariantes**
 - [x] API contract definido (`docs/api-contracts/audit-intelligence-platform.md`) — 14 endpoints; propagación al requisito **en bloque al cerrar el run** y vínculo con el Evidence Graph en el mismo gesto que la decisión (decisiones del usuario, 2026-08-10)
-- [ ] Security spec definido (`docs/security-specs/audit-intelligence-platform.md`)
+- [x] Security spec definido (`docs/security-specs/audit-intelligence-platform.md`) — ⚠️ **corrige el RBAC del api-contract**: decidir un hallazgo y cerrar un run son **admin-only**. Deja tres bloqueos abiertos: jurisdicción del proveedor, borrado en el proveedor (ADR-005) y control de gasto
 - [ ] Migración Prisma escrita y aplicada
 - [ ] Abstracción `AIProvider` implementada, sin SDK de proveedor en el dominio
 - [ ] Capa de servicio (`services/extraction.service.ts`, `services/analysis.service.ts`)
@@ -162,4 +162,4 @@ Son dos motores distintos que se prueban, se auditan y fallan de forma distinta.
 5. **Techo de coste por auditoría** — decisión de producto, no técnica. ADR-008 fija el método (medir con `count_tokens` sobre documentos reales antes de comprometer un techo) pero no la cifra.
 6. **Idioma de la documentación** — se asume español y se declara explícitamente; documentación en otros idiomas queda fuera del slice hasta decidirlo.
 7. **Corrección pendiente en gobernanza aceptada** — `docs/domain-models/knowledge-graph.md` afirma que el texto normativo es de dominio público. Es incorrecto (ISO 19650 tiene copyright). No bloquea este slice, que no usa texto ISO, pero debe corregirse antes de implementar el Knowledge Graph.
-8. **Jurisdicción del procesado de inferencia** — ADR-007 puso datos y cómputo en la UE. Queda por verificar dónde procesa el proveedor de inferencia y si eso exige alguna cláusula adicional. No lo resuelve ADR-008.
+8. **Jurisdicción del procesado de inferencia** — ADR-007 puso datos y cómputo en la UE. Queda por verificar dónde procesa el proveedor de inferencia y si eso exige alguna cláusula adicional. No lo resuelve ADR-008. ⚠️ **Elevado a bloqueante el 2026-08-10 por el security-spec**: no impide prototipar con datos propios, pero sí usar documentación real de cliente. Arrastra dos consecuencias — sin política de borrado en el proveedor, el recibo sellado del ADR-005 afirmaría una purga que no ocurrió; y el store de Blob sigue en `iad1` (Washington), región inmutable que solo la Fase D puede corregir creando el de `fra1`.
