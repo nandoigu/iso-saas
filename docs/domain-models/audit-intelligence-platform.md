@@ -22,7 +22,11 @@ Seis entidades sostienen el bucle completo: preparar un documento, lanzar un an�
 
 **FindingDecision** es la decisión humana sobre un hallazgo: aceptarlo, corregirlo o rechazarlo, con quién lo hizo, cuándo y por qué. Se acumulan —igual que `EvidenceValidation` en el Evidence Graph—, de modo que si un auditor cambia de criterio queda registrado el cambio, no solo el resultado final. Este registro cumple dos funciones a la vez: es el punto de control humano y es el corpus con el que algún día se medirá si la IA acierta.
 
-**AiInference** es el registro de provenance de cada llamada al modelo: qué modelo, qué versión, qué versión de prompt, sobre qué entradas, con qué parámetros, cuándo, qué devolvió en crudo, cuántos tokens costó y cuánto tardó. Es lo que permite responder, meses después y ante un tercero, cómo se produjo exactamente una conclusión. Sin esta fila, su hallazgo no puede citarse en un informe.
+**AiInference** es el registro de provenance de cada llamada al modelo: qué modelo, qué versión, qué versión de prompt, **qué corpus de lecciones**, sobre qué entradas, con qué parámetros, cuándo, qué devolvió en crudo, cuántos tokens costó y cuánto tardó. Es lo que permite responder, meses después y ante un tercero, cómo se produjo exactamente una conclusión. Sin esta fila, su hallazgo no puede citarse en un informe.
+
+**AuditLesson** es un criterio aprendido: cuando un auditor corrige o rechaza una propuesta, puede convertir esa corrección en una lección que se inyectará en los análisis futuros del mismo requisito. No es una copia de su nota — es texto nuevo que el auditor escribe como criterio genérico, precisamente para que pueda aplicarse a otros clientes sin arrastrar nada del documento de origen. Es lo que hace que el sistema mejore con el uso sin tocar el modelo (ADR-009).
+
+**LessonSet** es una fotografía inmutable y numerada del corpus de lecciones activas. Cada alta o retirada de lección crea una versión nueva; ninguna versión se modifica jamás. Es la pieza que reconcilia mejorar con ser reproducible: un análisis fija su versión de corpus al lanzarse, y meses después se puede saber exactamente con qué criterios acumulados se produjo un hallazgo, aunque el corpus haya crecido desde entonces.
 
 ---
 
@@ -37,6 +41,8 @@ Aportada por el usuario el 2026-08-10 como **fuente autorizada del proyecto**, c
 | **NO CONFORMIDAD MENOR** | `no_conformidad_menor` | Incumplimiento **no grave** | **Sí** |
 | **OBSERVACIÓN** | `observacion` | Incumplimiento menor **fácilmente subsanable** | No |
 | **OPORTUNIDAD DE MEJORA** | `oportunidad_mejora` | Sugerencia para mejorar el grado de cumplimiento. **No es un incumplimiento** | No |
+
+⚠️ **`oportunidad_mejora` presupone conformidad.** Aclaración del usuario (2026-08-10): es una acción propuesta sobre un requisito **valorado como CONFORME**, para elevar su grado de cumplimiento. No compite con `conforme`: lo da por supuesto y añade una sugerencia. De ahí se siguen dos cosas: propaga a `Requirement.status = conforme` (no «no cambia», como decía la versión anterior de este documento), y **exige cita igual que `conforme`** — no se sugiere una mejora sobre algo que no se puede señalar en el documento.
 
 Tres consecuencias de diseño que se derivan de esta tabla:
 
@@ -57,7 +63,9 @@ Tres consecuencias de diseño que se derivan de esta tabla:
 | `AnalysisFinding` | Propuesta de clasificación para un requisito | `analysisRunId`, `requirementId`, `proposedClassification`, `basis`, `confidence`, `rationale`, `status`, `finalClassification`, `requiresCorrectiveAction` |
 | `FindingCitation` | Fragmento literal que sostiene la propuesta | `analysisFindingId`, `analysisDocumentId`, `citedText`, `startPage`, `endPage` |
 | `FindingDecision` | Decisión humana sobre un hallazgo | `analysisFindingId`, `outcome`, `decidedClassification`, `notes`, `decidedBy` |
-| `AiInference` | Provenance completa de una llamada al modelo | `analysisRunId`, `analysisFindingId`, `modelId`, `modelVersion`, `promptVersion`, `inputDigest`, `parameters`, `rawOutput`, tokens, coste, latencia |
+| `AiInference` | Provenance completa de una llamada al modelo | `analysisRunId`, `analysisFindingId`, `modelId`, `modelVersion`, `promptVersion`, `lessonSetVersion`, `inputDigest`, `parameters`, `rawOutput`, tokens, coste, latencia |
+| `AuditLesson` | Criterio aprendido de una corrección humana | `scopeKey`, `lessonText`, `status`, `sourceDecisionId`, `originCompanyId`, `createdBy`, `retiredBy` |
+| `LessonSet` | Fotografía inmutable del corpus activo | `version`, `snapshot`, `lessonCount`, `changeReason`, `triggeredBy` |
 
 ---
 
@@ -77,12 +85,23 @@ Project (1) ─────── (N) AnalysisRun
         │        └── (1) AnalysisDocument ─── (1) EvidenceItem ─── (1) Project
         │
         └── (N) FindingDecision ─── (1) User
+                      │
+                      └── (0..N) AuditLesson   [el auditor promueve al corregir]
+                                     │
+                                     └── congelada en → LessonSet (versión N)
 
 Cadena de trazabilidad completa:
   Requirement ← AnalysisFinding → FindingCitation → AnalysisDocument → EvidenceItem
                       ↑                                    (texto literal + página)
                  AiInference
-              (cómo se produjo)
+        (modelo + versión + prompt + lessonSetVersion)
+
+Bucle de aprendizaje gobernado (ADR-009):
+  FindingDecision(corrected|rejected) → AuditLesson → LessonSet vN
+                                                          ↓
+                            AnalysisRun fija vN al enviarse y no la cambia
+                                                          ↓
+                          se inyecta en el prompt de los análisis siguientes
 ```
 
 **Cardinalidades:**
@@ -137,8 +156,9 @@ model AnalysisRun {
   id              String    @id @default(cuid())
   projectId       String // tenant isolation via project → company
   status          String    @default("draft") // "draft" | "submitted" | "processing" | "completed" | "failed" | "expired" | "cancelled"
-  modelId         String // p. ej. "claude-opus-5" — solicitado; el servido se registra en AiInference
-  promptVersion   String // versión del prompt: un cambio de prompt es un cambio de sistema
+  modelId          String // p. ej. "claude-opus-5" — solicitado; el servido se registra en AiInference
+  promptVersion    String // versión del prompt: un cambio de prompt es un cambio de sistema
+  lessonSetVersion Int? // fijado AL ENVIAR y ya inmutable, aunque el lote tarde horas (ADR-009 D2)
   providerBatchId String? // identificador del lote en el proveedor
   submittedAt     DateTime?
   completedAt     DateTime?
@@ -253,9 +273,10 @@ model AiInference {
   analysisFindingId String? // null en operaciones de run que no producen hallazgo
 
   // Identidad del sistema que produjo el resultado
-  modelId       String // solicitado, p. ej. "claude-opus-5"
-  modelVersion  String // el que el proveedor declara haber servido — puede diferir del solicitado
-  promptVersion String // el mismo modelo con otro prompt es, a efectos de auditoría, otro sistema
+  modelId          String // solicitado, p. ej. "claude-opus-5"
+  modelVersion     String // el que el proveedor declara haber servido — puede diferir del solicitado
+  promptVersion    String // el mismo modelo con otro prompt es, a efectos de auditoría, otro sistema
+  lessonSetVersion Int? // corpus de lecciones vigente (ADR-009); null si no se aplicó ninguna
 
   // Reproducibilidad de la entrada
   inputDigest   String // hash del payload exacto enviado (documentos + requisito + instrucciones)
@@ -279,7 +300,64 @@ model AiInference {
   @@index([analysisRunId])
   @@index([analysisFindingId])
   @@index([modelId])
+  @@index([lessonSetVersion])
   @@index([occurredAt])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// AUDIT INTELLIGENCE PLATFORM — Aprendizaje gobernado (ADR-009)
+// La lección es texto NUEVO que escribe el auditor, no una copia de su nota.
+// Alcance global por decisión del usuario; la garantía de aislamiento está en
+// la sanitización verificada al promover, no en el schema.
+// ─────────────────────────────────────────────────────────────────────────────
+
+model AuditLesson {
+  id       String @id @default(cuid())
+  scopeKey String // identidad del requisito al que aplica: templateId, o "norma|item" como respaldo
+
+  lessonText String // criterio genérico, sanitizado. NUNCA igual a FindingDecision.notes
+  status     String @default("active") // "active" | "retired"
+
+  // Procedencia — para auditar de dónde salió cada criterio
+  sourceDecisionId      String? // la corrección que la originó
+  originCompanyId       String? // empresa de origen; permite acotar el alcance a posteriori sin migrar
+  requirementTemplateId String? // trazabilidad cuando el requisito viene de plantilla
+
+  createdAt    DateTime  @default(now())
+  createdBy    String // userId del auditor que la promovió
+  retiredAt    DateTime?
+  retiredBy    String? // userId del admin que la retiró
+  retiredReason String?
+
+  sourceDecision      FindingDecision?     @relation(fields: [sourceDecisionId], references: [id], onDelete: SetNull)
+  originCompany       Company?             @relation(fields: [originCompanyId], references: [id], onDelete: SetNull)
+  requirementTemplate RequirementTemplate? @relation(fields: [requirementTemplateId], references: [id], onDelete: SetNull)
+  creator             User                 @relation("AuditLessonCreator", fields: [createdBy], references: [id], onDelete: Restrict)
+  retirer             User?                @relation("AuditLessonRetirer", fields: [retiredBy], references: [id], onDelete: Restrict)
+
+  @@index([scopeKey, status])
+  @@index([status])
+  @@index([createdBy])
+  @@index([originCompanyId])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// AUDIT INTELLIGENCE PLATFORM — Corpus congelado (semántica de ADR-006:
+// el snapshot de la versión N describe el estado resultante en N)
+// ─────────────────────────────────────────────────────────────────────────────
+
+model LessonSet {
+  id           String   @id @default(cuid())
+  version      Int      @unique // monotónico global, nunca reutilizado
+  snapshot     Json // lecciones activas en esta versión, congeladas
+  lessonCount  Int      @default(0)
+  changeReason String // "lesson_promoted" | "lesson_retired" | "initial"
+  createdAt    DateTime @default(now())
+  triggeredBy  String // userId cuya acción provocó la versión
+
+  trigger User @relation("LessonSetTrigger", fields: [triggeredBy], references: [id], onDelete: Restrict)
+
+  @@index([version])
 }
 ```
 
@@ -290,6 +368,9 @@ model AiInference {
   analysisDocumentsCreated AnalysisDocument[] @relation("AnalysisDocumentCreator")
   analysisRunsRequested    AnalysisRun[]      @relation("AnalysisRunRequester")
   findingDecisions         FindingDecision[]  @relation("FindingDecider")
+  auditLessonsCreated      AuditLesson[]      @relation("AuditLessonCreator")
+  auditLessonsRetired      AuditLesson[]      @relation("AuditLessonRetirer")
+  lessonSetsTriggered      LessonSet[]        @relation("LessonSetTrigger")
 
 // model Project { ... }
   analysisRuns AnalysisRun[]
@@ -299,13 +380,24 @@ model AiInference {
 
 // model EvidenceItem { ... }
   analysisDocument AnalysisDocument?
+
+// model Company { ... }
+  auditLessonsOriginated AuditLesson[]
+
+// model RequirementTemplate { ... }
+  auditLessons AuditLesson[]
+
+// model FindingDecision { ... }  ← dentro del propio componente
+  promotedLessons AuditLesson[]
 ```
 
 ---
 
 ## BAOS Compliance Checklist
 
-- [x] **Aislamiento multi-tenant** — ninguna entidad lleva `tenantId` propio, igual que el Evidence Graph: la cadena es resoluble en todos los casos. `AnalysisRun → Project → Company/User`; `AnalysisDocument → EvidenceItem → Project`; `AnalysisFinding → AnalysisRun → Project`. La invariante #11 prohíbe además citas cruzadas entre proyectos.
+- [~] **Aislamiento multi-tenant — con una excepción deliberada.** Para las seis entidades de análisis se cumple sin matices: ninguna lleva `tenantId` propio, igual que el Evidence Graph, y la cadena es resoluble siempre (`AnalysisRun → Project → Company/User`; `AnalysisDocument → EvidenceItem → Project`; `AnalysisFinding → AnalysisRun → Project`). La invariante #11 prohíbe además citas cruzadas entre proyectos.
+
+  ⚠️ **`AuditLesson` y `LessonSet` son globales a propósito** (ADR-009 D4, decisión del usuario): una lección aprendida con un cliente se aplica al analizar los documentos de otro. Es la **primera excepción deliberada al aislamiento** en todo BAOS. La garantía no está en el schema sino en la sanitización verificada al promover (invariantes #17 y #18) y en la procedencia registrada (`originCompanyId`), que permite acotar el alcance a posteriori filtrando, sin migrar datos. El riesgo residual —fuga por paráfrasis, que ningún control automático detecta— está aceptado y documentado en ADR-009.
 - [x] **Audit trail** — `createdAt`/`updatedAt` en las entidades mutables; `occurredAt` en `AiInference` y `decidedAt` en `FindingDecision`, que son inmutables por diseño.
 - [x] **Actor de gobernanza** — `createdBy` en `AnalysisDocument`, `requestedBy` en `AnalysisRun`, `decidedBy` en `FindingDecision`. `AnalysisFinding` y `AiInference` **no llevan actor humano a propósito**: los produce el sistema, y atribuirlos a una persona sería falsificar el trail. Su actor es el registro de provenance.
 - [x] **Reglas de borrado explícitas en todas las relaciones** — ver tabla en Integration.
@@ -322,6 +414,8 @@ model AiInference {
 | `AiInference.rawOutput` | Puede contener fragmentos del documento analizado | Ídem |
 | `AiInference.inputRef` / `inputDigest` | Referencias y hash de la entrada; el digest no revela contenido, las referencias sí lo localizan | Ídem |
 | `AnalysisDocument.providerFileId` | Identificador en un servicio externo; permite recuperar el documento | Rotar/revocar al purgar |
+| `AuditLesson.lessonText` | **Cruza la frontera de tenant.** Debería contener solo criterio genérico, pero es texto libre escrito por una persona a partir de un caso real de un cliente concreto | Sanitización verificada al promover (#17, #18); revisión periódica del corpus por admin |
+| `LessonSet.snapshot` | Congela el texto de todas las lecciones activas, con la misma exposición | Ídem, más retención ADR-005 |
 
 ---
 
@@ -343,11 +437,22 @@ model AiInference {
 14. **`completed` significa terminado.** Un `AnalysisRun` no pasa a `completed` mientras queden peticiones del lote sin resultado. Si el lote caduca, el estado es `expired`, no `completed`.
 15. **Propuesta inmutable.** `proposedClassification`, `basis`, `confidence`, `rationale` y las citas no se modifican tras crearse. Corregir es decidir, y eso vive en `FindingDecision`.
 
+### Invariantes del aprendizaje gobernado (ADR-009)
+
+16. **Solo enseña lo que corrige.** Una `AuditLesson` solo puede promoverse desde una `FindingDecision` con `outcome` de `corrected` o `rejected`. Aceptar la propuesta de la IA no aporta criterio nuevo.
+17. **Escribir, no copiar.** `lessonText` no puede ser idéntico a `FindingDecision.notes` de su decisión de origen. La sanitización es un acto, y este es el control que obliga a ejecutarlo.
+18. **La lección no arrastra el documento.** `lessonText` no puede contener el `citedText` de ninguna cita del hallazgo de origen, ni el nombre del proyecto ni el de la empresa de origen. Se comprueba **mecánicamente antes de guardar**. ⚠️ Esto detecta la copia literal, no la paráfrasis: el riesgo residual está aceptado en ADR-009 D4.
+19. **El corpus solo crece por versiones.** Toda alta o retirada de lección crea un `LessonSet` nuevo. Ninguna versión existente se modifica jamás, y `version` es monotónica y no se reutiliza.
+20. **Un run fija su corpus al enviarse.** `AnalysisRun.lessonSetVersion` se escribe al pasar a `submitted` y no cambia después, aunque el lote tarde horas y el corpus crezca mientras tanto.
+21. **Retirar no reescribe el pasado.** Retirar una lección crea una versión nueva del set; los hallazgos producidos con versiones anteriores conservan su `lessonSetVersion` y siguen siendo reconstruibles. Se puede listar exactamente a qué hallazgos afectó una lección que resultó equivocada.
+22. **Solo un admin retira.** Promover es acto del auditor; retirar es acto de admin. Son dos permisos distintos sobre la misma entidad.
+23. **Solo lecciones activas se inyectan.** El snapshot de un `LessonSet` contiene únicamente lecciones en `status = active` en el momento de congelarlo.
+
 ---
 
 ## Integration with Existing Schema
 
-**Es puramente aditivo.** Seis tablas nuevas, ninguna columna modificada en tablas existentes. Solo se añaden back-relations en `User`, `Project`, `Requirement` y `EvidenceItem`, que en Prisma no generan SQL sobre las tablas existentes.
+**Es puramente aditivo.** **Ocho** tablas nuevas —seis de análisis y dos de aprendizaje—, ninguna columna modificada en tablas existentes. Solo se añaden back-relations en `User`, `Project`, `Requirement`, `EvidenceItem`, `Company` y `RequirementTemplate`, que en Prisma no generan SQL sobre esas tablas.
 
 ### Reglas de borrado
 
@@ -362,6 +467,9 @@ model AiInference {
 | `FindingDecision.analysisFinding` | Cascade | La decisión pertenece al hallazgo |
 | `AiInference.analysisRun` | Cascade | La provenance vive con el run; su retención la gobierna ADR-005 |
 | `AiInference.analysisFinding` | **SetNull** | La provenance sobrevive a la desaparición de su hallazgo |
+| `AuditLesson.sourceDecision` | **SetNull** | La lección sobrevive a la desaparición de su decisión de origen: ya es criterio propio, no una copia |
+| `AuditLesson.originCompany` | **SetNull** | Si el cliente de origen se retira, el criterio sigue siendo válido; se pierde solo la procedencia |
+| `AuditLesson.requirementTemplate` | **SetNull** | Coherente con `Requirement.template`, que ya usa SetNull |
 | Todas las relaciones de actor (`User`) | **Restrict** | Igual que en Audit Team y Evidence Graph: no se borra un usuario que dejó rastro de gobernanza |
 
 ### ⚠️ `DELETE /api/projects/[id]` gana dos bloqueos nuevos
@@ -398,19 +506,22 @@ No se añade `Requirement.knowledgeNodeId`. ADR-008 lo prevé como campo opciona
 
 ## Open Questions
 
-1. **Propagación al `Requirement`.** La invariante #5 prohíbe que el sistema escriba `Requirement.status`; falta definir cómo lo hace el auditor (acción por hallazgo o aceptación en bloque al cerrar el run). Afecta al api-contract, no al schema. La **correspondencia entre los dos ejes** es propuesta mía y necesita confirmación antes de implementarse:
+1. **Propagación al `Requirement`.** Falta definir *cómo* la ejecuta el auditor (acción por hallazgo o aceptación en bloque al cerrar el run). Afecta al api-contract, no al schema — la invariante #5 sigue prohibiendo que la escriba el sistema. La **correspondencia entre los dos ejes está CONFIRMADA por el usuario** (2026-08-10):
 
-   | `finalClassification` | `Requirement.status` propuesto |
+   | `finalClassification` | `Requirement.status` |
    |---|---|
    | `conforme` | `conforme` |
    | `no_conformidad_mayor` | `no_conforme` |
    | `no_conformidad_menor` | `no_conforme` |
    | `observacion` | `parcial` |
-   | `oportunidad_mejora` | **no cambia** — es una sugerencia, no un incumplimiento |
+   | `oportunidad_mejora` | `conforme` |
 
-   El punto discutible es `observacion → parcial`: la taxonomía la define como incumplimiento menor fácilmente subsanable, y `parcial` es el valor existente que más se le acerca, pero no es una equivalencia exacta.
+   `observacion → parcial` es criterio expreso del usuario: **`parcial` es más objetivo que «menor»**. `oportunidad_mejora → conforme` se sigue de que la oportunidad de mejora presupone conformidad.
 2. **Hallazgo aceptado → `EvidenceRequirementLink`.** ¿Debe el auditor poder crear el vínculo de evidencia desde el hallazgo en un solo gesto? Sería el punto donde el análisis alimenta de verdad al Evidence Graph.
 3. **Caducidad de `providerFileId`.** El modelo prevé `providerExpiresAt`, pero falta decidir la política: re-subir bajo demanda al lanzar un run, o mantener un proceso de refresco. Depende de la política real de retención del proveedor, que hay que verificar.
 4. **Granularidad del run.** Hoy un run cubre un proyecto entero. ¿Hace falta un run parcial —unos pocos requisitos, un documento nuevo— sin re-analizar todo? El schema lo admite (`requirementCount` es un contador, no una restricción); la decisión es de producto.
 5. **`confidence` como enumerado.** Se elige `high|medium|low` en lugar de un número porque no existe calibración que respalde una probabilidad, y un `0.87` invita a leerse como precisión que no hay. Reconsiderable cuando el Benchmark Framework aporte datos reales.
-6. **Deriva respecto al component-spec.** El spec dice que este componente «extrae el contenido textual y estructural [...] y lo persiste como proyección legible por máquina». ADR-008 (D5) lo supera: el PDF viaja nativo y las citas las produce la API, así que **no se persiste el texto extraído**. `AnalysisDocument` guarda referencia y metadatos, no contenido. El spec debe corregirse para que ambos documentos digan lo mismo.
+6. **Tope de lecciones por requisito.** Cada lección inyectada suma tokens en **cada** análisis de ese requisito. Sin un techo, el coste por auditoría crece de forma silenciosa a medida que el corpus madura. Falta decidir el límite y qué se hace al alcanzarlo (descartar las más antiguas, exigir consolidación, avisar al admin).
+7. **Contradicción entre lecciones.** Nada impide hoy que el corpus acumule dos criterios opuestos sobre el mismo requisito. Detectarlo es competencia del Contradiction Engine, que no existe. Mientras tanto, el único control es que el corpus sea pequeño y revisable a ojo.
+8. **Consolidación del corpus.** Varias correcciones parecidas producirán lecciones casi duplicadas. ¿Se permite fusionarlas? Fusionar crea una lección nueva y retira las originales, así que encaja con el versionado, pero falta decidir si es una operación de producto o basta con retirar a mano.
+9. **Deriva respecto al component-spec.** El spec dice que este componente «extrae el contenido textual y estructural [...] y lo persiste como proyección legible por máquina». ADR-008 (D5) lo supera: el PDF viaja nativo y las citas las produce la API, así que **no se persiste el texto extraído**. `AnalysisDocument` guarda referencia y metadatos, no contenido. El spec debe corregirse para que ambos documentos digan lo mismo.

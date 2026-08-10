@@ -23,7 +23,7 @@ Es el componente que materializa el objetivo del producto. Todo lo construido ha
 | BAOS layer | Intelligence |
 | Implementation phase | Slice inicial sobre Phase 1 Foundation |
 | Entry point | `app/api/projects/[id]/analysis/*` (lanzar y consultar), `app/api/admin/analysis/*` (revisión y decisión), `services/analysis.service.ts`, `services/extraction.service.ts` |
-| Persistence | Modelos Prisma fijados en `docs/domain-models/audit-intelligence-platform.md`: `AnalysisDocument`, `AnalysisRun`, `AnalysisFinding`, `FindingCitation`, `FindingDecision`, `AiInference` |
+| Persistence | Modelos Prisma fijados en `docs/domain-models/audit-intelligence-platform.md`: `AnalysisDocument`, `AnalysisRun`, `AnalysisFinding`, `FindingCitation`, `FindingDecision`, `AiInference`, más `AuditLesson` y `LessonSet` para el aprendizaje gobernado (ADR-009) |
 | Boundary | Posee la extracción de contenido de los documentos de evidencia, el análisis IA que los confronta con los requisitos, los hallazgos propuestos y la provenance de toda inferencia. NO posee el ciclo de vida de la evidencia, ni el veredicto final de cumplimiento, ni la redacción del informe. |
 
 ### Conflicto de frontera declarado
@@ -87,6 +87,7 @@ Son dos motores distintos que se prueban, se auditan y fallan de forma distinta.
 - **Registrar la provenance completa** de cada inferencia, según la regla fijada en `CLAUDE.md`: modelo, versión, versión de prompt, inputs, parámetros, timestamp, salida cruda, tenant/proyecto/auditoría, tokens, coste y latencia.
 - **Versionar los prompts** como artefacto de gobernanza: un cambio de prompt es un cambio de sistema y debe quedar registrado.
 - **Registrar la decisión humana** sobre cada hallazgo (aceptado, corregido, rechazado), con actor y motivo.
+- **Mantener el corpus de lecciones** (ADR-009): promover una corrección a criterio, congelarlo en versiones inmutables e inyectar las lecciones aplicables en los análisis siguientes. Es lo que hace que el sistema **mejore con el uso sin tocar el modelo**, conservando la reproducibilidad.
 - Mantener el aislamiento multi-tenant en todo el recorrido: documento, extracción, inferencia y hallazgo.
 
 ### This component is NOT responsible for
@@ -98,7 +99,8 @@ Son dos motores distintos que se prueban, se auditan y fallan de forma distinta.
 - **Detectar contradicciones entre evidencias** — es del futuro Contradiction Engine.
 - **Estructurar el texto normativo de la ISO 19650** — es del futuro Knowledge Graph. Este slice trabaja contra el texto de `Requirement`.
 - **Redactar el informe de auditoría** — es de `audit-report.generator.ts`.
-- **Entrenar, afinar o evaluar modelos** — son Training Factory y Benchmark Framework.
+- **Entrenar, afinar o evaluar modelos** — son Training Factory y Benchmark Framework. El aprendizaje que sí entra aquí (ADR-009) ocurre **en el contexto del prompt, nunca en los pesos**: el modelo sigue siendo intercambiable y sin estado.
+- **El ciclo completo de mejora continua gobernada** — es CALS. Lo que se construye aquí es su germen y CALS deberá absorberlo, no duplicarlo (ADR-009 D6).
 - **Analizar geometría o datos de modelo BIM/IFC** — fuera del slice inicial, que es documental. Ver Open Questions.
 
 ---
@@ -133,7 +135,8 @@ Son dos motores distintos que se prueban, se auditan y fallan de forma distinta.
 ## Implementation Checklist
 
 - [x] **ADR-008** — frontera Audit Intelligence Platform ↔ Rule Engine, proveedor/modelo, citación y ejecución asíncrona (`docs/adr/ADR-008-audit-intelligence-platform-frontera-y-proveedor.md`, Accepted)
-- [x] Domain model documentado (`docs/domain-models/audit-intelligence-platform.md`) — 6 entidades, 12 invariantes
+- [x] **ADR-009** — aprendizaje gobernado por corpus de lecciones versionado (`docs/adr/ADR-009-aprendizaje-gobernado-por-corpus-de-lecciones.md`, Accepted)
+- [x] Domain model documentado (`docs/domain-models/audit-intelligence-platform.md`) — 8 entidades, 23 invariantes
 - [ ] API contract definido (`docs/api-contracts/audit-intelligence-platform.md`)
 - [ ] Security spec definido (`docs/security-specs/audit-intelligence-platform.md`)
 - [ ] Migración Prisma escrita y aplicada
