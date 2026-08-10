@@ -35,6 +35,8 @@ El inventario previo confirmó que la ventana estaba abierta de par en par: la b
 - Neon: proyecto `BAOS-produccion-fra` (`late-hat-22164008`) en `aws-eu-central-1`, con ramas `production` y `Test`.
 - Vercel Functions: `"regions": ["fra1"]` en `vercel.json`.
 - Vercel Blob: el store se creará en `fra1`. El actual, en `iad1` y vacío, se retira.
+  ✅ **Ejecutado el 2026-08-10.** `iso-saas-evidence-fra` (`store_wyhryJCIVwjFEuMw`) en `fra1`, privado, vinculado a `iso-saas` en Production, Preview y Development. El store de `iad1` (`store_SPJ4WiRGmr7N39TV`) se borró **con 0 ficheros y 0 B**: la ventana que este ADR describía seguía abierta y el coste fue cero, como estaba previsto. Script: `scripts/blob-a-frankfurt.ps1`. **Con esto ADR-007 queda ejecutado en sus tres patas.**
+  ⚠️ El store se creó en `iad1` en julio **por el valor por defecto de `--region` en el CLI**, no por un flag mal escrito: omitir el flag es suficiente para acabar en Washington.
 
 **Los tres van juntos, no se parten.** Se descartó explícitamente la opción de mover solo el Blob a la UE dejando Neon en Londres: resolver la jurisdicción del binario y dejar sus metadatos —quién lo subió, a qué requisito responde, quién lo validó— bajo otra jurisdicción no resuelve nada y produce una respuesta ambigua a la única pregunta que importa.
 

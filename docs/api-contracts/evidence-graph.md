@@ -662,7 +662,7 @@ Los route handlers son thin: autentican, validan el shape del input y delegan al
 
 **AuditReport**: `EvidenceReportLink.auditReportId → AuditReport.id`. Esta API no reemplaza el campo `AuditReport.traceability Json` existente en Phase 1 — coexisten hasta el backfill de Phase 2.
 
-**Storage**: `EvidenceItem.sourceRef` almacena el `pathname` de Vercel Blob (store privado `iso-saas-evidence`, ya aprovisionado con `BLOB_READ_WRITE_TOKEN` vinculado al proyecto). La escritura del binario es client upload autorizado por `POST /api/projects/[projectId]/evidence/upload-token`; la lectura, signed URL vía `GET /api/evidence/[evidenceId]/file`. El binario nunca atraviesa una función serverless en ninguno de los dos sentidos. Requiere `@vercel/blob` como dependencia — **no instalada todavía**.
+**Storage**: `EvidenceItem.sourceRef` almacena el `pathname` de Vercel Blob (store privado **`iso-saas-evidence-fra`** en `fra1`, ya aprovisionado con `BLOB_READ_WRITE_TOKEN` vinculado al proyecto — región cambiada el 2026-08-10 por ADR-007). La escritura del binario es client upload autorizado por `POST /api/projects/[projectId]/evidence/upload-token`; la lectura, signed URL vía `GET /api/evidence/[evidenceId]/file`. El binario nunca atraviesa una función serverless en ninguno de los dos sentidos. Requiere `@vercel/blob` como dependencia — **no instalada todavía**.
 
 **Frontend**: En Phase 1 no existe UI dedicada de Evidence Graph. `/projects/[id]` es el candidato natural para listar/subir evidencia del proyecto; `/admin/audit-reports` es el candidato para las acciones de validación y vinculación a informe.
 

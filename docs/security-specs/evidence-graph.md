@@ -163,7 +163,9 @@ Estas reglas se aplican en `evidence.service.ts`, no en el route handler ni en e
 |----------|----------|--------|-------|
 | `DATABASE_URL` | Sí | ✅ Ya configurada en Vercel | Conexión Neon PostgreSQL |
 | `AUTH_SECRET` | Sí | ✅ Ya configurada en Vercel | Firma de cookies de sesión |
-| `BLOB_READ_WRITE_TOKEN` | Sí | ✅ Aprovisionada (2026-07-01) | Store privado `iso-saas-evidence` (`store_SPJ4WiRGmr7N39TV`, región iad1), vinculado al proyecto `iso-saas`. Token seteado en Production, Preview y Development |
+| `BLOB_READ_WRITE_TOKEN` | Sí | ✅ Aprovisionada (2026-07-01) · **rotada el 2026-08-10** | Store privado **`iso-saas-evidence-fra`** (`store_wyhryJCIVwjFEuMw`, región **`fra1`**), vinculado al proyecto `iso-saas`. Token en Production, Preview y Development |
+
+⚠️ **Cambio de región el 2026-08-10 (ADR-007)**: el store original `iso-saas-evidence` (`store_SPJ4WiRGmr7N39TV`) estaba en **`iad1` — Washington**, fuera de la UE, por el valor por defecto de `--region` en el CLI. Como **la región de un store es inmutable**, no se cambió: se creó otro en `fra1` y se borró el anterior, que seguía con **0 ficheros**. El token cambió, así que cualquier `.env.local` anterior a esa fecha apunta a un store que ya no existe: hay que hacer `vercel env pull`.
 
 **Acción requerida antes de implementar**: instalar la dependencia `@vercel/blob` — el store y el token existen, pero el paquete **no está en `package.json`** (verificado 2026-08-05). Sin él no hay ni emisión de token de subida ni generación de signed URL.
 

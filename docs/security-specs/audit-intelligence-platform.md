@@ -295,7 +295,7 @@ Obligaciones que se derivan, ninguna resuelta hoy:
 | `DATABASE_URL` | Sí | ✅ En Vercel | Neon Frankfurt (ADR-007) |
 | `AUTH_SECRET` | Sí | ✅ En Vercel | Firma de cookies `bmo_session` |
 | `CRON_SECRET` | Sí | ✅ En Vercel | Reutilizada del cron de alertas |
-| `BLOB_READ_WRITE_TOKEN` | Sí | ⚠️ Existe, **región equivocada** | Ver aviso siguiente |
+| `BLOB_READ_WRITE_TOKEN` | Sí | ✅ En Vercel, **rotada el 2026-08-10** | Store `iso-saas-evidence-fra` (`store_wyhryJCIVwjFEuMw`) en `fra1` |
 | **`ANTHROPIC_API_KEY`** | Sí | ❌ **No existe** | Alta en Production, Preview y Development |
 
 ### Reglas para `ANTHROPIC_API_KEY`
@@ -308,9 +308,11 @@ Obligaciones que se derivan, ninguna resuelta hoy:
 
 ### ⚠️ El store de Blob actual está en la región equivocada
 
-`docs/security-specs/evidence-graph.md` documenta el store `iso-saas-evidence` (`store_SPJ4WiRGmr7N39TV`) en región **`iad1` — Washington**. ADR-007 movió datos y cómputo a la UE precisamente por jurisdicción.
+✅ **RESUELTO el 2026-08-10** — este apartado se conserva porque explica por qué el store actual se llama como se llama.
 
-**La región de un store de Blob es inmutable**: no se cambia, se crea otro. La Fase D del Evidence Graph debe crear el store en **`fra1`**, y este componente **depende de esa decisión** — los documentos que analiza salen de ahí. Analizar documentos alojados en Washington contradice ADR-007 en el mismo acto.
+El store original `iso-saas-evidence` (`store_SPJ4WiRGmr7N39TV`) estaba en **`iad1` — Washington**, fuera de la UE, contra ADR-007. Como **la región de un store es inmutable**, no se cambió: se creó **`iso-saas-evidence-fra`** (`store_wyhryJCIVwjFEuMw`) en **`fra1`**, privado y en los tres entornos, y se borró el de Washington con **0 ficheros y 0 B**. Script: `scripts/blob-a-frankfurt.ps1`.
+
+Este componente dependía de ello: los documentos que analiza salen de ese store, y analizarlos alojados en Washington habría contradicho ADR-007 en el mismo acto. **Ya no es el caso.**
 
 ⚠️ **Gotcha ya documentado**: `vercel blob create-store --yes` dispara un `vercel env pull` que **sobrescribe `.env.local` entero**. Copia de seguridad antes de cualquier comando `vercel blob` o `vercel env`.
 
@@ -391,7 +393,7 @@ Esperado: `total` con el número de runs del proyecto, y `401` en la segunda.
 - [ ] **Jurisdicción del procesado de inferencia sin verificar** — bloqueante para documentación real de cliente
 - [ ] **Sin política de borrado en el proveedor** — ADR-005 no se puede cumplir hasta resolverlo
 - [ ] **Sin control de gasto** — aceptable con un solo propietario del sistema, no con un segundo cliente
-- [ ] **Store de Blob en región equivocada** (`iad1`) — lo resuelve la Fase D creando el de `fra1`
+- [x] **Store de Blob en la UE** — `iso-saas-evidence-fra` en `fra1` desde el 2026-08-10; el de `iad1` borrado vacío
 - [ ] Tests TENANT-01/02/03 pendientes (test-plan)
 
 ---
