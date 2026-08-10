@@ -122,6 +122,51 @@ Principios de código: SOLID, Clean Architecture, desacoplamiento alto, alta coh
 
 ---
 
+## Regla de integridad normativa (anti-alucinación)
+
+Está **prohibido inventar** —en código, documentación, tests, seeds, migraciones o respuestas de sesión—:
+
+- requisitos ISO 19650
+- cláusulas normativas
+- criterios de conformidad
+- reglas auditoras
+- evidencias
+
+Todo contenido normativo que entre en el sistema debe proceder de una **fuente autorizada y validada como tal por el proyecto**. Si el conocimiento necesario no está disponible, no se rellena con una aproximación plausible: se declara **`ARCHITECTURAL INPUT REQUIRED`** indicando exactamente qué falta y quién debe aportarlo.
+
+Los datos que se necesiten para pruebas o demos se marcan explícitamente como **`SYNTHETIC TEST DATA`**, tanto en el propio dato como en su documentación. Nunca deben poder confundirse con contenido normativo real.
+
+⚠️ **Nota de licencia**: el texto de la ISO 19650 **no es de dominio público** — es material con copyright que ISO y AENOR comercializan. El checklist de `docs/domain-models/knowledge-graph.md` afirma lo contrario ("normative text is public domain"); es incorrecto y debe corregirse al retomar ese componente. Volcar el texto íntegro de la norma en la base de datos o servirlo a los tenants es un riesgo de licencia, no un detalle de implementación. Los requisitos parafraseados de elaboración propia (las `RequirementTemplate` actuales) no tienen ese problema.
+
+**Por qué**: una cláusula inventada dentro de un informe de auditoría es responsabilidad profesional del auditor que lo firma, no un bug del software.
+
+---
+
+## Regla de trazabilidad de inferencia IA (provenance)
+
+BAOS **no se acopla a ningún proveedor LLM**. Toda inferencia pasa por una abstracción `AIProvider`; el dominio no importa SDKs de proveedor directamente.
+
+**La salida de un modelo es siempre una propuesta, nunca un veredicto.** No existe transición autónoma de estado sobre conclusiones de auditoría, hallazgos ni validación de evidencia: el auditor humano confirma o corrige, siguiendo el mismo patrón que `EvidenceValidation.validatedBy`.
+
+Toda inferencia que influya —aunque sea indirectamente— en un resultado de auditoría debe dejar **registro persistente** de:
+
+| Campo | Por qué |
+|-------|---------|
+| Modelo e identificador exacto de versión | "lo dijo la IA" no es reconstruible; "lo dijo el modelo X versión Y" sí |
+| Versión del prompt | el mismo modelo con otro prompt es, a efectos de auditoría, otro sistema |
+| Inputs exactos (o referencia estable + hash) | sin las entradas la conclusión no se puede reproducir |
+| Parámetros de invocación (temperatura, límites, formato) | afectan al resultado y deben poder replicarse |
+| Timestamp | sitúa la inferencia frente a la edición de norma vigente |
+| Salida estructurada devuelta | lo que el modelo dijo realmente, antes de interpretarlo |
+| Tenant, proyecto y auditoría | aislamiento multi-tenant y ámbito de la conclusión |
+| Tokens, coste y latencia | control económico y operativo |
+
+**Regla dura, equivalente al evidence-first**: una inferencia sin provenance registrada **no puede citarse en un informe de auditoría**.
+
+El sistema debe poder responder, para cualquier conclusión asistida por IA: qué modelo la produjo, con qué versión, con qué prompt, sobre qué inputs, cuándo y bajo qué configuración.
+
+---
+
 ---
 
 # BMO ISO 19650 — Implementación actual (Phase 1 Foundation)
