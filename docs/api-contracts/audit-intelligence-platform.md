@@ -456,7 +456,7 @@ type ProvenanceResponse = {
     promptVersion: string;
     lessonSetVersion: number | null;
     inputDigest: string;
-    inputRef: unknown;        // providerFileIds, requirementId, ids de bloque
+    inputRef: unknown;        // analysisDocumentIds + hash del binario, requirementId, ids de bloque
     parameters: unknown;      // temperatura, max_tokens, formato
     rawOutput: unknown;       // lo que el modelo devolvió antes de interpretarlo
     stopReason: string | null;

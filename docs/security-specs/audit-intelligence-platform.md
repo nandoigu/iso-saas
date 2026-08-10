@@ -213,8 +213,8 @@ Ninguna está decidida: falta la cifra real, que exige medir con `count_tokens` 
 | `notes` | `FindingDecision` | Criterio del auditor sobre por qué la IA se equivocó | Nunca en logs. Solo dueño y admin |
 | `lessonText` | `AuditLesson` | ⚠️ **Cruza la frontera de tenant** — se inyecta en análisis de otros clientes | Sanitización verificada al escribir. Lectura solo admin. Nunca en logs |
 | `snapshot` | `LessonSet` | Agregado de todas las lecciones activas | Ídem |
-| `inputRef` | `AiInference` | `providerFileId`s — referencias a documentos en el proveedor | Nunca en logs ni en respuestas fuera de `provenance` |
-| `providerFileId` | `AnalysisDocument` | Referencia al documento en la infraestructura del proveedor | No exponer al cliente en respuestas ordinarias |
+| `inputRef` | `AiInference` | Identificadores de documento y hash del binario analizado | Nunca en logs ni en respuestas fuera de `provenance` |
+| **El binario en memoria** | (runtime) | El PDF completo pasa por la función para incrustarse en la petición (ADR-008 D5) | No escribirlo nunca en disco ni en log; liberarlo al terminar. Vigilar memoria con documentos grandes |
 | `ANTHROPIC_API_KEY` | (entorno) | **Credencial** | Solo `services/ai-provider.ts`. Jamás en cliente, jamás en `NEXT_PUBLIC_*`, jamás en un mensaje de error |
 
 ### Reglas de logging
@@ -273,16 +273,17 @@ ADR-007 puso datos y cómputo en la UE: Neon en `eu-central-1` y Vercel en `fra1
 
 | Qué sale | Dónde queda | Cuánto |
 |---|---|---|
-| El PDF completo | Files API del proveedor | Hasta que se borre explícitamente |
+| El PDF completo | ~~Files API~~ — **ya no se usa** (ADR-008 D5) | **Nada persistente**: viaja en línea y sigue la retención estándar |
 | El payload de cada petición | Lote del proveedor | Durante el proceso |
 | Los resultados | Almacenamiento de resultados de lotes | **29 días** (ADR-008 D4) |
 
 Obligaciones que se derivan, ninguna resuelta hoy:
 
 1. ✅ **Jurisdicción verificada el 2026-08-10 — no existe opción UE.** `inference_geo` solo admite `"us"` y `"global"`; el *workspace geo* solo `"us"`, e inmutable. Con la API directa la inferencia **no puede ocurrir en la UE**. Ya no es una comprobación pendiente sino una decisión de producto entre aceptar la transferencia con base legal o mover la superficie a Bedrock UE. Ver pregunta abierta #2.
-2. ⚠️ **La retención declarada acota qué funciones se pueden usar.** ADR-005 declara **30 días** en el recibo. La **Files API retiene indefinidamente hasta borrado explícito** —lo dice su documentación: «files persist until you delete them»—, así que **excede el plazo declarado**. O se descarta la Files API y el PDF viaja en línea en cada petición, o hay que borrar cada fichero activamente antes de emitir el recibo. `AnalysisDocument.providerExpiresAt` da soporte a la segunda vía, pero un borrado que falle en silencio convierte el recibo en falso: la primera vía es más segura porque no hay nada que borrar.
+2. ✅ **RESUELTO el 2026-08-10: se descarta la Files API.** Retenía **indefinidamente hasta borrado explícito** y excedía los 30 días que declara el recibo. El PDF viaja **en línea** en cada petición (ADR-008 D5): no hay nada que borrar y, por tanto, **nada que pueda fallar en silencio** y volver falso el recibo. La Batches API sí encaja: 29 días, por debajo del plazo declarado.
+   ⚠️ **Regla permanente que queda**: ninguna función del proveedor con retención superior a la declarada. Toda función nueva se comprueba **antes** de adoptarla — el plazo del recibo es un compromiso, no una etiqueta.
 3. ~~**Encaje con ADR-005**~~ ✅ **RESUELTO el 2026-08-10 por decisión del usuario**: el recibo **declara el plazo** en lugar de perseguir el cero. ADR-005 gana `providerRetentionUntil` (calculado desde la **última inferencia**, no desde el cierre), `providerRetentionDays` (30 por defecto), `providerName` y `providerRegion`; y su texto separa «purgado en BAOS» de «copias del proveedor expiradas».
-   ⚠️ **Obligación recíproca que recae sobre este componente**: **ninguna función del proveedor con retención superior a la declarada**, o el recibo vuelve a mentir. Verificado: la **Files API retiene indefinidamente hasta borrado explícito** —no caduca sola—, así que o se descarta o se borra activamente antes de emitir el recibo. Toda función nueva debe comprobarse antes de adoptarla: el plazo del recibo es un compromiso, no una etiqueta.
+   ⚠️ **Obligación recíproca que recae sobre este componente**: **ninguna función del proveedor con retención superior a la declarada**, o el recibo vuelve a mentir. ✅ Aplicada el mismo día: **la Files API queda descartada** (retenía indefinidamente) y el PDF viaja en línea. Batches encaja con sus 29 días. Toda función nueva debe comprobarse antes de adoptarla.
 4. **Contrato de tratamiento de datos** con el proveedor, y garantía de no entrenamiento sobre los datos enviados.
 
 > Esto no bloquea prototipar con datos propios. **Bloquea el uso con documentación real de un cliente**, y conviene decidirlo antes de que el primer PDF real se suba, no después.
@@ -411,7 +412,9 @@ Esperado: `total` con el número de runs del proyecto, y `401` en la segunda.
 
    **Lo que la vía A exige tener antes de tratar documentación real de cliente**: DPA firmado con el proveedor, mecanismo de transferencia (cláusulas contractuales tipo), y la transferencia declarada en el registro de actividades de tratamiento. Es trabajo jurídico, no de ingeniería, y no lo resuelve este documento.
 
-3. **Retención cero (ZDR), si se quisiera además del plazo declarado.** Verificado: Messages API, PDF **en línea**, citations, prompt caching y `count_tokens` **sí** son elegibles; **Files API y Batches API NO** —29 días por diseño la segunda, indefinida la primera—. Es decir, el diseño quedaría en retención cero renunciando a las dos optimizaciones. Se negocia con ventas y es para clientes comerciales. **No es urgente**: con el plazo declarado en el recibo, el sistema ya es honesto.
+3. **Retención cero (ZDR), si se quisiera además del plazo declarado.** Verificado: Messages API, PDF **en línea**, citations, prompt caching y `count_tokens` **sí** son elegibles; **Batches API no** (29 días por diseño). Descartada ya la Files API, **la única pieza que separa al diseño de la retención cero es Batches**: renunciar al descuento del 50% bastaría. Se negocia con ventas y es para clientes comerciales. **No es urgente**: con el plazo declarado en el recibo, el sistema ya es honesto.
+
+4. ⚠️ **Troceado de las peticiones — la palanca de coste más grande, sin resolver.** Al viajar el PDF en línea, una petición por requisito reenvía y refactura el documento entero tantas veces como requisitos tenga el run, y engorda el lote hasta tamaños difíciles de manejar. Hay que decidir entre **agrupar varios requisitos por petición** o **apoyarse en la caché de prompt**, verificando antes que la caché funcione dentro de un lote. No es un problema de seguridad, pero condiciona el techo de gasto de la pregunta #1.
 
 4. **¿Hace falta un rol `auditor`?** Con `user` | `admin`, el auditor es admin, así que la separación de ADR-009 D5 entre «promueve el auditor» y «retira el admin» es hoy de momento y pantalla, no de permiso. Un tercer rol la haría real, a cambio de tocar el modelo de roles de toda la app.
 

@@ -96,6 +96,21 @@ Los bloques `document` aceptan PDF directamente, con límite de **32 MB por peti
 
 Quedan **fuera** de esta primera versión, cada uno con decisión propia pendiente: PDF escaneado sin capa de texto (exige OCR), e IFC/BIM (no es texto, es modelo de datos; el análisis geométrico es un problema distinto).
 
+#### El PDF viaja EN LÍNEA en cada petición. No se usa la Files API
+
+*Decidido el 2026-08-10.*
+
+El proveedor ofrece dos formas de entregar el documento: subirlo una vez a la **Files API** y referenciarlo por `file_id`, o incrustarlo **en línea** en cada petición. Se elige la segunda.
+
+**Motivo, y es de gobernanza, no de comodidad**: ADR-005 hace que el recibo de purga **declare** un plazo de retención del proveedor (30 días por defecto). La Files API **retiene los ficheros indefinidamente, hasta borrado explícito** — su documentación es literal: *«files persist until you delete them»*. Usarla obligaría a mantener un proceso de borrado activo antes de emitir cada recibo, y **un borrado que falle en silencio convierte el recibo en falso**. En línea no hay nada que borrar y, por tanto, nada que pueda fallar.
+
+Consecuencias asumidas:
+
+- **El binario pasa ahora por la función serverless**, que lo descarga del Blob y lo incrusta en la petición. ADR-004 evitaba esto en la *subida*, y su motivo era el límite de 4,5 MB del body — hoy son 100 MB, así que la razón original ya no aplica. Aun así es un cambio de postura y queda registrado: hay que vigilar memoria y tiempo de función con documentos grandes.
+- **El documento se envía —y se factura— una vez por petición.** Con la Files API ocurriría lo mismo (el contenido referenciado se cobra como tokens de entrada en cada llamada), así que **no hay penalización de tokens** por este cambio; sí de ancho de banda.
+- ⚠️ **Lo que sí queda abierto es el troceado de las peticiones.** Si se manda una petición por requisito, el PDF entero se reenvía y se cobra tantas veces como requisitos tenga el run, y el lote alcanza tamaños difíciles de manejar. Hay que decidir entre **agrupar varios requisitos por petición** —el documento se paga una vez por grupo— o **apoyarse en la caché de prompt**, verificando antes que la caché funcione dentro de un lote. Es la palanca de coste más grande de todo el componente y está sin resolver.
+- Se elimina de `AnalysisDocument` toda referencia al fichero en el proveedor: `providerFileId` y `providerExpiresAt` dejan de tener sentido.
+
 ## Alternatives Considered
 
 ### Asignar el análisis IA al Rule Engine

@@ -58,7 +58,7 @@ Tres consecuencias de diseño que se derivan de esta tabla:
 
 | Entity | What it represents | Key attributes |
 |--------|-------------------|----------------|
-| `AnalysisDocument` | Documento de evidencia preparado para análisis | `evidenceItemId`, `providerFileId`, `pageCount`, `mediaType`, `sizeBytes`, `status`, `unsupportedReason` |
+| `AnalysisDocument` | Documento de evidencia preparado para análisis | `evidenceItemId`, `pageCount`, `mediaType`, `sizeBytes`, `status`, `unsupportedReason` |
 | `AnalysisRun` | Campaña de análisis sobre un proyecto | `projectId`, `status`, `modelId`, `promptVersion`, `providerBatchId`, `requestedBy`, contadores |
 | `AnalysisFinding` | Propuesta de clasificación para un requisito | `analysisRunId`, `requirementId`, `proposedClassification`, `basis`, `confidence`, `rationale`, `status`, `finalClassification`, `requiresCorrectiveAction` |
 | `FindingCitation` | Fragmento literal que sostiene la propuesta | `analysisFindingId`, `analysisDocumentId`, `citedText`, `startPage`, `endPage` |
@@ -129,8 +129,9 @@ Bucle de aprendizaje gobernado (ADR-009):
 model AnalysisDocument {
   id                String   @id @default(cuid())
   evidenceItemId    String   @unique // tenant isolation via evidenceItem → project → company
-  providerFileId    String? // referencia del fichero en el proveedor de IA (Files API)
-  providerExpiresAt DateTime? // si el proveedor caduca la referencia, hay que re-subir
+  // Sin referencia al proveedor: el PDF viaja EN LÍNEA en cada petición (ADR-008 D5,
+  // 2026-08-10). No se usa la Files API porque retiene indefinidamente y excedería el
+  // plazo que el recibo de purga declara (ADR-005). Nada que borrar, nada que falle.
   mediaType         String // "application/pdf" | ...
   pageCount         Int? // null hasta que se inspecciona
   sizeBytes         Int
@@ -288,7 +289,7 @@ model AiInference {
 
   // Reproducibilidad de la entrada
   inputDigest   String // hash del payload exacto enviado (documentos + requisito + instrucciones)
-  inputRef      Json // referencias estables: providerFileId(s), requirementId, ids de bloque
+  inputRef      Json // referencias estables: analysisDocumentId(s) + hash del binario, requirementId, ids de bloque
   parameters    Json // temperatura, effort, max_tokens, formato — lo que afecte al resultado
 
   // Salida y economía
@@ -421,7 +422,7 @@ model LessonSet {
 | `FindingCitation.citedText` | **Contiene texto literal de documentación de cliente.** Es el campo más sensible del modelo | Jurisdicción ADR-007; purga ADR-005 |
 | `AiInference.rawOutput` | Puede contener fragmentos del documento analizado | Ídem |
 | `AiInference.inputRef` / `inputDigest` | Referencias y hash de la entrada; el digest no revela contenido, las referencias sí lo localizan | Ídem |
-| `AnalysisDocument.providerFileId` | Identificador en un servicio externo; permite recuperar el documento | Rotar/revocar al purgar |
+| `AnalysisDocument.evidenceItemId` | Vía única al binario, que vive en el Blob privado | Ningún identificador del proveedor que proteger: **no se sube nada** (ADR-008 D5) |
 | `AuditLesson.lessonText` | **Cruza la frontera de tenant.** Debería contener solo criterio genérico, pero es texto libre escrito por una persona a partir de un caso real de un cliente concreto | Sanitización verificada al promover (#17, #18); revisión periódica del corpus por admin |
 | `LessonSet.snapshot` | Congela el texto de todas las lecciones activas, con la misma exposición | Ídem, más retención ADR-005 |
 
@@ -557,7 +558,7 @@ No se añade `Requirement.knowledgeNodeId`. ADR-008 lo prevé como campo opciona
 
 1. ~~**Propagación al `Requirement`.**~~ ✅ **RESUELTA** el 2026-08-10: en bloque al cerrar el run. Ver *Propagación al `Requirement`* e invariantes #24-27.
 2. ~~**Hallazgo aceptado → `EvidenceRequirementLink`.**~~ ✅ **RESUELTA** el 2026-08-10: sí, en el mismo gesto que la decisión. Ver *Vínculo con el Evidence Graph*.
-3. **Caducidad de `providerFileId`.** El modelo prevé `providerExpiresAt`, pero falta decidir la política: re-subir bajo demanda al lanzar un run, o mantener un proceso de refresco. Depende de la política real de retención del proveedor, que hay que verificar.
+3. ~~**Caducidad de `providerFileId`.**~~ ✅ **DISUELTA el 2026-08-10**: no se usa la Files API, así que no hay fichero en el proveedor que caduque ni que refrescar. El PDF viaja en línea en cada petición (ADR-008 D5). ⚠️ **En su lugar queda abierta una pregunta mayor: el troceado de las peticiones.** Una petición por requisito reenvía y refactura el PDF entero tantas veces como requisitos tenga el run. Hay que decidir entre agrupar varios requisitos por petición o apoyarse en la caché de prompt —verificando antes que la caché funcione dentro de un lote—. **Es la palanca de coste más grande del componente.**
 4. **Granularidad del run.** Hoy un run cubre un proyecto entero. ¿Hace falta un run parcial —unos pocos requisitos, un documento nuevo— sin re-analizar todo? El schema lo admite (`requirementCount` es un contador, no una restricción); la decisión es de producto.
 5. **`confidence` como enumerado.** Se elige `high|medium|low` en lugar de un número porque no existe calibración que respalde una probabilidad, y un `0.87` invita a leerse como precisión que no hay. Reconsiderable cuando el Benchmark Framework aporte datos reales.
 6. **Tope de lecciones por requisito.** Cada lección inyectada suma tokens en **cada** análisis de ese requisito. Sin un techo, el coste por auditoría crece de forma silenciosa a medida que el corpus madura. Falta decidir el límite y qué se hace al alcanzarlo (descartar las más antiguas, exigir consolidación, avisar al admin).
