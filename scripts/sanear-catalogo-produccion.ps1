@@ -13,7 +13,7 @@
 #   pwsh -ExecutionPolicy Bypass -File scripts\sanear-catalogo-produccion.ps1
 #   pwsh -ExecutionPolicy Bypass -File scripts\sanear-catalogo-produccion.ps1 -Aplicar
 
-param([switch]$Aplicar)
+param([switch]$Aplicar, [switch]$Comparar)
 
 $ErrorActionPreference = "Stop"
 Set-Location (Split-Path $PSScriptRoot -Parent)
@@ -39,6 +39,17 @@ if ($cs.Contains("jolly-resonance")) {
 }
 
 $env:SANEAR_DATABASE_URL = $cs
+
+if ($Comparar) {
+    # Verificacion completa: las 91 plantillas de produccion contra los Excel de
+    # docs/fuentes, texto incluido. Un recuento no detecta una descripcion mal.
+    Write-Host "`nCOMPARANDO produccion contra docs/fuentes (solo lectura)`n" -ForegroundColor Green
+    $env:DUMP_DATABASE_URL = $cs
+    node scripts/comparar-fuente-vs-base.mjs
+    Remove-Item Env:\DUMP_DATABASE_URL -ErrorAction SilentlyContinue
+    Remove-Item Env:\SANEAR_DATABASE_URL -ErrorAction SilentlyContinue
+    exit 0
+}
 
 if ($Aplicar) {
     Write-Host "`nAPLICANDO sobre produccion...`n" -ForegroundColor Yellow
