@@ -28,6 +28,8 @@ Eso obliga a resolver ahora tres cosas que ADR-008 no contemplaba: cómo se mant
 - **Multi-tenant isolation** — es el principio en mayor riesgo. Una lección que viaje entre clientes arrastrando contenido de origen es una fuga de datos.
 - **Certification-ready** — un sistema cuyos criterios cambian sin dejar rastro produce informes que un tercero no puede verificar.
 
+> ⚠️ **DEPENDENCIA NO DECLARADA, cubierta por ADR-013 (2026-08-11).** Este ADR describe cómo mejora el criterio pero **no dice de qué parte**: da por supuesto que existe un criterio inicial que las lecciones perfeccionan, y el corpus arranca vacío. El arranque en frío —criterios de aceptación escritos por el experto, campaña de calibración y conjunto de referencia apartado— se resuelve en **ADR-013**, que también fija que criterio de aceptación y lección son entidades distintas y no deben mezclarse. Todo lo que sigue en este ADR permanece en vigor.
+
 ## Decision
 
 ### D1 — Se aprende en el contexto, nunca en el modelo

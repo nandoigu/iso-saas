@@ -19,3 +19,4 @@ ADRs follow the Nygard format enriched with BAOS governance fields.
 | ADR-010 | El vínculo evidencia–requisito lo declara el dueño del proyecto y lo valida el auditor | Accepted | 2026-08-11 |
 | ADR-011 | La unidad de análisis es un requisito con sus documentos; el troceado se ordena por documento | Accepted | 2026-08-11 |
 | ADR-012 | Se retira la Batches API; el análisis se ejecuta en rodajas encadenadas (supersede ADR-008 D4) | Accepted | 2026-08-11 |
+| ADR-013 | Arranque en frío — el criterio de auditoría se escribe antes de que haya lecciones | Accepted | 2026-08-11 |
