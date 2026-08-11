@@ -73,6 +73,8 @@ Esto resuelve además la pregunta abierta #3 del component-spec: el anclaje esta
 
 ### D4 — Ejecución asíncrona sobre la Batches API, disparada por el Cron ya existente
 
+> ⚠️ **SUPERSEDIDO POR ADR-012 (2026-08-11). Este punto D4 ya no está en vigor.** La Batches API se retira: el análisis pasa a ejecutarse en rodajas encadenadas y desaparece el cron de reconciliación. El motivo es que la medición de tokens redujo el valor del descuento del 50% de ~15 $ a ~0,50 $ por auditoría, y los lotes son incompatibles con la caché de prompt, que ahorra más. **El resto de este ADR —D1, D2, D3 y D5— sigue íntegramente en vigor**, incluidas las citas y el PDF en línea. El dato de los 300 segundos por función que se verifica más abajo sigue siendo cierto y sigue siendo el motivo por el que hay que trocear.
+
 Dato verificado que corrige una imprecisión del component-spec: en **Vercel Hobby una función admite 300 segundos** (5 minutos), tanto por defecto como de máximo, con fluid compute activo. Pro llega a 800s y a 1800s en beta. Un documento suelto cabe holgadamente; **un proyecto entero no** — `Hospital Laguna 2` tenía 86 requisitos, y cada uno es al menos una inferencia.
 
 Se adopta la **Batches API** (`POST /v1/messages/batches`): hasta 100.000 peticiones por lote, la mayoría completan en menos de una hora, máximo 24 horas, resultados disponibles 29 días, y **50% de descuento sobre el precio estándar**.
