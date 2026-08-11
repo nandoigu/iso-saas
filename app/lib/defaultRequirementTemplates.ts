@@ -224,7 +224,7 @@ export const DEFAULT_REQUIREMENT_TEMPLATES = [
     "norma": "19650-2",
     "item": "5.2.2",
     "titulo": "Reunir la información de referencia y los recursos compartidos.",
-    "descripcion": "¿Tiene definida el adjudicador, por medio de conjuntos de requisitos, toda información que deberá aportar a lo largo del ciclo de vida del activo y del proyecto?\n¿Transmite estos requisitos a los adjudicatarios principales ofertantes antes de la contratación?"
+    "descripcion": "¿Reune la información de referencia o los recursos compartidos que tiene la intención de proporcionar al adjudicatario principal durante el proceso de petición de ofertas o adjudicación?"
   },
   {
     "role": "adjudicador",
@@ -638,13 +638,6 @@ export const DEFAULT_REQUIREMENT_TEMPLATES = [
     "item": "5.7.1",
     "titulo": "PRESENTAR AL ADJUDICATARIO PRINCIPAL EL MODELO DE INFORMACIÓN PARA SU AUTORIZACIÓN",
     "descripcion": "¿Es conocedor el equipo de trabajo que el modelo de información deber ser entregado al adjudicatario principal para su autorización dentro del CDE antes de su entrega al adjudicador?"
-  },
-  {
-    "role": "adjudicatario",
-    "norma": "19650-2",
-    "item": "5.7.2",
-    "titulo": "Revisar y autorizar el modelo de información.",
-    "descripcion": "¿Realiza el adjudicatario principal una revisión del modelo de acuerdo con los métodos y procedimientos de producción de información, fijando especial atención al EIR del adjudicador y suya propia, y que se cumplen los criterios de aceptación y nivel de información para cada requisito de información?"
   },
   {
     "role": "adjudicatario",
