@@ -45,4 +45,8 @@ next-env.d.ts
 
 /app/generated/prisma
 
+# Documentacion real de proyectos, usada solo como muestra local para medir tokens
+# o probar el analisis. El repositorio es PUBLICO: nada de esto se commitea nunca.
+/docs/muestras/
+
 .env*
