@@ -299,7 +299,11 @@ Este endpoint es el punto crítico de seguridad del flujo de subida: es donde se
 
 #### Request Body
 
-El payload del handshake de client upload de `@vercel/blob/client`. La firma exacta se fija en implementación contra la documentación del paquete; el contrato exige únicamente que el `pathname` autorizado quede bajo un prefijo que incluya el `projectId`, para que un archivo huérfano sea siempre atribuible a su proyecto.
+El payload del handshake de client upload de `@vercel/blob/client` (`HandleUploadBody`). El contrato exige únicamente que el `pathname` autorizado quede bajo un prefijo que incluya el `projectId`, para que un archivo huérfano sea siempre atribuible a su proyecto.
+
+**Fijado en implementación (2026-08-16, `@vercel/blob@2.8.0`)**: prefijo `evidence/{projectId}/`, comprobado en `onBeforeGenerateToken` antes de emitir nada. El token resultante queda además acotado al pathname por el propio SDK — un `put` a otra ruta con ese token falla con `Pathname mismatch` (verificado contra el store real). Restricciones aplicadas: `maximumSizeInBytes` de 200 MB y `addRandomSuffix: true`. **Sin lista blanca de `contentType`**: los formatos BIM (IFC, DWG, RVT) llegan con MIME inconsistente o vacío y una lista blanca rechazaría evidencia legítima.
+
+⚠️ **El `access` no lo decide este endpoint**: en este handshake lo declara el cliente en su llamada a `upload()`. Lo que impide publicar una evidencia es que el store `iso-saas-evidence-fra` está **configurado como privado** y rechaza toda escritura pública (`Cannot use public access on a private store`). Es una garantía de infraestructura, no de código: un store creado sin acceso privado dejaría esta ruta sin esa protección.
 
 #### Response — 200 OK
 
@@ -309,6 +313,7 @@ La respuesta del handshake de client upload. El cliente recibe el `pathname` res
 
 | Status | Condition |
 |--------|-----------|
+| 400 | El `pathname` solicitado cae fuera del prefijo del proyecto — denegación, no fallo del servidor |
 | 401 | Sin sesión válida |
 | 404 | Proyecto no encontrado en el tenant del usuario |
 | 500 | `BLOB_READ_WRITE_TOKEN` ausente o inválido |
@@ -492,6 +497,8 @@ type GetEvidenceFileResponse = {
   expiresAt: string; // ISO 8601 — vencimiento de la URL
 };
 ```
+
+**Fijado en implementación (2026-08-16)**: la URL se produce con `issueSignedToken` + `presignUrl` (`operation: 'get'`, `access: 'private'`), ambos acotados al mismo `validUntil`. **TTL de 5 minutos** — ADR-003 decía "corta duración" sin fijar número; cinco minutos bastan para abrir o descargar y dejan poca ventana si la URL se filtra por historial, proxy o captura. El `access: 'private'` entra en la cadena firmada del lado del servidor: quien reciba la URL no puede cambiarlo.
 
 #### Error Responses
 

@@ -1,5 +1,58 @@
-import { describe, it, expect, beforeAll, afterAll } from "vitest";
+import { describe, it, expect, beforeAll, afterAll, vi } from "vitest";
 import { prisma } from "@/app/lib/prisma";
+
+// El store real no participa en los tests de integracion (test-plan, Fase E): se
+// mockean las dos primitivas de `@vercel/blob` que usa el servicio. Lo que aqui se
+// verifica es CON QUE se las llama — pathname, `access: 'private'`, caducidad — no
+// que Vercel firme bien. Eso se comprueba contra el store real con
+// `scripts/probar-blob-fase-d.mjs`.
+const SIGNED_URL_FAKE = "https://blob.example/evidence/firmada?signature=fake";
+const CLIENT_TOKEN_FAKE = "vercel_blob_client_fake";
+
+vi.mock("@vercel/blob", () => ({
+  issueSignedToken: vi.fn(async ({ validUntil }: { validUntil: number }) => ({
+    delegationToken: "delegacion-fake",
+    clientSigningToken: "firma-fake",
+    validUntil,
+  })),
+  presignUrl: vi.fn(async () => ({ presignedUrl: SIGNED_URL_FAKE })),
+}));
+
+vi.mock("@vercel/blob/client", () => ({
+  // Reproduce el contrato real de `handleUpload`: invoca el callback de
+  // autorizacion y deja que sus excepciones suban. Si el mock no lo llamara, el
+  // test del prefijo pasaria en verde sin ejercitar la comprobacion.
+  handleUpload: vi.fn(
+    async ({
+      body,
+      onBeforeGenerateToken,
+    }: {
+      body: { payload?: { pathname?: string; clientPayload?: string | null } };
+      onBeforeGenerateToken: (
+        pathname: string,
+        clientPayload: string | null,
+        multipart: boolean
+      ) => Promise<unknown>;
+    }) => {
+      await onBeforeGenerateToken(
+        body?.payload?.pathname ?? "",
+        body?.payload?.clientPayload ?? null,
+        false
+      );
+      return { type: "blob.generate-client-token", clientToken: CLIENT_TOKEN_FAKE };
+    }
+  ),
+}));
+
+import { presignUrl } from "@vercel/blob";
+import { handleUpload } from "@vercel/blob/client";
+import { EVIDENCE_SIGNED_URL_TTL_MS } from "@/services/evidence-storage.service";
+
+/** Cuerpo del handshake de client upload tal y como lo envia `@vercel/blob/client`. */
+const uploadHandshake = (pathname: string) => ({
+  type: "blob.generate-client-token",
+  payload: { pathname, callbackUrl: "http://localhost/api/upload", clientPayload: null, multipart: false },
+});
 import {
   GET as LIST_EVIDENCE,
   POST as CREATE_EVIDENCE,
@@ -795,30 +848,111 @@ describe("FILE — acceso al binario", () => {
     expect(res.status).toBe(404);
   });
 
-  it("FASE D: con `sourceRef` y permisos correctos responde 501 hasta integrar Blob", async () => {
-    // HP-10/FILE-02 del test-plan esperan 200 + signed URL. Quedan pendientes de la
-    // Fase D; este test fija el contrato provisional para que el cambio sea visible.
+  it("FILE-02/HP-10: con `sourceRef` y permisos correctos devuelve signed URL y caducidad", async () => {
     const item = await createEvidenceItem(projectA.id, tenantA.user.id, {
-      sourceRef: "evidence/projectA/plano.pdf",
+      sourceRef: `evidence/${projectA.id}/plano.pdf`,
     });
 
     const res = await GET_FILE(
       makeRequest(`/api/evidence/${item.id}/file`, { cookie: ownerCookie }),
       evidenceCtx(item.id)
     );
+    const body = await res.json();
 
-    expect(res.status).toBe(501);
+    expect(res.status).toBe(200);
+    expect(body.url).toBe(SIGNED_URL_FAKE);
+    // Caducidad corta y futura (ADR-003 #1): nunca una URL sin vencimiento.
+    const expira = new Date(body.expiresAt).getTime();
+    expect(expira).toBeGreaterThan(Date.now());
+    expect(expira).toBeLessThanOrEqual(Date.now() + EVIDENCE_SIGNED_URL_TTL_MS + 1000);
+
+    // Se firma sobre el `sourceRef` guardado y como blob privado, nunca publico.
+    expect(vi.mocked(presignUrl)).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        operation: "get",
+        pathname: `evidence/${projectA.id}/plano.pdf`,
+        access: "private",
+      })
+    );
   });
 
-  it("FASE D: el token de subida responde 501 sobre un proyecto propio", async () => {
+  it("FILE-04: un admin obtiene la signed URL de evidencia de otro tenant", async () => {
+    const item = await createEvidenceItem(projectA.id, tenantA.user.id, {
+      sourceRef: `evidence/${projectA.id}/memoria.pdf`,
+    });
+
+    const res = await GET_FILE(
+      makeRequest(`/api/evidence/${item.id}/file`, { cookie: adminCookie }),
+      evidenceCtx(item.id)
+    );
+
+    expect(res.status).toBe(200);
+  });
+});
+
+// ─── UPLOAD TOKEN ─────────────────────────────────────────────────────────────
+
+describe("UPLOAD-TOKEN — autorizacion de escritura en el store", () => {
+  it("UPL-01: el dueño del proyecto recibe el token del handshake", async () => {
     const res = await UPLOAD_TOKEN(
       makeRequest(`/api/projects/${projectA.id}/evidence/upload-token`, {
         method: "POST",
         cookie: ownerCookie,
+        body: uploadHandshake(`evidence/${projectA.id}/plano.pdf`),
+      }),
+      projectCtx(projectA.id)
+    );
+    const body = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(body.clientToken).toBe(CLIENT_TOKEN_FAKE);
+  });
+
+  it("UPL-02: un pathname fuera del prefijo del proyecto se rechaza con 400", async () => {
+    // El prefijo por `projectId` es lo que hace atribuible un archivo huerfano
+    // (api-contract). Sin esta comprobacion, el dueño de un proyecto podria
+    // escribir bajo el prefijo de otro con un token legitimamente emitido.
+    const res = await UPLOAD_TOKEN(
+      makeRequest(`/api/projects/${projectA.id}/evidence/upload-token`, {
+        method: "POST",
+        cookie: ownerCookie,
+        body: uploadHandshake(`evidence/${projectB.id}/robado.pdf`),
       }),
       projectCtx(projectA.id)
     );
 
-    expect(res.status).toBe(501);
+    expect(res.status).toBe(400);
+  });
+
+  it("UPL-03: proyecto de otro tenant devuelve 404 sin llegar a firmar", async () => {
+    vi.mocked(handleUpload).mockClear();
+
+    const res = await UPLOAD_TOKEN(
+      makeRequest(`/api/projects/${projectB.id}/evidence/upload-token`, {
+        method: "POST",
+        cookie: ownerCookie,
+        body: uploadHandshake(`evidence/${projectB.id}/plano.pdf`),
+      }),
+      projectCtx(projectB.id)
+    );
+
+    expect(res.status).toBe(404);
+    expect(vi.mocked(handleUpload)).not.toHaveBeenCalled();
+  });
+
+  it("UPL-04: sin sesion devuelve 401 sin llegar a firmar", async () => {
+    vi.mocked(handleUpload).mockClear();
+
+    const res = await UPLOAD_TOKEN(
+      makeRequest(`/api/projects/${projectA.id}/evidence/upload-token`, {
+        method: "POST",
+        body: uploadHandshake(`evidence/${projectA.id}/plano.pdf`),
+      }),
+      projectCtx(projectA.id)
+    );
+
+    expect(res.status).toBe(401);
+    expect(vi.mocked(handleUpload)).not.toHaveBeenCalled();
   });
 });

@@ -144,6 +144,11 @@ Este componente añade fixtures nuevas a `tests/helpers/db.ts` (`createEvidenceI
 | FILE-01 | `GET .../file` con `sourceRef` vacío | 404 |
 | FILE-02 | `GET .../file` con `sourceRef` presente, mock de `@vercel/blob` devuelve URL | 200 + `url`/`expiresAt` — el mock verifica que se llama con el `pathname` correcto, no con una URL pública |
 | FILE-03 | `GET .../file` de otro tenant | 404 antes de siquiera llamar al mock de Blob (verifica orden: tenant check primero) |
+| FILE-04 | `GET .../file` (admin) sobre evidencia de otro tenant | 200 — el admin sí atraviesa el corte de tenant (matriz RBAC del security-spec) |
+| UPL-01 | `POST .../upload-token` (dueño) con pathname bajo `evidence/{projectId}/` | 200 + `clientToken` del handshake |
+| UPL-02 | `POST .../upload-token` con pathname bajo el prefijo de **otro** proyecto | 400 — denegación, no error de servidor |
+| UPL-03 | `POST .../upload-token` sobre proyecto de otro tenant | 404 **sin llegar a llamar** a `handleUpload` (no se firma nada antes de comprobar pertenencia) |
+| UPL-04 | `POST .../upload-token` sin sesión | 401 sin llegar a llamar a `handleUpload` |
 
 ---
 
@@ -240,5 +245,7 @@ Pasos que no se automatizan en Phase 1 — requieren el store real de Vercel Blo
 
 | Caso | Estado |
 |------|--------|
-| HP-10, FILE-02 | **Pendientes de la Fase D.** Esperan 200 + signed URL; hoy el endpoint devuelve 501 porque `@vercel/blob` no es dependencia todavía. Hay tests que fijan el 501 provisional para que el cambio sea visible al integrar Blob. |
+| HP-10, FILE-02 | ✅ **Cerrados el 2026-08-16 con la Fase D.** `@vercel/blob@2.8.0` instalado; ambos endpoints devuelven 200. Los tests que fijaban el 501 provisional se han sustituido por los definitivos. |
+| FILE-04, UPL-01…04 | Casos nuevos que el plan original no preveía: acceso de admin a la signed URL, y los cuatro del token de subida (emisión, prefijo ajeno → 400, tenant ajeno → 404, sin sesión → 401). |
+| Verificación contra el store real | Los tests mockean `@vercel/blob`, así que prueban **con qué** se llama al SDK, no que Vercel firme bien. Lo segundo lo cubre `scripts/probar-blob-fase-d.mjs` contra `iso-saas-evidence-fra`: URL desnuda → 403, signed URL → 200, signed URL caducada → 403, `access: 'public'` rechazado por el store, token de subida acotado al prefijo del proyecto. Crea y borra sus propios ficheros. |
 | Nº de endpoints | El plan dice 10; la implementación son **12** (añade `POST .../submit` y el desglose de métodos por ruta). Todos cubiertos. |

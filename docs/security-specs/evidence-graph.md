@@ -167,7 +167,9 @@ Estas reglas se aplican en `evidence.service.ts`, no en el route handler ni en e
 
 ⚠️ **Cambio de región el 2026-08-10 (ADR-007)**: el store original `iso-saas-evidence` (`store_SPJ4WiRGmr7N39TV`) estaba en **`iad1` — Washington**, fuera de la UE, por el valor por defecto de `--region` en el CLI. Como **la región de un store es inmutable**, no se cambió: se creó otro en `fra1` y se borró el anterior, que seguía con **0 ficheros**. El token cambió, así que cualquier `.env.local` anterior a esa fecha apunta a un store que ya no existe: hay que hacer `vercel env pull`.
 
-**Acción requerida antes de implementar**: instalar la dependencia `@vercel/blob` — el store y el token existen, pero el paquete **no está en `package.json`** (verificado 2026-08-05). Sin él no hay ni emisión de token de subida ni generación de signed URL.
+✅ **Resuelto el 2026-08-16 (Fase D)**: `@vercel/blob@2.8.0` instalado. Toda la interacción con el store se concentra en `services/evidence-storage.service.ts`; ningún route handler importa el SDK directamente.
+
+⚠️ **El acceso privado del store es un control de infraestructura, no de código.** El handshake de client upload deja el `access` en manos del cliente; lo que impide publicar una evidencia es que el store esté configurado como privado (`Cannot use public access on a private store`, verificado el 2026-08-16). **Si algún día se sustituye el store, comprobar esa propiedad antes de dar por buena la protección** — el código no la puede garantizar por sí solo. La sonda `scripts/probar-blob-fase-d.mjs` la verifica contra el store real.
 
 ⚠️ **Gotcha documentado**: `vercel blob create-store --yes` dispara un `vercel env pull` que **sobrescribe `.env.local` entero** con las vars scoped a `development`. Hacer copia de seguridad de `.env.local` antes de ejecutar cualquier comando `vercel blob` o `vercel env`.
 

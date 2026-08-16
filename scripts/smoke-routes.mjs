@@ -43,6 +43,13 @@ const apiChecks = [
     expectedStatus: 401,
     name: "evidence detail without session",
   },
+  {
+    // Fase D: comprueba que la ruta de signed URL esta desplegada y que la sesion
+    // se exige antes de tocar el store. No firma nada: se corta en el 401.
+    path: "/api/evidence/nonexistent-id/file",
+    expectedStatus: 401,
+    name: "evidence signed URL without session",
+  },
 ];
 
 const failures = [];
