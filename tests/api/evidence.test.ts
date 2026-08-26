@@ -65,6 +65,7 @@ import {
 } from "@/app/api/evidence/[evidenceId]/route";
 import { POST as SUBMIT_EVIDENCE } from "@/app/api/evidence/[evidenceId]/submit/route";
 import { GET as GET_FILE } from "@/app/api/evidence/[evidenceId]/file/route";
+import { POST as DECLARE_REQUIREMENT_LINK } from "@/app/api/projects/[id]/requirements/[requirementId]/evidence-links/route";
 import { POST as ADD_REQUIREMENT_LINK } from "@/app/api/admin/evidence/[evidenceId]/requirement-links/route";
 import { DELETE as REMOVE_REQUIREMENT_LINK } from "@/app/api/admin/evidence/[evidenceId]/requirement-links/[linkId]/route";
 import { POST as VALIDATE_EVIDENCE } from "@/app/api/admin/evidence/[evidenceId]/validate/route";
@@ -954,5 +955,163 @@ describe("UPLOAD-TOKEN — autorizacion de escritura en el store", () => {
 
     expect(res.status).toBe(401);
     expect(vi.mocked(handleUpload)).not.toHaveBeenCalled();
+  });
+});
+
+// ─── DECL ───────────────────────────────────────────────────
+
+describe("DECL — el dueno del proyecto declara el vinculo (ADR-010)", () => {
+  const declareCtx = (id: string, requirementId: string) => ({
+    params: Promise.resolve({ id, requirementId }),
+  });
+
+  it("DECL-01: el dueno declara el vinculo y nace SIN validar", async () => {
+    const item = await createEvidenceItem(projectA.id, tenantA.user.id);
+    const requirement = await createRequirement(projectA.id, "Req decl01");
+
+    const res = await DECLARE_REQUIREMENT_LINK(
+      makeRequest(
+        `/api/projects/${projectA.id}/requirements/${requirement.id}/evidence-links`,
+        { method: "POST", cookie: ownerCookie, body: { evidenceItemId: item.id } }
+      ),
+      declareCtx(projectA.id, requirement.id)
+    );
+    const json = await res.json();
+
+    expect(res.status).toBe(201);
+    expect(json.data.linkType).toBe("supporting");
+    // El autor sale de la sesion, nunca del body.
+    expect(json.data.addedBy).toBe(tenantA.user.id);
+    // Lo que ADR-010 exige: declarado no es validado.
+    expect(json.data.validatedAt).toBeNull();
+    expect(json.data.validatedBy).toBeNull();
+  });
+
+  it("DECL-02: `contradictory` es juicio del auditor, no del aportante — 403", async () => {
+    const item = await createEvidenceItem(projectA.id, tenantA.user.id);
+    const requirement = await createRequirement(projectA.id, "Req decl02");
+
+    const res = await DECLARE_REQUIREMENT_LINK(
+      makeRequest(
+        `/api/projects/${projectA.id}/requirements/${requirement.id}/evidence-links`,
+        {
+          method: "POST",
+          cookie: ownerCookie,
+          body: { evidenceItemId: item.id, linkType: "contradictory" },
+        }
+      ),
+      declareCtx(projectA.id, requirement.id)
+    );
+
+    expect(res.status).toBe(403);
+    // Y no debe haber tocado el estado de la evidencia.
+    const after = await prisma.evidenceItem.findUnique({ where: { id: item.id } });
+    expect(after?.status).not.toBe("under_review");
+  });
+
+  it("DECL-03: un usuario de otro tenant recibe 404, no 403", async () => {
+    const item = await createEvidenceItem(projectA.id, tenantA.user.id);
+    const requirement = await createRequirement(projectA.id, "Req decl03");
+
+    const res = await DECLARE_REQUIREMENT_LINK(
+      makeRequest(
+        `/api/projects/${projectA.id}/requirements/${requirement.id}/evidence-links`,
+        { method: "POST", cookie: strangerCookie, body: { evidenceItemId: item.id } }
+      ),
+      declareCtx(projectA.id, requirement.id)
+    );
+
+    expect(res.status).toBe(404);
+  });
+
+  it("DECL-04: requisito de otro proyecto — 404", async () => {
+    const item = await createEvidenceItem(projectA.id, tenantA.user.id);
+    const ajeno = await createRequirement(projectB.id, "Req decl04");
+
+    const res = await DECLARE_REQUIREMENT_LINK(
+      makeRequest(
+        `/api/projects/${projectA.id}/requirements/${ajeno.id}/evidence-links`,
+        { method: "POST", cookie: ownerCookie, body: { evidenceItemId: item.id } }
+      ),
+      declareCtx(projectA.id, ajeno.id)
+    );
+
+    expect(res.status).toBe(404);
+  });
+
+  it("DECL-05: evidencia de otro proyecto — 404", async () => {
+    const ajena = await createEvidenceItem(projectB.id, tenantB.user.id);
+    const requirement = await createRequirement(projectA.id, "Req decl05");
+
+    const res = await DECLARE_REQUIREMENT_LINK(
+      makeRequest(
+        `/api/projects/${projectA.id}/requirements/${requirement.id}/evidence-links`,
+        { method: "POST", cookie: ownerCookie, body: { evidenceItemId: ajena.id } }
+      ),
+      declareCtx(projectA.id, requirement.id)
+    );
+
+    expect(res.status).toBe(404);
+  });
+
+  it("DECL-06: declarar dos veces el mismo par — 409", async () => {
+    const item = await createEvidenceItem(projectA.id, tenantA.user.id);
+    const requirement = await createRequirement(projectA.id, "Req decl06");
+    await createRequirementLink(item.id, requirement.id, tenantA.user.id);
+
+    const res = await DECLARE_REQUIREMENT_LINK(
+      makeRequest(
+        `/api/projects/${projectA.id}/requirements/${requirement.id}/evidence-links`,
+        { method: "POST", cookie: ownerCookie, body: { evidenceItemId: item.id } }
+      ),
+      declareCtx(projectA.id, requirement.id)
+    );
+
+    expect(res.status).toBe(409);
+  });
+
+  it("DECL-07: sin `evidenceItemId` — 400", async () => {
+    const requirement = await createRequirement(projectA.id, "Req decl07");
+
+    const res = await DECLARE_REQUIREMENT_LINK(
+      makeRequest(
+        `/api/projects/${projectA.id}/requirements/${requirement.id}/evidence-links`,
+        { method: "POST", cookie: ownerCookie, body: {} }
+      ),
+      declareCtx(projectA.id, requirement.id)
+    );
+
+    expect(res.status).toBe(400);
+  });
+
+  it("DECL-08: sin sesion — 401", async () => {
+    const requirement = await createRequirement(projectA.id, "Req decl08");
+
+    const res = await DECLARE_REQUIREMENT_LINK(
+      makeRequest(
+        `/api/projects/${projectA.id}/requirements/${requirement.id}/evidence-links`,
+        { method: "POST", body: { evidenceItemId: "x" } }
+      ),
+      declareCtx(projectA.id, requirement.id)
+    );
+
+    expect(res.status).toBe(401);
+  });
+
+  it("DECL-09: el admin tambien puede declarar (no es ruta admin, pero no lo excluye)", async () => {
+    const item = await createEvidenceItem(projectA.id, tenantA.user.id);
+    const requirement = await createRequirement(projectA.id, "Req decl09");
+
+    const res = await DECLARE_REQUIREMENT_LINK(
+      makeRequest(
+        `/api/projects/${projectA.id}/requirements/${requirement.id}/evidence-links`,
+        { method: "POST", cookie: adminCookie, body: { evidenceItemId: item.id } }
+      ),
+      declareCtx(projectA.id, requirement.id)
+    );
+    const json = await res.json();
+
+    expect(res.status).toBe(201);
+    expect(json.data.addedBy).toBe(tenantA.admin.id);
   });
 });

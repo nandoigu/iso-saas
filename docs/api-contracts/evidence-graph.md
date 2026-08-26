@@ -145,6 +145,10 @@ type EvidenceRequirementLinkSummary = {
   linkType: string; // primary | supporting | contradictory
   addedAt: string;
   addedBy: string;
+  // ADR-010: null mientras el vinculo solo este declarado. Un vinculo sin validar
+  // no puede sustentar una conclusion como evidencia validada.
+  validatedAt: string | null;
+  validatedBy: string | null;
 };
 
 type EvidenceReportLinkSummary = {
@@ -320,6 +324,57 @@ La respuesta del handshake de client upload. El cliente recibe el `pathname` res
 
 ---
 
+### `POST /api/projects/[projectId]/requirements/[requirementId]/evidence-links`
+
+**Purpose**: El dueño del proyecto **declara** que una evidencia ya subida sustenta este requisito.
+Es una aportación, no una certificación: el vínculo nace **sin validar** (ADR-010).
+**Auth**: Required — `getAuthSession(req)`
+**RBAC**: dueño del proyecto **o** `admin`. No vive bajo `/api/admin/` y por tanto **no** lleva
+`isAdminRole`: ADR-010 acota el punto #2 de ADR-004 separando declarar de validar.
+**Tenant scope**: `assertProjectAccess(projectId, actor)` — 404 si el proyecto no es del usuario
+
+#### Request Body
+
+```typescript
+type DeclareLinkRequest = {
+  evidenceItemId: string;
+  linkType?: 'primary' | 'supporting'; // por defecto 'supporting'
+};
+```
+
+#### Validation Rules
+
+- `evidenceItemId`: obligatorio, no vacío.
+- La evidencia y el requisito deben pertenecer **al mismo proyecto** de la ruta (ADR-003 #2).
+- `linkType`: **`contradictory` se rechaza con 403.** Declarar un documento como contradictorio
+  es un juicio sobre el cumplimiento, no una afirmación sobre la intención del aportante, y
+  además fuerza la evidencia a `under_review`. Por el criterio de ADR-010 ese acto es del
+  auditor y se queda en la ruta admin.
+
+#### Side Effects
+
+- Crea el `EvidenceRequirementLink` con `addedBy = user.id`, `validatedAt = null` y
+  `validatedBy = null`. **Ninguna** transición de estado de la evidencia.
+
+#### Response — 201 Created
+
+```typescript
+type DeclareLinkResponse = {
+  data: EvidenceRequirementLinkSummary; // validatedAt y validatedBy siempre null aquí
+};
+```
+
+#### Error Responses
+
+| Status | Condition |
+|--------|-----------|
+| 400 | Falta `evidenceItemId`, o `linkType` no reconocido |
+| 401 | Sin sesión válida |
+| 403 | `linkType = contradictory` — reservado al auditor |
+| 404 | Proyecto ajeno al usuario, evidencia inexistente, o requisito fuera del proyecto |
+| 409 | Esa evidencia ya está vinculada a ese requisito |
+
+---
 ### `POST /api/admin/evidence/[evidenceId]/requirement-links`
 
 **Purpose**: Vincular una evidencia a un requisito ISO 19650, tipando la naturaleza del vínculo.

@@ -5,6 +5,7 @@ import {
   IMMUTABLE_EVIDENCE_STATUSES,
   type AddEvidenceReportLinkInput,
   type AddEvidenceRequirementLinkInput,
+  type DeclareEvidenceRequirementLinkInput,
   type CreateEvidenceItemInput,
   type CreateEvidenceValidationInput,
   type EvidenceActor,
@@ -278,6 +279,43 @@ export async function submitEvidenceItem(evidenceId: string, actor: EvidenceActo
  * (`status → under_review`). Es la unica notificacion al Contradiction Engine en
  * Phase 1 — sin cola ni tabla de trigger (ADR-003, decision #3).
  */
+/**
+ * ADR-010: declaracion del vinculo por el dueno del proyecto.
+ *
+ * Se diferencia de `addEvidenceRequirementLink` en el alcance, no en el efecto: aqui
+ * el proyecto de la ruta manda, y tanto el requisito como la evidencia tienen que
+ * vivir dentro de el. Sin esa comprobacion un dueno podria declarar contra evidencia
+ * ajena con solo conocer su id.
+ *
+ * Todo lo que no sea del actor devuelve `notFound`, nunca `forbidden`: revelar que un
+ * id existe pero es de otro ya es filtrar la existencia de otro tenant.
+ */
+export async function declareEvidenceRequirementLink(
+  input: DeclareEvidenceRequirementLinkInput
+) {
+  const access = await assertProjectAccess(input.projectId, input.actor);
+  if ("notFound" in access) return { notFound: "project" as const };
+
+  const requirement = await prisma.requirement.findFirst({
+    where: { id: input.requirementId, projectId: input.projectId },
+    select: { id: true },
+  });
+  if (!requirement) return { notFound: "requirement" as const };
+
+  const evidence = await prisma.evidenceItem.findFirst({
+    where: { id: input.evidenceItemId, projectId: input.projectId },
+    select: { id: true },
+  });
+  if (!evidence) return { notFound: "evidence" as const };
+
+  return addEvidenceRequirementLink({
+    evidenceItemId: input.evidenceItemId,
+    requirementId: input.requirementId,
+    linkType: input.linkType,
+    addedBy: input.actor.userId,
+  });
+}
+
 export async function addEvidenceRequirementLink(
   input: AddEvidenceRequirementLinkInput
 ) {

@@ -31,6 +31,17 @@ export const EVIDENCE_REQUIREMENT_LINK_TYPES: EvidenceRequirementLinkType[] = [
   "contradictory",
 ];
 
+/**
+ * ADR-010: el dueno del proyecto DECLARA que un documento sustenta un requisito.
+ * `contradictory` queda fuera a proposito: afirmar que un documento contradice el
+ * requisito es un juicio sobre el cumplimiento (y ademas empuja la evidencia a
+ * `under_review`), asi que es acto de auditor y se queda en la ruta admin.
+ */
+export const DECLARABLE_REQUIREMENT_LINK_TYPES: EvidenceRequirementLinkType[] = [
+  "primary",
+  "supporting",
+];
+
 export const EVIDENCE_REPORT_LINK_USAGES: EvidenceReportLinkUsage[] = [
   "supporting",
   "conclusion_basis",
@@ -135,6 +146,14 @@ export type UpdateEvidenceItemInput = Partial<
   Pick<EvidenceItem, "title" | "description" | "sourceRef">
 > & {
   updatedBy: string;
+};
+
+export type DeclareEvidenceRequirementLinkInput = {
+  projectId: string;
+  requirementId: string;
+  evidenceItemId: string;
+  linkType?: EvidenceRequirementLinkType;
+  actor: EvidenceActor;
 };
 
 export type AddEvidenceRequirementLinkInput = {
