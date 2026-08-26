@@ -41,6 +41,7 @@ model User {
 
   evidenceItemsCreated     EvidenceItem[]            @relation("EvidenceCreator")
   evidenceLinksAdded       EvidenceRequirementLink[] @relation("EvidenceLinkAdder")
+  evidenceLinksValidated   EvidenceRequirementLink[] @relation("EvidenceLinkValidator")
   evidenceReportLinksAdded EvidenceReportLink[]      @relation("ReportLinkAdder")
   evidenceValidations      EvidenceValidation[]      @relation("EvidenceValidator")
   evidenceVersionsCreated  EvidenceItemVersion[]     @relation("EvidenceVersionCreator")
@@ -99,6 +100,9 @@ model RequirementTemplate {
   descripcion   String    @default("")
   role          String    @default("general")
   evidencia     String?
+  // ADR-013: criterio de aceptacion escrito por el experto, quinta columna del Excel
+  // de docs/fuentes/. NO se reutiliza el campo legado `evidencia`.
+  criterioAceptacion String?
   defaultStatus String    @default("no_conforme")
   deadline      DateTime?
   createdAt     DateTime  @default(now())
@@ -305,10 +309,15 @@ model EvidenceRequirementLink {
   linkType       String   @default("supporting") // "primary" | "supporting" | "contradictory"
   addedAt        DateTime @default(now())
   addedBy        String // userId
+  // ADR-010: declarar el vinculo es del dueno del proyecto; validarlo, del auditor.
+  // Nulos mientras nadie lo haya validado.
+  validatedAt    DateTime?
+  validatedBy    String? // userId del auditor que valida
 
   evidenceItem EvidenceItem @relation(fields: [evidenceItemId], references: [id], onDelete: Cascade)
   requirement  Requirement  @relation(fields: [requirementId], references: [id], onDelete: Cascade)
   addedByUser  User         @relation("EvidenceLinkAdder", fields: [addedBy], references: [id], onDelete: Restrict)
+  validatedByUser User?    @relation("EvidenceLinkValidator", fields: [validatedBy], references: [id], onDelete: Restrict)
 
   @@unique([evidenceItemId, requirementId])
   @@index([evidenceItemId])
