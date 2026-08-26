@@ -473,6 +473,10 @@ describe("HP — happy path", () => {
     expect(json.data.linkType).toBe("supporting");
     // TRAIL-04: el autor sale de la sesion, nunca del body.
     expect(json.data.addedBy).toBe(tenantA.admin.id);
+    // ADR-010: que el auditor cree el vinculo ES el acto certificante, asi que
+    // nace validado en el mismo gesto. No hay vinculos admin inertes.
+    expect(json.data.validatedBy).toBe(tenantA.admin.id);
+    expect(json.data.validatedAt).not.toBeNull();
   });
 
   it("HP-07: admin elimina el vinculo a requisito", async () => {
@@ -1113,5 +1117,9 @@ describe("DECL — el dueno del proyecto declara el vinculo (ADR-010)", () => {
 
     expect(res.status).toBe(201);
     expect(json.data.addedBy).toBe(tenantA.admin.id);
+    // El acto lo define la RUTA, no el rol: un admin que declara por la ruta del
+    // dueno esta aportando, no certificando. El vinculo nace sin validar.
+    expect(json.data.validatedAt).toBeNull();
+    expect(json.data.validatedBy).toBeNull();
   });
 });

@@ -11,6 +11,11 @@ type RouteContext = { params: Promise<{ evidenceId: string }> };
 /**
  * El vinculo normativo es criterio de auditor: admin only, sin excepcion, como toda
  * ruta bajo `/api/admin/` (ADR-004, decision #2).
+ *
+ * ADR-010 separo declarar de validar y dejo la validacion aqui. Que el auditor cree
+ * el vinculo es, en si mismo, el acto certificante: nace validado en el mismo gesto.
+ * La alternativa —crear aqui y validar en un segundo paso— dejaba vinculos admin
+ * inertes, indistinguibles de una declaracion del dueno.
  */
 export async function POST(req: Request, context: RouteContext) {
   try {
@@ -46,6 +51,7 @@ export async function POST(req: Request, context: RouteContext) {
       requirementId,
       linkType: (rawLinkType || undefined) as EvidenceRequirementLinkType | undefined,
       addedBy: user.id,
+      validatedBy: user.id,
     });
 
     if ("notFound" in result) {

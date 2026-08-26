@@ -398,6 +398,14 @@ type AddRequirementLinkRequest = {
 
 #### Side Effects
 
+- **El vínculo nace validado**: `validatedBy = user.id` y `validatedAt = now()`, sellados en
+  la misma escritura que el `create`. ADR-010 deja la validación en el ámbito admin, y que
+  el auditor cree el vínculo es en sí mismo el acto certificante. La alternativa —crear aquí
+  y validar en un segundo paso— dejaba vínculos admin inertes, indistinguibles de una
+  declaración del dueño del proyecto.
+- El acto lo define **la ruta, no el rol**: un admin que use la ruta de declaración
+  (`/api/projects/.../evidence-links`) está aportando, no certificando, y ese vínculo nace
+  sin validar.
 - Si `linkType = contradictory`: transiciona `EvidenceItem.status` a `under_review` y notifica al Contradiction Engine vía el flag de estado (ADR-003, decisión #3 — sin cola ni tabla de trigger en Phase 1).
 
 #### Response — 201 Created

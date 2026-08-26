@@ -344,6 +344,11 @@ export async function addEvidenceRequirementLink(
           requirementId: input.requirementId,
           linkType,
           addedBy: input.addedBy,
+          // Validacion y creacion se sellan en la misma escritura: no existe una
+          // ventana en la que el vinculo del auditor este creado pero sin validar.
+          ...(input.validatedBy
+            ? { validatedBy: input.validatedBy, validatedAt: new Date() }
+            : {}),
         },
       });
 

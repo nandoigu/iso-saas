@@ -161,6 +161,15 @@ export type AddEvidenceRequirementLinkInput = {
   requirementId: string;
   linkType?: EvidenceRequirementLinkType;
   addedBy: string;
+  /**
+   * ADR-010: presente solo cuando el acto que crea el vinculo es, en si mismo,
+   * certificante — es decir, cuando viene de la ruta admin. La declaracion del
+   * dueno del proyecto lo deja ausente y el vinculo nace sin validar.
+   *
+   * Lo define la ruta, no el rol: un admin que declara por la ruta del dueno
+   * esta aportando, no certificando.
+   */
+  validatedBy?: string;
 };
 
 export type AddEvidenceReportLinkInput = {
