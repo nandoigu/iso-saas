@@ -469,6 +469,40 @@ export async function addEvidenceReportLink(input: AddEvidenceReportLinkInput) {
           return { conflict: "El informe esta cerrado y no admite citas nuevas." as const };
         }
 
+        // ADR-010, riesgo declarado: un vinculo solo DECLARADO por el dueno del
+        // proyecto no puede sustentar una conclusion. Hace falta que algun auditor
+        // haya avalado que esa evidencia sirve para algun requisito.
+        //
+        // La guarda es GRUESA a proposito: comprueba que exista aval, no que sea del
+        // requisito concreto. No puede ser fina porque `EvidenceReportLink` no tiene
+        // dimension de requisito — el informe es de proyecto. La version exacta llega
+        // con el hallazgo por requisito (ADR-011), y entonces esta se mantiene como
+        // red de seguridad, no se sustituye.
+        //
+        // Va dentro de la transaccion `Serializable` por lo mismo que las demas: entre
+        // el recuento y el create, otro admin puede retirar el vinculo que da el aval.
+        if ((input.usedAs ?? "supporting") === "conclusion_basis") {
+          const vinculos = await tx.evidenceRequirementLink.count({
+            where: { evidenceItemId: input.evidenceItemId },
+          });
+          const avalados = await tx.evidenceRequirementLink.count({
+            where: {
+              evidenceItemId: input.evidenceItemId,
+              validatedAt: { not: null },
+            },
+          });
+          // `vinculos > 0` no sobra: ADR-010 prohibe citar un vinculo DECLARADO y no
+          // validado, no citar evidencia que no tiene vinculo ninguno. Eso ultimo era
+          // legal antes de ADR-010 (lo fija HP-09) y prohibirlo seria una regla nueva
+          // que ningun ADR autoriza. Queda como hueco conocido, no como descuido.
+          if (vinculos > 0 && avalados === 0) {
+            return {
+              conflict:
+                "Para sustentar una conclusion, la evidencia necesita un vinculo a requisito validado por un auditor." as const,
+            };
+          }
+        }
+
         const link = await tx.evidenceReportLink.create({
           data: {
             evidenceItemId: input.evidenceItemId,

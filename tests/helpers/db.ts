@@ -170,10 +170,19 @@ export async function createRequirementLink(
   evidenceItemId: string,
   requirementId: string,
   addedById: string,
-  linkType = "supporting"
+  linkType = "supporting",
+  validatedById?: string
 ) {
   return prisma.evidenceRequirementLink.create({
-    data: { evidenceItemId, requirementId, linkType, addedBy: addedById },
+    data: {
+      evidenceItemId,
+      requirementId,
+      linkType,
+      addedBy: addedById,
+      ...(validatedById
+        ? { validatedBy: validatedById, validatedAt: new Date() }
+        : {}),
+    },
   });
 }
 

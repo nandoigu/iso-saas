@@ -581,6 +581,84 @@ describe("INV — las invariantes se traducen a 409 en la API", () => {
     expect(res.status).toBe(409);
   });
 
+
+  it("INV-10: citar como `conclusion_basis` sin vinculo validado devuelve 409", async () => {
+    const item = await createEvidenceItem(projectA.id, tenantA.user.id);
+    await createEvidenceValidation(item.id, tenantA.admin.id, "approved");
+    const requirement = await createRequirement(projectA.id, "Req inv10");
+    // Solo DECLARADO por el dueno: nadie lo ha avalado.
+    await createRequirementLink(item.id, requirement.id, tenantA.user.id);
+    const report = await createAuditReport(
+      projectA.id,
+      auditTeamA.id,
+      tenantA.admin.id,
+      "draft"
+    );
+
+    const res = await ADD_REPORT_LINK(
+      makeRequest(`/api/admin/evidence/${item.id}/report-links`, {
+        method: "POST",
+        cookie: adminCookie,
+        body: { auditReportId: report.id, usedAs: "conclusion_basis" },
+      }),
+      evidenceCtx(item.id)
+    );
+
+    expect(res.status).toBe(409);
+  });
+
+  it("INV-11: con el vinculo validado, `conclusion_basis` pasa", async () => {
+    const item = await createEvidenceItem(projectA.id, tenantA.user.id);
+    await createEvidenceValidation(item.id, tenantA.admin.id, "approved");
+    const requirement = await createRequirement(projectA.id, "Req inv11");
+    await createRequirementLink(
+      item.id,
+      requirement.id,
+      tenantA.user.id,
+      "supporting",
+      tenantA.admin.id
+    );
+    const report = await createAuditReport(
+      projectA.id,
+      auditTeamA.id,
+      tenantA.admin.id,
+      "draft"
+    );
+
+    const res = await ADD_REPORT_LINK(
+      makeRequest(`/api/admin/evidence/${item.id}/report-links`, {
+        method: "POST",
+        cookie: adminCookie,
+        body: { auditReportId: report.id, usedAs: "conclusion_basis" },
+      }),
+      evidenceCtx(item.id)
+    );
+
+    expect(res.status).toBe(201);
+  });
+
+  it("INV-12: la guarda NO alcanza a `supporting` — sigue pudiendo citarse", async () => {
+    const item = await createEvidenceItem(projectA.id, tenantA.user.id);
+    await createEvidenceValidation(item.id, tenantA.admin.id, "approved");
+    const report = await createAuditReport(
+      projectA.id,
+      auditTeamA.id,
+      tenantA.admin.id,
+      "draft"
+    );
+
+    const res = await ADD_REPORT_LINK(
+      makeRequest(`/api/admin/evidence/${item.id}/report-links`, {
+        method: "POST",
+        cookie: adminCookie,
+        body: { auditReportId: report.id, usedAs: "supporting" },
+      }),
+      evidenceCtx(item.id)
+    );
+
+    expect(res.status).toBe(201);
+  });
+
   it("INV-03: borrar evidencia citada devuelve 409", async () => {
     const item = await createEvidenceItem(projectA.id, tenantA.user.id);
     await createEvidenceValidation(item.id, tenantA.admin.id, "approved");

@@ -524,6 +524,18 @@ type AddReportLinkRequest = {
 - `evidenceItem.status` debe ser `validated` (invariant #2) — 409 en caso contrario
 - `auditReport.status` no puede ser `signed` ni `finalizado` (invariant #7) — 409 en caso contrario
 - Único por `[evidenceItemId, auditReportId]` — 409 si ya existe el vínculo
+- **`usedAs = conclusion_basis`**: si la evidencia tiene vínculos de requisito y **ninguno**
+  está validado, 409 (ADR-010, riesgo declarado). Un vínculo que solo declaró el dueño del
+  proyecto no puede sustentar una conclusión.
+
+> ⚠️ **Guarda gruesa y hueco conocido.** La comprobación verifica que *exista* aval de auditor,
+> no que sea del requisito concreto: `EvidenceReportLink` no tiene dimensión de requisito porque
+> el informe es de proyecto. La versión exacta llega con el hallazgo por requisito (ADR-011), y
+> entonces esta se mantiene como red de seguridad, no se sustituye.
+>
+> Además, la guarda **no alcanza a la evidencia sin ningún vínculo de requisito**: eso era legal
+> antes de ADR-010 (lo fija HP-09) y prohibirlo sería una regla nueva que ningún ADR autoriza.
+> Queda como decisión pendiente, no como descuido.
 
 #### Response — 201 Created
 
