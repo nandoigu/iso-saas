@@ -52,7 +52,7 @@ Verificado en el repositorio, no heredado de notas anteriores:
 ### This component IS responsible for
 
 - Leer la quinta columna del Excel de rol y persistirla en `RequirementTemplate.criterioAceptacion`.
-- Propagar el criterio a los `Requirement` que se creen desde plantilla.
+- Exponer el criterio en el listado de requisitos **leyéndolo de la plantilla por la relación**, nunca copiándolo: es global, y copiarlo dejaría versiones obsoletas en cada proyecto cuando el experto lo corrija (ADR-013 D2).
 - Ofrecer, en cada requisito de un proyecto, un botón de carga que en un solo gesto: sube el fichero al store, crea el `EvidenceItem`, declara el `EvidenceRequirementLink` y crea el `AnalysisDocument`.
 - Mostrar al dueño qué documentos ha presentado ya para cada requisito.
 
@@ -116,13 +116,14 @@ Efecto secundario buscado: cuando llegue el componente de IA, su tabla de entrad
 
 - [ ] Ampliar `getRoleTemplateColumnMap` y el parser para leer «Criterio de Aceptación»
 - [ ] Persistir el criterio en `importTemplates`
-- [ ] Propagar `criterioAceptacion` de plantilla a requisito al crear proyecto
+- [ ] Exponer el criterio por la relacion `Requirement.template`, **sin copiarlo** al requisito
 - [ ] Preparar los tres Excel de trabajo con la columna E estructurada en los cuatro apartados
 - [ ] Migración aditiva: `AnalysisDocument`
 - [ ] Crear `AnalysisDocument` en el mismo gesto que el `EvidenceItem`
 - [ ] Componente de panel lateral, aislado de `ProjectClient.tsx`
 - [ ] Botón y contador de documentos por requisito
-- [ ] Tests: importación con y sin quinta columna, gesto de carga completo, y que la declaración no exige admin
+- [ ] Tests: importacion con y sin quinta columna, y gesto de carga completo
+- [x] Que la declaracion no exige admin — **ya cubierto** por el bloque `DECL` de `tests/api/evidence.test.ts:1045`
 
 ---
 
