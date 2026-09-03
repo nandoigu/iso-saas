@@ -62,7 +62,11 @@ if (mb > 32) {
 }
 const datosPdf = bytes.toString("base64");
 
-const client = new Anthropic({ apiKey });
+// La clave es identity-linked: sin esta cabecera toda llamada devuelve 400.
+const client = new Anthropic({
+  apiKey,
+  defaultHeaders: { "anthropic-workspace-id": "wrkspc_019CS1Y9yar6zZgcp8vssuZj" },
+});
 
 // El bloque `document` va ANTES del bloque de texto.
 const bloquePdf = {
