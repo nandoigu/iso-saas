@@ -25,10 +25,31 @@ Set-Location (Split-Path $PSScriptRoot -Parent)
 # produccion seria candidato a subir a un repo publico.
 $tmp = ".env.produccion.tmp"
 
+# El CLI de Vercel no esta instalado ni global ni como dependencia del proyecto,
+# asi que por defecto se invoca con npx. Si algun dia se instala, se usa el del PATH.
+$vercelExe = "npx"
+$vercelArgs = @("--yes", "vercel@latest")
+if (Get-Command vercel -ErrorAction SilentlyContinue) {
+    $vercelExe = "vercel"
+    $vercelArgs = @()
+}
+
 try {
     Write-Host "Descargando el entorno de produccion desde Vercel..." -ForegroundColor Cyan
-    vercel env pull --environment=production --yes $tmp | Out-Null
-    if (-not (Test-Path $tmp)) { throw "Vercel no genero $tmp" }
+    & $vercelExe @($vercelArgs + @("env", "pull", "--environment=production", "--yes", $tmp)) | Out-Null
+
+    if (-not (Test-Path $tmp)) {
+        throw @"
+Vercel no genero $tmp.
+
+La causa mas probable es que no haya sesion iniciada: no existen ni
+~/.vercel ni %APPDATA%\com.vercel.cli. Inicia sesion una vez con
+
+    npx --yes vercel@latest login
+
+y vuelve a lanzar este script.
+"@
+    }
 
     $linea = Select-String -Path $tmp -Pattern '^DATABASE_URL=' | Select-Object -First 1
     if (-not $linea) { throw "No hay DATABASE_URL en el entorno de produccion" }
