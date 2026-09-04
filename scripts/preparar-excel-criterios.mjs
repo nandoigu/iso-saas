@@ -9,7 +9,7 @@
 // descarta separadores y deduplica igual que la aplicacion.
 //
 // Uso: node scripts/preparar-excel-criterios.mjs
-import { readFile, mkdir, writeFile } from "node:fs/promises";
+import { readFile, mkdir, writeFile, access } from "node:fs/promises";
 import { join } from "node:path";
 import ExcelJS from "exceljs";
 import { parseRoleTemplateRequirementWorkbook } from "../app/lib/requirementImport.ts";
@@ -22,7 +22,7 @@ const APARTADOS = [
   "1. Que documento lo satisface",
   "2. Que debe encontrarse dentro",
   "3. Que NO basta",
-  "4. Frontera entre NC mayor y NC menor",
+  "4. Frontera entre NC mayor, NC menor, OBS y OM",
 ];
 
 // Recuento verificado contra produccion el 11-ago. Una desviacion significa que
@@ -37,7 +37,41 @@ await mkdir(DESTINO, { recursive: true });
 
 let desviaciones = 0;
 
+// Un libro que ya lleva criterios escritos es trabajo del experto y no se pisa.
+// Comprueba las columnas E-H del destino, no su mera existencia: un libro recien
+// generado esta vacio y si debe regenerarse.
+async function tieneCriteriosEscritos(ruta) {
+  try {
+    await access(ruta);
+  } catch {
+    return false;
+  }
+
+  const libro = new ExcelJS.Workbook();
+  await libro.xlsx.readFile(ruta);
+  const hoja = libro.worksheets[0];
+  if (!hoja) return false;
+
+  let escritas = 0;
+  hoja.eachRow((fila, numero) => {
+    if (numero === 1) return;
+    for (const columna of [5, 6, 7, 8]) {
+      const valor = fila.getCell(columna).value;
+      if (valor != null && String(valor).trim() !== "") escritas += 1;
+    }
+  });
+
+  return escritas > 0;
+}
+
 for (const { nombre, esperado } of LIBROS) {
+  const destino = join(DESTINO, nombre);
+
+  if (await tieneCriteriosEscritos(destino)) {
+    console.log(`${nombre}: RESPETADO, ya tiene criterios escritos`);
+    continue;
+  }
+
   const buffer = await readFile(join(ORIGEN, nombre));
   const resultado = await parseRoleTemplateRequirementWorkbook(
     buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength)
@@ -79,7 +113,7 @@ for (const { nombre, esperado } of LIBROS) {
     añadida.alignment = { vertical: "top", wrapText: true };
   }
 
-  await writeFile(join(DESTINO, nombre), await libro.xlsx.writeBuffer());
+  await writeFile(destino, await libro.xlsx.writeBuffer());
 
   const marca = resultado.rows.length === esperado ? "" : `  <-- ESPERADOS ${esperado}`;
   if (resultado.rows.length !== esperado) desviaciones += 1;
