@@ -9,6 +9,7 @@ export type ParsedRequirementTemplate = {
   name: string;
   titulo: string;
   descripcion: string;
+  criterioAceptacion: string | null;
   evidencia: string | null;
   defaultStatus: RequirementStatus;
   deadline: Date | null;
@@ -63,6 +64,13 @@ const HEADER_ALIASES = {
     "descripción del requerimiento",
     "descripcion_del_requerimiento",
     "descripción_del_requerimiento",
+  ],
+  criterioAceptacion: [
+    "criterio de aceptacion",
+    "criterio de aceptación",
+    "criterio_de_aceptacion",
+    "criterio_de_aceptación",
+    "criterio",
   ],
   fase: ["fase"],
 } as const;
@@ -212,6 +220,7 @@ function parseDetailedWorkbook(
       name,
       titulo: name,
       descripcion: name,
+      criterioAceptacion: null,
       evidencia,
       defaultStatus: statusResult.status,
       deadline: deadlineResult.date,
@@ -255,6 +264,10 @@ function parseRoleTemplateWorkbook(
     const explicitItem = getRequiredString(row[columnMap.item]);
     const titulo = getRequiredString(row[columnMap.titulo]);
     const descripcion = getRequiredString(row[columnMap.descripcion]);
+    const criterioAceptacion =
+      columnMap.criterioAceptacion === -1
+        ? null
+        : getOptionalString(row[columnMap.criterioAceptacion]);
 
     if (explicitNorma) {
       currentNorma = explicitNorma;
@@ -298,6 +311,7 @@ function parseRoleTemplateWorkbook(
       name: titulo,
       titulo,
       descripcion,
+      criterioAceptacion,
       evidencia: null,
       defaultStatus: fallbackStatus,
       deadline: null,
@@ -393,6 +407,10 @@ function getRoleTemplateColumnMap(headers: string[]) {
     titulo: findHeaderIndex(normalized, HEADER_ALIASES.titulo),
     descripcion: findHeaderIndex(normalized, HEADER_ALIASES.descripcion),
     fase: findHeaderIndex(normalized, HEADER_ALIASES.fase),
+    criterioAceptacion: findHeaderIndex(
+      normalized,
+      HEADER_ALIASES.criterioAceptacion
+    ),
   };
 }
 
