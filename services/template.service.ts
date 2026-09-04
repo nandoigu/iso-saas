@@ -39,6 +39,9 @@ export async function importTemplates(
       descripcion: row.descripcion,
       role,
       name: row.titulo,
+      // ADR-013 D2: el criterio viaja en la quinta columna del Excel de la fuente.
+      // No se reutiliza `evidencia`, que tiene otra semantica y la usan 21 ficheros.
+      criterioAceptacion: row.criterioAceptacion,
       evidencia: null,
       defaultStatus: "no_conforme",
       deadline: null,
