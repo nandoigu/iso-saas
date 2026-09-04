@@ -50,14 +50,24 @@ export async function GET(req: Request) {
       );
     }
 
-    const requirements = await prisma.requirement.findMany({
+    const filas = await prisma.requirement.findMany({
       where: {
         projectId: project.id,
       },
       orderBy: {
         createdAt: "desc",
       },
+      include: { template: { select: { criterioAceptacion: true } } },
     });
+
+    // ADR-013 D2: el criterio es global y vive en la plantilla. Se lee por la
+    // relacion en vez de copiarse, para que corregirlo alcance a todos los
+    // proyectos y no queden copias obsoletas. Un requisito sin plantilla
+    // (importado del Excel de un proyecto) devuelve null: es correcto.
+    const requirements = filas.map(({ template, ...requisito }) => ({
+      ...requisito,
+      criterioAceptacion: template?.criterioAceptacion ?? null,
+    }));
 
     return NextResponse.json(requirements);
   } catch (error) {
