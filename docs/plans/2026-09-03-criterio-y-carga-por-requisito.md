@@ -937,6 +937,12 @@ export default function RequirementEvidencePanel({
 
 ⚠️ `access: "public"` es lo que exige la firma de `upload()`; **quien impone la privacidad real es el store**, configurado como privado (ADR-014). No cambiar el store sin releer ese ADR.
 
+> **Corrección al ejecutar (2026-10-12).** El código de este paso tenía cuatro errores que hacían fallar toda subida; el componente commiteado los corrige:
+> 1. `access: "public"` → **`"private"`**. La nota anterior es falsa: `@vercel/blob@2.8.0` acepta `'private'` en `upload()`, y el store privado rechaza toda escritura pública («Cannot use public access on a private store», verificado en la Fase D).
+> 2. Pathname `fichero.name` → **`evidence/${projectId}/${fichero.name}`**. `handleEvidenceUploadToken` solo emite token bajo ese prefijo.
+> 3. `sourceRef: blob.url` → **`blob.pathname`**. La ruta `file` firma la lectura con `pathname: sourceRef`.
+> 4. `evidencia.item.id` → **`evidencia.data.id`**. `POST /api/projects/[id]/evidence` responde `{ data: {...} }`.
+
 - [ ] **Step 2: Comprobar que compila**
 
 Run: `npx tsc --noEmit`
