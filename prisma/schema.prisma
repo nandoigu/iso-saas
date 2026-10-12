@@ -45,6 +45,7 @@ model User {
   evidenceReportLinksAdded EvidenceReportLink[]      @relation("ReportLinkAdder")
   evidenceValidations      EvidenceValidation[]      @relation("EvidenceValidator")
   evidenceVersionsCreated  EvidenceItemVersion[]     @relation("EvidenceVersionCreator")
+  analysisDocuments        AnalysisDocument[]        @relation("AnalysisDocumentCreator")
 }
 
 model Project {
@@ -292,6 +293,7 @@ model EvidenceItem {
   reportLinks      EvidenceReportLink[]
   validations      EvidenceValidation[]
   versions         EvidenceItemVersion[]
+  analysisDocument AnalysisDocument?
 
   @@index([projectId])
   @@index([createdBy])
@@ -382,4 +384,30 @@ model EvidenceItemVersion {
 
   @@unique([evidenceItemId, version])
   @@index([evidenceItemId])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// AUDIT INTELLIGENCE PLATFORM — Documento preparado para analisis
+// No almacena el contenido: el PDF viaja nativo a la API (ADR-008 D5).
+// La relacion `citations FindingCitation[]` del domain model se anade con la
+// fase de IA: FindingCitation todavia no existe.
+// ─────────────────────────────────────────────────────────────────────────────
+
+model AnalysisDocument {
+  id                String   @id @default(cuid())
+  evidenceItemId    String   @unique // tenant isolation via evidenceItem → project → company
+  mediaType         String // "application/pdf" | ...
+  pageCount         Int? // null hasta que se inspecciona
+  sizeBytes         Int
+  status            String   @default("pending") // "pending" | "ready" | "unsupported" | "failed"
+  unsupportedReason String? // "scanned_no_text_layer" | "exceeds_page_limit" | "exceeds_size_limit" | "unsupported_media_type"
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  createdBy         String // userId
+
+  evidenceItem EvidenceItem @relation(fields: [evidenceItemId], references: [id], onDelete: Restrict)
+  creator      User         @relation("AnalysisDocumentCreator", fields: [createdBy], references: [id], onDelete: Restrict)
+
+  @@index([status])
+  @@index([createdBy])
 }
