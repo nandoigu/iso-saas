@@ -140,6 +140,20 @@ export async function createEvidenceItem(
       createdBy: input.createdBy,
     });
 
+    // El documento de analisis nace con la evidencia porque `mediaType` y
+    // `sizeBytes` solo se conocen en el momento de la subida. `pageCount` y
+    // `status` los completa la fase de analisis (domain model AIP).
+    if (input.mediaType && typeof input.sizeBytes === "number") {
+      await tx.analysisDocument.create({
+        data: {
+          evidenceItemId: created.id,
+          mediaType: input.mediaType,
+          sizeBytes: input.sizeBytes,
+          createdBy: input.createdBy,
+        },
+      });
+    }
+
     return created;
   });
 
@@ -239,6 +253,11 @@ export async function deleteEvidenceItem(evidenceId: string, actor: EvidenceActo
         };
       }
 
+      // `AnalysisDocument.evidenceItem` es Restrict: el documento no cae en cascada,
+      // el servicio lo retira explicitamente cuando es seguro (domain model AIP).
+      // Hoy siempre lo es porque FindingCitation no existe todavia. Cuando exista,
+      // este borrado debe comprobar antes que el documento no tenga citas.
+      await tx.analysisDocument.deleteMany({ where: { evidenceItemId: evidenceId } });
       await tx.evidenceItem.delete({ where: { id: evidenceId } });
       return { deleted: true as const, id: evidenceId };
     },

@@ -225,7 +225,11 @@ export async function cleanupTenant(companyId: string) {
   // Delete in dependency order.
   // EvidenceItem va primero: su relacion con Project es `onDelete: Restrict`, asi que
   // dejarla viva bloquearia el borrado del proyecto. Links, validaciones y versiones
-  // caen en cascada desde EvidenceItem.
+  // caen en cascada desde EvidenceItem. AnalysisDocument no: es Restrict hacia
+  // EvidenceItem y tiene que irse antes.
+  await prisma.analysisDocument.deleteMany({
+    where: { evidenceItem: { project: { companyId } } },
+  });
   await prisma.evidenceItem.deleteMany({ where: { project: { companyId } } });
   await prisma.auditTeamMember.deleteMany({
     where: { auditTeam: { companyId } },

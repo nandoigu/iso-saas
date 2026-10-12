@@ -48,6 +48,10 @@ if (!APPLY) {
 }
 
 for (const c of companies) {
+  // AnalysisDocument es Restrict hacia EvidenceItem: tiene que irse antes.
+  await prisma.analysisDocument.deleteMany({
+    where: { evidenceItem: { project: { companyId: c.id } } },
+  });
   await prisma.evidenceItem.deleteMany({ where: { project: { companyId: c.id } } });
   await prisma.auditTeamMember.deleteMany({ where: { auditTeam: { companyId: c.id } } });
   await prisma.auditReport.deleteMany({ where: { project: { companyId: c.id } } });

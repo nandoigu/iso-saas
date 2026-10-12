@@ -140,6 +140,11 @@ export type CreateEvidenceItemInput = {
   type: EvidenceType;
   sourceRef?: string;
   createdBy: string;
+  // Los declara el cliente en el momento de la subida: EvidenceItem no guarda
+  // tipo ni tamano, y recuperarlos despues obligaria a interrogar al store
+  // fichero a fichero.
+  mediaType?: string;
+  sizeBytes?: number;
 };
 
 export type UpdateEvidenceItemInput = Partial<

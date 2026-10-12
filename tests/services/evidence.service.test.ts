@@ -625,3 +625,76 @@ describe("removeEvidenceRequirementLink", () => {
     expect(stored).not.toBeNull();
   });
 });
+
+// ─── AnalysisDocument ────────────────────────────────────────────────────────
+
+describe("createEvidenceItem — AnalysisDocument", () => {
+  it("crea el AnalysisDocument en la misma transaccion que la evidencia", async () => {
+    const resultado = await createEvidenceItem(
+      {
+        projectId: projectA.id,
+        title: "BEP del proyecto",
+        type: "document",
+        createdBy: tenantA.user.id,
+        mediaType: "application/pdf",
+        sizeBytes: 1415577,
+      },
+      ownerA
+    );
+
+    const item = "item" in resultado ? resultado.item : null;
+    expect(item).not.toBeNull();
+
+    const documento = await prisma.analysisDocument.findUnique({
+      where: { evidenceItemId: item!.id },
+    });
+
+    expect(documento).not.toBeNull();
+    expect(documento!.mediaType).toBe("application/pdf");
+    expect(documento!.sizeBytes).toBe(1415577);
+    expect(documento!.status).toBe("pending");
+    expect(documento!.pageCount).toBeNull();
+  });
+
+  it("no crea AnalysisDocument si no se declara el fichero", async () => {
+    const resultado = await createEvidenceItem(
+      {
+        projectId: projectA.id,
+        title: "Declaracion verbal",
+        type: "declaration",
+        createdBy: tenantA.user.id,
+      },
+      ownerA
+    );
+
+    const item = "item" in resultado ? resultado.item : null;
+    const documento = await prisma.analysisDocument.findUnique({
+      where: { evidenceItemId: item!.id },
+    });
+
+    expect(documento).toBeNull();
+  });
+
+  it("borrar la evidencia retira tambien su AnalysisDocument", async () => {
+    const resultado = await createEvidenceItem(
+      {
+        projectId: projectA.id,
+        title: "Plano a retirar",
+        type: "document",
+        createdBy: tenantA.user.id,
+        mediaType: "application/pdf",
+        sizeBytes: 2048,
+      },
+      ownerA
+    );
+    const item = "item" in resultado ? resultado.item : null;
+
+    const result = await deleteEvidenceItem(item!.id, ownerA);
+
+    expect(result).toEqual({ deleted: true, id: item!.id });
+    expect(await prisma.evidenceItem.findUnique({ where: { id: item!.id } })).toBeNull();
+    expect(
+      await prisma.analysisDocument.findUnique({ where: { evidenceItemId: item!.id } })
+    ).toBeNull();
+  });
+});

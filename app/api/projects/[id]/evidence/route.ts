@@ -80,6 +80,15 @@ export async function POST(req: Request, context: RouteContext) {
         type: type as EvidenceType,
         sourceRef: typeof body.sourceRef === "string" ? body.sourceRef : undefined,
         createdBy: user.id,
+        // Solo con fichero: sin los dos, la evidencia nace sin AnalysisDocument.
+        // `sizeBytes` entero y positivo; cualquier otro valor se descarta en vez
+        // de llegar a la columna Int y acabar en un 500.
+        mediaType:
+          typeof body.mediaType === "string" && body.mediaType.trim()
+            ? body.mediaType.trim()
+            : undefined,
+        sizeBytes:
+          Number.isInteger(body.sizeBytes) && body.sizeBytes > 0 ? body.sizeBytes : undefined,
       },
       { userId: user.id, isAdmin: isAdminRole(user.role) }
     );
