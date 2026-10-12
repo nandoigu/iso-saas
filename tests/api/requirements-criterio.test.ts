@@ -2,7 +2,13 @@ import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import type { AuthUser } from "@/app/lib/auth";
 import { prisma } from "@/app/lib/prisma";
 import { GET } from "@/app/api/requirements/route";
-import { createProject, createTenant, cleanupTenant } from "@/tests/helpers/db";
+import {
+  createEvidenceItem,
+  createProject,
+  createRequirementLink,
+  createTenant,
+  cleanupTenant,
+} from "@/tests/helpers/db";
 import { makeRequest, sessionCookie } from "@/tests/helpers/auth";
 
 function asAuthUser(user: {
@@ -98,5 +104,32 @@ describe("GET /api/requirements", () => {
 
     const suelto = body.find((r: { name: string }) => r.name === "SUELTO");
     expect(suelto.criterioAceptacion).toBeNull();
+  });
+
+  it("devuelve los documentos presentados para cada requisito", async () => {
+    const requisito = await prisma.requirement.findFirstOrThrow({
+      where: { projectId: project.id, name: "SUELTO" },
+    });
+    const evidencia = await createEvidenceItem(project.id, tenant.user.id, {
+      title: "BEP firmado.pdf",
+    });
+    const vinculo = await createRequirementLink(evidencia.id, requisito.id, tenant.user.id);
+
+    const cookie = sessionCookie(asAuthUser(tenant.user));
+    const res = await GET(
+      makeRequest(`/api/requirements?projectId=${project.id}`, { cookie })
+    );
+    const body = await res.json();
+
+    const suelto = body.find((r: { name: string }) => r.name === "SUELTO");
+    expect(suelto.evidenceLinks).toEqual([
+      {
+        id: vinculo.id,
+        linkType: vinculo.linkType,
+        evidenceItem: { title: "BEP firmado.pdf" },
+      },
+    ]);
+    const conPlantilla = body.find((r: { name: string }) => r.name === "TITULO");
+    expect(conPlantilla.evidenceLinks).toEqual([]);
   });
 });

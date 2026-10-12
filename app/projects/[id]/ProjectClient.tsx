@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import {
   getProjectRoleBadgeStyle,
   getProjectRoleLabel,
@@ -40,6 +40,7 @@ import {
   type SortMode,
 } from "@/app/projects/[id]/project-requirements";
 import { useProjectRequirements } from "@/app/projects/[id]/useProjectRequirements";
+import RequirementEvidencePanel from "./RequirementEvidencePanel";
 
 type ProjectClientProps = {
   projectId: string;
@@ -98,6 +99,8 @@ export default function ProjectClient({ projectId }: ProjectClientProps) {
   const [editData, setEditData] = useState<EditData>(EMPTY_EDIT_DATA);
   const [savingEdit, setSavingEdit] = useState(false);
   const [deletingRequirementId, setDeletingRequirementId] = useState<string | null>(null);
+  // Todo el estado de subida vive en RequirementEvidencePanel; aqui solo cual esta abierto.
+  const [requisitoAbierto, setRequisitoAbierto] = useState<string | null>(null);
 
   useEffect(() => {
     const loadProjectMeta = async () => {
@@ -689,6 +692,31 @@ export default function ProjectClient({ projectId }: ProjectClientProps) {
     setSearchTerm("");
   };
 
+  // Se busca en `requirements`, no en la lista filtrada: un filtro no debe cerrar
+  // el panel de un requisito que el usuario tiene abierto.
+  const requisitoDelPanel = requisitoAbierto
+    ? requirements.find((r) => r.id === requisitoAbierto)
+    : undefined;
+  const panelDeCarga = requisitoDelPanel ? (
+    <RequirementEvidencePanel
+      key={requisitoDelPanel.id}
+      projectId={projectId}
+      requirement={{
+        id: requisitoDelPanel.id,
+        item: getDisplayValue(requisitoDelPanel.item, "Sin item"),
+        titulo: requisitoDelPanel.titulo || requisitoDelPanel.name,
+        criterioAceptacion: requisitoDelPanel.criterioAceptacion ?? null,
+      }}
+      documentos={(requisitoDelPanel.evidenceLinks ?? []).map((v) => ({
+        id: v.id,
+        title: v.evidenceItem.title,
+        linkType: v.linkType,
+      }))}
+      onClose={() => setRequisitoAbierto(null)}
+      onUploaded={() => reloadRequirements()}
+    />
+  ) : null;
+
   return (
     <main style={{ ...pageStyle, ...(isMobile ? mobilePageStyle : {}) }}>
       <DestructiveConfirmationDialog
@@ -1243,23 +1271,45 @@ export default function ProjectClient({ projectId }: ProjectClientProps) {
         )}
 
         {!loading && !loadError && filteredRequirements.length > 0 && (
-          <div style={{ display: "grid", gap: 14 }}>
-            {filteredRequirements.map((requirement) => (
-              <RequirementCard
-                key={requirement.id}
-                requirement={requirement}
-                editing={editingId === requirement.id}
-                editData={editData}
-                savingEdit={savingEdit}
-                deletingRequirement={deletingRequirementId === requirement.id}
-                onStartEditing={startEditing}
-                onCancelEditing={cancelEditing}
-                onSaveEditing={saveEditing}
-                onEditChange={setEditData}
-                onDeleteRequirement={deleteRequirement}
-                compactLayout={isMobile}
-              />
-            ))}
+          <div
+            style={{
+              alignItems: "start",
+              display: "grid",
+              gap: 14,
+              gridTemplateColumns:
+                panelDeCarga && !isMobile
+                  ? "minmax(0, 1fr) minmax(300px, 380px)"
+                  : "minmax(0, 1fr)",
+            }}
+          >
+            <div style={{ display: "grid", gap: 14 }}>
+              {filteredRequirements.map((requirement) => (
+                <Fragment key={requirement.id}>
+                  <RequirementCard
+                    requirement={requirement}
+                    editing={editingId === requirement.id}
+                    editData={editData}
+                    savingEdit={savingEdit}
+                    deletingRequirement={deletingRequirementId === requirement.id}
+                    evidencePanelOpen={requisitoAbierto === requirement.id}
+                    onToggleEvidencePanel={() =>
+                      setRequisitoAbierto(
+                        requirement.id === requisitoAbierto ? null : requirement.id
+                      )
+                    }
+                    onStartEditing={startEditing}
+                    onCancelEditing={cancelEditing}
+                    onSaveEditing={saveEditing}
+                    onEditChange={setEditData}
+                    onDeleteRequirement={deleteRequirement}
+                    compactLayout={isMobile}
+                  />
+                  {/* En movil el panel va bajo su tarjeta: al final de la lista quedaria lejos. */}
+                  {isMobile && requisitoAbierto === requirement.id ? panelDeCarga : null}
+                </Fragment>
+              ))}
+            </div>
+            {!isMobile ? panelDeCarga : null}
           </div>
         )}
       </section>
@@ -1273,6 +1323,8 @@ function RequirementCard({
   editData,
   savingEdit,
   deletingRequirement,
+  evidencePanelOpen,
+  onToggleEvidencePanel,
   onStartEditing,
   onCancelEditing,
   onSaveEditing,
@@ -1285,6 +1337,8 @@ function RequirementCard({
   editData: EditData;
   savingEdit: boolean;
   deletingRequirement: boolean;
+  evidencePanelOpen: boolean;
+  onToggleEvidencePanel: () => void;
   onStartEditing: (requirement: Requirement) => void;
   onCancelEditing: () => void;
   onSaveEditing: () => void;
@@ -1371,6 +1425,17 @@ function RequirementCard({
                 width: compactLayout ? "100%" : undefined,
               }}
             >
+              <button
+                type="button"
+                onClick={onToggleEvidencePanel}
+                aria-expanded={evidencePanelOpen}
+                style={{
+                  ...compactActionButtonStyle,
+                  width: compactLayout ? "100%" : undefined,
+                }}
+              >
+                Documentos ({requirement.evidenceLinks?.length ?? 0})
+              </button>
               <button
                 onClick={() => onStartEditing(requirement)}
                 disabled={deletingRequirement}

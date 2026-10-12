@@ -57,7 +57,16 @@ export async function GET(req: Request) {
       orderBy: {
         createdAt: "desc",
       },
-      include: { template: { select: { criterioAceptacion: true } } },
+      include: {
+        template: { select: { criterioAceptacion: true } },
+        // Documentos presentados por requisito, para el contador y el panel de
+        // carga. Solo lo que la lista pinta: el detalle de la evidencia se pide
+        // por su propia ruta.
+        evidenceLinks: {
+          select: { id: true, linkType: true, evidenceItem: { select: { title: true } } },
+          orderBy: { addedAt: "asc" },
+        },
+      },
     });
 
     // ADR-013 D2: el criterio es global y vive en la plantilla. Se lee por la

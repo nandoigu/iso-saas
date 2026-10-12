@@ -10,6 +10,13 @@ export type Requirement = {
   evidencia?: string | null;
   status?: RequirementStatus | null;
   deadline?: string | null;
+  titulo?: string | null;
+  criterioAceptacion?: string | null;
+  evidenceLinks?: {
+    id: string;
+    linkType: string;
+    evidenceItem: { title: string };
+  }[];
 };
 
 export type EditData = {
