@@ -22,3 +22,4 @@ ADRs follow the Nygard format enriched with BAOS governance fields.
 | ADR-013 | Arranque en frío — el criterio de auditoría se escribe antes de que haya lecciones | Accepted | 2026-08-11 |
 | ADR-014 | El acceso privado del binario de evidencia es un control de infraestructura, no de código | Accepted | 2026-08-16 |
 | ADR-015 | La guarda de la cita de conclusión es aproximada mientras la cita no tenga requisito | Accepted | 2026-08-26 |
+| ADR-016 | Catálogo de plantillas documentales — binarios en la función y carga por subida desde /admin | Accepted | 2026-10-13 |

@@ -7,6 +7,7 @@ import {
   type DestructiveConfirmationState,
 } from "@/components/DestructiveConfirmationDialog";
 import { Notice } from "@/components/Notice";
+import DocumentCatalogImport from "./DocumentCatalogImport";
 import {
   appDangerButtonStyle,
   appFieldStyle,
@@ -396,6 +397,10 @@ export default function AdminPanelClient({
           </table>
         </div>
       </section>
+
+      <DocumentCatalogImport
+        style={{ ...sectionStyle, ...(isCompact ? compactSectionStyle : {}) }}
+      />
 
       <section style={{ ...sectionStyle, ...(isCompact ? compactSectionStyle : {}) }}>
         <div style={sectionIntroStyle}>

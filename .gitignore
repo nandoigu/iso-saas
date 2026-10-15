@@ -50,3 +50,6 @@ next-env.d.ts
 /docs/muestras/
 
 .env*
+
+# Prompts de arranque de sesion: instrucciones de un solo uso, no documentacion
+docs/superpowers/specs/*prompt-arranque*.md

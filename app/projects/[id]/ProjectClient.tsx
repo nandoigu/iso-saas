@@ -1,7 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { Fragment, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import {
+  Fragment,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type KeyboardEvent,
+  type ReactNode,
+} from "react";
 import {
   getProjectRoleBadgeStyle,
   getProjectRoleLabel,
@@ -41,6 +50,7 @@ import {
 } from "@/app/projects/[id]/project-requirements";
 import { useProjectRequirements } from "@/app/projects/[id]/useProjectRequirements";
 import RequirementEvidencePanel from "./RequirementEvidencePanel";
+import ProjectDocumentsSection from "./ProjectDocumentsSection";
 
 type ProjectClientProps = {
   projectId: string;
@@ -54,6 +64,16 @@ type ProjectMeta = {
 };
 
 type ImportMode = "append" | "replace";
+
+// La vista activa vive en la URL (?vista=documentacion) para poder enlazarla y volver atras.
+type Vista = "requerimientos" | "documentacion";
+type Formulario = "nuevo" | "importar" | null;
+
+const VISTAS: Vista[] = ["requerimientos", "documentacion"];
+const VISTA_ETIQUETA: Record<Vista, string> = {
+  requerimientos: "Requerimientos",
+  documentacion: "Documentación",
+};
 
 const PROJECT_FILTERS_STORAGE_PREFIX = "bmo:project-filters:";
 
@@ -101,6 +121,67 @@ export default function ProjectClient({ projectId }: ProjectClientProps) {
   const [deletingRequirementId, setDeletingRequirementId] = useState<string | null>(null);
   // Todo el estado de subida vive en RequirementEvidencePanel; aqui solo cual esta abierto.
   const [requisitoAbierto, setRequisitoAbierto] = useState<string | null>(null);
+  const [filtrosAbiertos, setFiltrosAbiertos] = useState(false);
+  const [formulario, setFormulario] = useState<Formulario>(null);
+  const [totalPlantillas, setTotalPlantillas] = useState<number | null>(null);
+
+  const searchParams = useSearchParams();
+  // Los enlaces antiguos apuntaban al ancla #documentacion de la pagina unica. No se
+  // reescribe la URL al montar: el router de Next la restaura durante la hidratacion.
+  const [anclaDocumentacion, setAnclaDocumentacion] = useState(false);
+  useEffect(() => {
+    setAnclaDocumentacion(window.location.hash === "#documentacion");
+  }, []);
+  const parametroVista = searchParams.get("vista");
+  const vista: Vista =
+    parametroVista === "documentacion" || (!parametroVista && anclaDocumentacion)
+      ? "documentacion"
+      : "requerimientos";
+  const pestanasVista = useRef<Partial<Record<Vista, HTMLButtonElement | null>>>({});
+
+  const cambiarVista = (nueva: Vista, enfocar = false) => {
+    setAnclaDocumentacion(false);
+    const params = new URLSearchParams(searchParams.toString());
+    if (nueva === "documentacion") {
+      params.set("vista", nueva);
+    } else {
+      params.delete("vista");
+    }
+    const query = params.toString();
+    window.history.pushState(
+      null,
+      "",
+      `${window.location.pathname}${query ? `?${query}` : ""}`
+    );
+    if (enfocar) pestanasVista.current[nueva]?.focus();
+  };
+
+  // Patron WAI-ARIA de pestanas: flechas, Inicio y Fin mueven el foco y activan.
+  const alTeclearVista = (event: KeyboardEvent<HTMLDivElement>) => {
+    const i = VISTAS.indexOf(vista);
+    const destino =
+      event.key === "ArrowRight"
+        ? VISTAS[(i + 1) % VISTAS.length]
+        : event.key === "ArrowLeft"
+          ? VISTAS[(i - 1 + VISTAS.length) % VISTAS.length]
+          : event.key === "Home"
+            ? VISTAS[0]
+            : event.key === "End"
+              ? VISTAS[VISTAS.length - 1]
+              : null;
+    if (!destino) return;
+    event.preventDefault();
+    cambiarVista(destino, true);
+  };
+
+  // Alta e importacion son tareas puntuales: se abren a demanda y nunca las dos a la vez.
+  const alternarFormulario = (destino: Exclude<Formulario, null>) => {
+    setFormulario((actual) => (actual === destino ? null : destino));
+  };
+
+  const alternarPanelDeCarga = (requirementId: string) => {
+    setRequisitoAbierto((actual) => (actual === requirementId ? null : requirementId));
+  };
 
   useEffect(() => {
     const loadProjectMeta = async () => {
@@ -675,6 +756,8 @@ export default function ProjectClient({ projectId }: ProjectClientProps) {
     selectedStatuses.length +
     (dateFilter !== "all" ? 1 : 0) +
     (searchTerm.trim() ? 1 : 0);
+  // El buscador queda fuera del panel de filtros; el boton solo cuenta lo que hay dentro.
+  const filtrosActivos = activeFilterCount - (searchTerm.trim() ? 1 : 0);
 
   const toggleStatusFilter = (nextStatus: RequirementStatus) => {
     setSelectedStatuses((current) =>
@@ -724,489 +807,534 @@ export default function ProjectClient({ projectId }: ProjectClientProps) {
         onCancel={() => setConfirmation(null)}
       />
 
-      <header
-        style={{
-          alignItems: "flex-start",
-          display: isMobile ? "grid" : "flex",
-          flexWrap: "wrap",
-          gap: 20,
-          justifyContent: "space-between",
-          marginBottom: 28,
-        }}
-      >
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={eyebrowStyle}>Trazabilidad del proyecto</div>
-          {editingProjectMeta ? (
+      <header style={{ marginBottom: 16 }}>
+        <Link href="/projects" style={breadcrumbLinkStyle}>
+          Proyectos
+        </Link>
+        {editingProjectMeta ? (
+          <div
+            style={{
+              background: "#ffffff",
+              border: "1px solid #dbe5f1",
+              borderRadius: 8,
+              marginTop: 8,
+              maxWidth: 760,
+              padding: 16,
+            }}
+          >
             <div
               style={{
-                background: "#ffffff",
-                border: "1px solid #dbe5f1",
-                borderRadius: 8,
-                marginTop: 8,
-                maxWidth: 760,
-                padding: 16,
+                display: "grid",
+                gap: 12,
+                gridTemplateColumns: isMobile
+                  ? "minmax(0, 1fr)"
+                  : "minmax(0, 1.2fr) minmax(220px, 0.8fr)",
               }}
             >
+              <label style={inlineFieldStyle}>
+                Nombre del proyecto
+                <input
+                  value={projectNameDraft}
+                  onChange={(event) => setProjectNameDraft(event.target.value)}
+                  style={controlStyle}
+                />
+              </label>
+              <label style={inlineFieldStyle}>
+                Código
+                <input
+                  value={projectCodeDraft}
+                  onChange={(event) => setProjectCodeDraft(event.target.value)}
+                  style={controlStyle}
+                />
+              </label>
+            </div>
+            <div
+              style={{
+                alignItems: "center",
+                display: "flex",
+                flexWrap: "wrap",
+                gap: 10,
+                justifyContent: "space-between",
+                marginTop: 12,
+              }}
+            >
+              <span style={{ color: "#64748b", fontSize: 13 }}>
+                La función del proyecto se mantiene fija para no desalinear
+                los requerimientos generados automáticamente.
+              </span>
               <div
                 style={{
-                  display: "grid",
-                  gap: 12,
-                  gridTemplateColumns: isMobile
-                    ? "minmax(0, 1fr)"
-                    : "minmax(0, 1.2fr) minmax(220px, 0.8fr)",
-                }}
-              >
-                <label style={inlineFieldStyle}>
-                  Nombre del proyecto
-                  <input
-                    value={projectNameDraft}
-                    onChange={(event) => setProjectNameDraft(event.target.value)}
-                    style={controlStyle}
-                  />
-                </label>
-                <label style={inlineFieldStyle}>
-                  Código
-                  <input
-                    value={projectCodeDraft}
-                    onChange={(event) => setProjectCodeDraft(event.target.value)}
-                    style={controlStyle}
-                  />
-                </label>
-              </div>
-              <div
-                style={{
-                  alignItems: "center",
-                  display: "flex",
-                  flexWrap: "wrap",
+                  display: isMobile ? "grid" : "flex",
                   gap: 10,
-                  justifyContent: "space-between",
-                  marginTop: 12,
+                  width: isMobile ? "100%" : undefined,
                 }}
               >
-                <span style={{ color: "#64748b", fontSize: 13 }}>
-                  La función del proyecto se mantiene fija para no desalinear
-                  los requerimientos generados automáticamente.
-                </span>
-                <div
-                  style={{
-                    display: isMobile ? "grid" : "flex",
-                    gap: 10,
-                    width: isMobile ? "100%" : undefined,
-                  }}
+                <button
+                  type="button"
+                  onClick={cancelProjectMetaEditing}
+                  disabled={savingProjectMeta}
+                  aria-disabled={savingProjectMeta}
+                  style={secondaryButtonStyle}
                 >
-                  <button
-                    type="button"
-                    onClick={cancelProjectMetaEditing}
-                    disabled={savingProjectMeta}
-                    aria-disabled={savingProjectMeta}
-                    style={secondaryButtonStyle}
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    type="button"
-                    onClick={saveProjectMeta}
-                    disabled={savingProjectMeta}
-                    aria-disabled={savingProjectMeta}
-                    style={primaryButtonStyle}
-                  >
-                    {savingProjectMeta ? "Guardando..." : "Guardar proyecto"}
-                  </button>
-                </div>
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={saveProjectMeta}
+                  disabled={savingProjectMeta}
+                  aria-disabled={savingProjectMeta}
+                  style={primaryButtonStyle}
+                >
+                  {savingProjectMeta ? "Guardando..." : "Guardar proyecto"}
+                </button>
               </div>
             </div>
-          ) : (
-            <>
-              <section style={projectIdentityStyle} aria-labelledby="project-open-title">
-                <div style={projectIdentityHeaderStyle}>
-                  <div style={{ minWidth: 0 }}>
-                    <div style={projectIdentityLabelStyle}>Proyecto abierto</div>
-                    <h1 id="project-open-title" style={projectIdentityTitleStyle}>
-                      {projectMeta?.name || "Gestion de requerimientos"}
-                    </h1>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={startProjectMetaEditing}
-                    style={secondaryButtonStyle}
-                  >
-                    Editar proyecto
-                  </button>
-                </div>
-                <div style={projectIdentityMetaRowStyle}>
-                  <span
-                    style={{
-                      ...projectRoleBadgeBaseStyle,
-                      ...getProjectRoleBadgeStyle(projectMeta?.role),
-                    }}
-                  >
-                    {getProjectRoleLabel(projectMeta?.role)}
-                  </span>
-                  {projectMeta?.code ? (
-                    <span style={projectCodeBadgeStyle}>{projectMeta.code}</span>
-                  ) : null}
-                </div>
-              </section>
-              <p style={{ color: "#6b7280", margin: "12px 0 0" }}>
-                Alta, edición y seguimiento de requerimientos, evidencias, estados y
-                fechas límite del proyecto.
-              </p>
-            </>
-          )}
-          {metaError ? (
-            <p style={{ color: "#b91c1c", margin: "8px 0 0" }}>{metaError}</p>
-          ) : null}
-        </div>
-
-        <div
-          style={{
-            alignItems: "center",
-            display: "flex",
-            flexWrap: "wrap",
-            gap: 10,
-            width: isMobile ? "100%" : undefined,
-          }}
-        >
-          <Link href="/projects" style={linkButtonStyle}>
-            Volver a proyectos
-          </Link>
-          <Link href={`/projects/${projectId}/matrix`} style={linkButtonStyle}>
-            Ver matriz de cumplimiento
-          </Link>
-          <Link
-            href={`/dashboard?projectId=${encodeURIComponent(projectId)}`}
-            style={linkButtonStyle}
+          </div>
+        ) : (
+          <div
+            style={{
+              alignItems: "flex-start",
+              display: isMobile ? "grid" : "flex",
+              gap: 14,
+              justifyContent: "space-between",
+              marginTop: 4,
+            }}
           >
-            Ver en dashboard
-          </Link>
-        </div>
+            <div style={{ minWidth: 0 }}>
+              <h1 style={projectTitleStyle}>
+                {projectMeta?.name || "Gestion de requerimientos"}
+              </h1>
+              <div style={projectMetaRowStyle}>
+                <span
+                  style={{
+                    ...projectRoleBadgeBaseStyle,
+                    ...getProjectRoleBadgeStyle(projectMeta?.role),
+                  }}
+                >
+                  {getProjectRoleLabel(projectMeta?.role)}
+                </span>
+                {projectMeta?.code ? (
+                  <span style={projectCodeBadgeStyle}>{projectMeta.code}</span>
+                ) : null}
+              </div>
+            </div>
+            <div style={{ display: "flex", flexShrink: 0, flexWrap: "wrap", gap: 8 }}>
+              <button
+                type="button"
+                onClick={startProjectMetaEditing}
+                style={linkButtonStyle}
+              >
+                Editar
+              </button>
+              <Link href={`/projects/${projectId}/matrix`} style={linkButtonStyle}>
+                Matriz de cumplimiento
+              </Link>
+              <Link
+                href={`/dashboard?projectId=${encodeURIComponent(projectId)}`}
+                style={linkButtonStyle}
+              >
+                Dashboard
+              </Link>
+            </div>
+          </div>
+        )}
+        {metaError ? (
+          <p style={{ color: "#b91c1c", margin: "8px 0 0" }}>{metaError}</p>
+        ) : null}
       </header>
 
-      <section
+      <dl
         style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-          gap: 14,
-          marginBottom: 20,
+          ...metricStripStyle,
+          gridTemplateColumns: isMobile
+            ? "repeat(2, minmax(0, 1fr))"
+            : "repeat(4, minmax(0, 1fr))",
         }}
       >
         <MetricCard label="Requerimientos" value={summary.total} />
         <MetricCard label="Cumplimiento" value={`${summary.percent}%`} />
         <MetricCard label="Próximos 7 días" value={summary.upcoming} tone="warning" />
         <MetricCard label="Vencidos" value={summary.overdue} tone="risk" />
-      </section>
+      </dl>
 
-      <section style={quickNavStyle}>
-        <div style={{ minWidth: 0 }}>
-          <strong style={quickNavTitleStyle}>Flujo de trabajo</strong>
-          <span style={{ color: "#64748b", fontSize: 13 }}>
-            Alta, importación, revisión filtrada y matriz quedan conectadas desde aquí.
-            Los filtros se conservan al volver a este proyecto.
-          </span>
-        </div>
-        <div
-          style={{
-            display: "flex",
-            flexWrap: "wrap",
-            gap: 10,
-            justifyContent: isMobile ? "stretch" : "flex-end",
-          }}
-        >
-          <a href="#nuevo-requerimiento" style={quickNavLinkStyle}>
-            Nuevo
-          </a>
-          <a href="#importar-requerimientos" style={quickNavLinkStyle}>
-            Importar
-          </a>
-          <a href="#filtros-requerimientos" style={quickNavLinkStyle}>
-            Filtrar
-          </a>
-          <a href="#listado-requerimientos" style={quickNavLinkStyle}>
-            Revisar
-          </a>
-        </div>
-      </section>
-
-      {(actionError || actionSuccess) && (
-        <div style={{ display: "grid", gap: 10, marginBottom: 20 }}>
-          {actionError ? (
-            <Notice tone="error" message={actionError} compact />
-          ) : null}
-          {actionSuccess ? (
-            <Notice tone="success" message={actionSuccess} compact />
-          ) : null}
-        </div>
-      )}
-
-      <section
-        style={{
-          display: "grid",
-          gap: 18,
-          gridTemplateColumns: isMobile
-            ? "minmax(0, 1fr)"
-            : "repeat(auto-fit, minmax(340px, 1fr))",
-          marginBottom: 24,
-        }}
+      <div
+        role="tablist"
+        aria-label="Vistas del proyecto"
+        onKeyDown={alTeclearVista}
+        style={viewTabListStyle}
       >
-        <section id="nuevo-requerimiento" style={panelStyle}>
-          <SectionHeader
-            eyebrow="Alta manual"
-            title="Nuevo requerimiento"
-            description="Registra nuevos requisitos del proyecto con su estado, evidencia y fecha límite desde un único bloque operativo."
+        {VISTAS.map((v) => {
+          const activa = v === vista;
+          const recuento =
+            v === "requerimientos" ? summary.total : totalPlantillas;
+          return (
+            <button
+              key={v}
+              ref={(el) => {
+                pestanasVista.current[v] = el;
+              }}
+              type="button"
+              role="tab"
+              id={`vista-pestana-${v}`}
+              aria-selected={activa}
+              aria-controls={`vista-panel-${v}`}
+              tabIndex={activa ? 0 : -1}
+              onClick={() => cambiarVista(v)}
+              style={{ ...viewTabStyle, ...(activa ? viewTabActiveStyle : {}) }}
+            >
+              {VISTA_ETIQUETA[v]}
+              {recuento !== null ? (
+                <span
+                  style={{
+                    ...viewTabCountStyle,
+                    ...(activa ? viewTabCountActiveStyle : {}),
+                  }}
+                >
+                  {recuento}
+                </span>
+              ) : null}
+            </button>
+          );
+        })}
+      </div>
+
+      <div
+        role="tabpanel"
+        id="vista-panel-requerimientos"
+        aria-labelledby="vista-pestana-requerimientos"
+        hidden={vista !== "requerimientos"}
+      >
+        {(actionError || actionSuccess) && (
+          <div style={{ display: "grid", gap: 10, marginBottom: 16 }}>
+            {actionError ? (
+              <Notice tone="error" message={actionError} compact />
+            ) : null}
+            {actionSuccess ? (
+              <Notice tone="success" message={actionSuccess} compact />
+            ) : null}
+          </div>
+        )}
+
+        <div style={toolbarStyle}>
+          <input
+            type="search"
+            aria-label="Buscar requerimientos"
+            placeholder="Buscar por norma, item, descripción o evidencia"
+            value={searchTerm}
+            onChange={(event) => setSearchTerm(event.target.value)}
+            style={{
+              ...controlStyle,
+              flex: "1 1 260px",
+              maxWidth: isMobile ? undefined : 420,
+            }}
           />
-
-          <div
-            style={{
-              display: "grid",
-              gap: 12,
-              gridTemplateColumns: isMobile
-                ? "minmax(0, 1fr)"
-                : "repeat(auto-fit, minmax(180px, 1fr))",
-            }}
-          >
-            <label style={inlineFieldStyle}>
-              Norma
-              <input
-                placeholder="ISO 19650-2"
-                value={norma}
-                onChange={(event) => setNorma(event.target.value)}
-                style={controlStyle}
-              />
-            </label>
-
-            <label style={inlineFieldStyle}>
-              Item
-              <input
-                placeholder="5.1.2"
-                value={item}
-                onChange={(event) => setItem(event.target.value)}
-                style={controlStyle}
-              />
-            </label>
-
-            <label style={inlineFieldStyle}>
-              Estado
-              <select
-                value={status}
-                onChange={(event) =>
-                  setStatus(event.target.value as RequirementStatus)
-                }
-                style={controlStyle}
-              >
-                <option value="total">Total</option>
-                <option value="parcial">Parcial</option>
-                <option value="no_conforme">No conforme</option>
-              </select>
-            </label>
-
-            <label style={inlineFieldStyle}>
-              Fecha límite
-              <input
-                type="date"
-                value={deadline}
-                onChange={(event) => setDeadline(event.target.value)}
-                style={controlStyle}
-              />
-            </label>
-          </div>
-
-          <div
-            style={{
-              display: "grid",
-              gap: 12,
-              gridTemplateColumns: isMobile
-                ? "minmax(0, 1fr)"
-                : "repeat(2, minmax(0, 1fr))",
-              marginTop: 12,
-            }}
-          >
-            <label style={inlineFieldStyle}>
-              Requerimiento
-              <textarea
-                placeholder="Descripcion del requerimiento"
-                value={name}
-                onChange={(event) => setName(event.target.value)}
-                rows={4}
-                style={textAreaStyle}
-              />
-            </label>
-
-            <label style={inlineFieldStyle}>
-              Evidencia
-              <textarea
-                placeholder="Documento, enlace, responsable o nota de evidencia"
-                value={evidencia}
-                onChange={(event) => setEvidencia(event.target.value)}
-                rows={4}
-                style={textAreaStyle}
-              />
-            </label>
-          </div>
-
           <button
-            onClick={createRequirement}
-            disabled={savingNew}
-            aria-disabled={savingNew}
+            type="button"
+            aria-expanded={filtrosAbiertos}
+            aria-controls="filtros-requerimientos"
+            onClick={() => setFiltrosAbiertos((abierto) => !abierto)}
             style={{
-              ...primaryButtonStyle,
-              ...getActionStateStyle(savingNew),
-              marginTop: 14,
+              ...secondaryButtonStyle,
+              ...(filtrosAbiertos ? toggleActiveStyle : {}),
             }}
           >
-            {savingNew ? "Guardando..." : "Añadir requerimiento"}
+            {filtrosActivos > 0 ? `Filtros (${filtrosActivos})` : "Filtros"}
           </button>
-        </section>
-
-        <section id="importar-requerimientos" style={panelStyle}>
-          <SectionHeader
-            eyebrow="Carga masiva"
-            title="Importar requisitos del proyecto"
-            description="Sube un Excel específico para este proyecto. Puedes añadir solo nuevos requerimientos o reemplazar por completo el listado actual."
-          />
-
           <div
             style={{
-              alignItems: "end",
-              display: "grid",
-              gap: 12,
-              gridTemplateColumns: isMobile
-                ? "minmax(0, 1fr)"
-                : "repeat(2, minmax(0, 1fr))",
+              display: "flex",
+              flexWrap: "wrap",
+              gap: 8,
+              marginLeft: isMobile ? 0 : "auto",
             }}
           >
-            <label style={filterLabelStyle}>
-              Archivo .xlsx
-              <input
-                id="project-requirements-import-file"
-                type="file"
-                accept=".xlsx"
-                onChange={(event) =>
-                  handleProjectImportFileChange(event.target.files?.[0] || null)
-                }
-                style={controlStyle}
-              />
-            </label>
-
-            <label style={filterLabelStyle}>
-              Modo de importación
-              <select
-                value={importMode}
-                onChange={(event) =>
-                  handleProjectImportModeChange(event.target.value as ImportMode)
-                }
-                style={controlStyle}
-              >
-                <option value="append">Añadir solo nuevos</option>
-                <option value="replace">Reemplazar requerimientos del proyecto</option>
-              </select>
-            </label>
-
             <button
               type="button"
-              onClick={importProjectRequirements}
-              disabled={importingRequirements}
-              aria-disabled={importingRequirements}
+              aria-expanded={formulario === "importar"}
+              aria-controls="importar-requerimientos"
+              onClick={() => alternarFormulario("importar")}
               style={{
-                ...primaryButtonStyle,
-                ...getActionStateStyle(importingRequirements),
-                gridColumn: isMobile ? undefined : "1 / -1",
-                justifySelf: isMobile ? "stretch" : "end",
-                minWidth: isMobile ? undefined : 180,
-                width: isMobile ? "100%" : undefined,
+                ...secondaryButtonStyle,
+                ...(formulario === "importar" ? toggleActiveStyle : {}),
               }}
             >
-              {importingRequirements ? "Importando..." : "Importar Excel"}
+              Importar Excel
+            </button>
+            <button
+              type="button"
+              aria-expanded={formulario === "nuevo"}
+              aria-controls="nuevo-requerimiento"
+              onClick={() => alternarFormulario("nuevo")}
+              style={primaryButtonStyle}
+            >
+              Nuevo requerimiento
             </button>
           </div>
+        </div>
 
-          <div style={importHelpStyle}>
-            <strong>Formato Excel del proyecto</strong>
-            <p>
-              La primera fila debe contener <code> norma </code>, <code> item </code>,
-              <code> requerimiento </code>, <code> evidencia </code>, <code> estado </code>
-              y <code> fecha_limite </code>. También se aceptan encabezados con acentos,
-              como <code> descripción </code> o <code> fecha límite </code>.
-            </p>
-            <p>
-              Estados válidos: <code>total</code>, <code>parcial</code> y
-              <code>no_conforme</code>. Las fechas deben venir como fecha de Excel o en
-              formato <code>YYYY-MM-DD</code>.
-            </p>
-          </div>
+        {filtrosAbiertos ? (
+          <FilterPanel
+            normaOptions={normaOptions}
+            selectedNorma={selectedNorma}
+            selectedStatuses={selectedStatuses}
+            dateFilter={dateFilter}
+            activeFilterCount={activeFilterCount}
+            onNormaChange={setSelectedNorma}
+            onStatusToggle={toggleStatusFilter}
+            onDateFilterChange={setDateFilter}
+            onReset={resetFilters}
+            compactLayout={isMobile}
+            sortMode={sortMode}
+            onSortModeChange={setSortMode}
+          />
+        ) : null}
 
-          {importingRequirements ? (
-            <Notice
-              tone="info"
-              message="Importando requisitos del proyecto. Mantén esta página abierta hasta que termine."
-              compact
-              style={{ marginTop: 14 }}
+        {formulario === "nuevo" ? (
+          <section
+            id="nuevo-requerimiento"
+            aria-labelledby="nuevo-requerimiento-titulo"
+            style={{ ...panelStyle, marginBottom: 16 }}
+          >
+            <SectionHeader
+              id="nuevo-requerimiento-titulo"
+              title="Nuevo requerimiento"
+              description="Registra un requisito del proyecto con su estado, evidencia y fecha límite."
+              onClose={() => setFormulario(null)}
             />
-          ) : null}
 
-          {importError ? (
-            <Notice
-              tone="error"
-              message={importError}
-              compact
-              style={{ marginTop: 14 }}
+            <div
+              style={{
+                display: "grid",
+                gap: 12,
+                gridTemplateColumns: isMobile
+                  ? "minmax(0, 1fr)"
+                  : "repeat(auto-fit, minmax(180px, 1fr))",
+              }}
+            >
+              <label style={inlineFieldStyle}>
+                Norma
+                <input
+                  placeholder="ISO 19650-2"
+                  value={norma}
+                  onChange={(event) => setNorma(event.target.value)}
+                  style={controlStyle}
+                />
+              </label>
+
+              <label style={inlineFieldStyle}>
+                Item
+                <input
+                  placeholder="5.1.2"
+                  value={item}
+                  onChange={(event) => setItem(event.target.value)}
+                  style={controlStyle}
+                />
+              </label>
+
+              <label style={inlineFieldStyle}>
+                Estado
+                <select
+                  value={status}
+                  onChange={(event) =>
+                    setStatus(event.target.value as RequirementStatus)
+                  }
+                  style={controlStyle}
+                >
+                  <option value="total">Total</option>
+                  <option value="parcial">Parcial</option>
+                  <option value="no_conforme">No conforme</option>
+                </select>
+              </label>
+
+              <label style={inlineFieldStyle}>
+                Fecha límite
+                <input
+                  type="date"
+                  value={deadline}
+                  onChange={(event) => setDeadline(event.target.value)}
+                  style={controlStyle}
+                />
+              </label>
+            </div>
+
+            <div
+              style={{
+                display: "grid",
+                gap: 12,
+                gridTemplateColumns: isMobile
+                  ? "minmax(0, 1fr)"
+                  : "repeat(2, minmax(0, 1fr))",
+                marginTop: 12,
+              }}
+            >
+              <label style={inlineFieldStyle}>
+                Requerimiento
+                <textarea
+                  placeholder="Descripcion del requerimiento"
+                  value={name}
+                  onChange={(event) => setName(event.target.value)}
+                  rows={4}
+                  style={textAreaStyle}
+                />
+              </label>
+
+              <label style={inlineFieldStyle}>
+                Evidencia
+                <textarea
+                  placeholder="Documento, enlace, responsable o nota de evidencia"
+                  value={evidencia}
+                  onChange={(event) => setEvidencia(event.target.value)}
+                  rows={4}
+                  style={textAreaStyle}
+                />
+              </label>
+            </div>
+
+            <button
+              onClick={createRequirement}
+              disabled={savingNew}
+              aria-disabled={savingNew}
+              style={{
+                ...primaryButtonStyle,
+                ...getActionStateStyle(savingNew),
+                marginTop: 14,
+              }}
+            >
+              {savingNew ? "Guardando..." : "Añadir requerimiento"}
+            </button>
+          </section>
+        ) : null}
+
+        {formulario === "importar" ? (
+          <section
+            id="importar-requerimientos"
+            aria-labelledby="importar-requerimientos-titulo"
+            style={{ ...panelStyle, marginBottom: 16 }}
+          >
+            <SectionHeader
+              id="importar-requerimientos-titulo"
+              title="Importar requisitos del proyecto"
+              description="Sube un Excel específico para este proyecto. Puedes añadir solo nuevos requerimientos o reemplazar por completo el listado actual."
+              onClose={() => setFormulario(null)}
             />
-          ) : null}
 
-          {importDetails.length > 0 ? (
-            <ul style={detailsListStyle}>
-              {importDetails.map((detail) => (
-                <li key={detail}>{detail}</li>
-              ))}
-            </ul>
-          ) : null}
+            <div
+              style={{
+                alignItems: "end",
+                display: "grid",
+                gap: 12,
+                gridTemplateColumns: isMobile
+                  ? "minmax(0, 1fr)"
+                  : "repeat(2, minmax(0, 1fr))",
+              }}
+            >
+              <label style={filterLabelStyle}>
+                Archivo .xlsx
+                <input
+                  id="project-requirements-import-file"
+                  type="file"
+                  accept=".xlsx"
+                  onChange={(event) =>
+                    handleProjectImportFileChange(event.target.files?.[0] || null)
+                  }
+                  style={controlStyle}
+                />
+              </label>
 
-          {importSuccess ? (
-            <Notice
-              tone="success"
-              message={importSuccess}
-              compact
-              style={{ marginTop: 14 }}
-            />
-          ) : null}
-        </section>
-      </section>
+              <label style={filterLabelStyle}>
+                Modo de importación
+                <select
+                  value={importMode}
+                  onChange={(event) =>
+                    handleProjectImportModeChange(event.target.value as ImportMode)
+                  }
+                  style={controlStyle}
+                >
+                  <option value="append">Añadir solo nuevos</option>
+                  <option value="replace">Reemplazar requerimientos del proyecto</option>
+                </select>
+              </label>
 
-      <section style={{ marginBottom: 30 }}>
-        <FilterPanel
-          normaOptions={normaOptions}
-          selectedNorma={selectedNorma}
-          selectedStatuses={selectedStatuses}
-          dateFilter={dateFilter}
-          activeFilterCount={activeFilterCount}
-          totalCount={requirements.length}
-          filteredCount={filteredRequirements.length}
-          searchTerm={searchTerm}
-          onNormaChange={setSelectedNorma}
-          onStatusToggle={toggleStatusFilter}
-          onDateFilterChange={setDateFilter}
-          onSearchTermChange={setSearchTerm}
-          onReset={resetFilters}
-          compactLayout={isMobile}
-          sortMode={sortMode}
-          onSortModeChange={setSortMode}
-        />
+              <button
+                type="button"
+                onClick={importProjectRequirements}
+                disabled={importingRequirements}
+                aria-disabled={importingRequirements}
+                style={{
+                  ...primaryButtonStyle,
+                  ...getActionStateStyle(importingRequirements),
+                  gridColumn: isMobile ? undefined : "1 / -1",
+                  justifySelf: isMobile ? "stretch" : "end",
+                  minWidth: isMobile ? undefined : 180,
+                  width: isMobile ? "100%" : undefined,
+                }}
+              >
+                {importingRequirements ? "Importando..." : "Importar Excel"}
+              </button>
+            </div>
 
-        <div
-          id="listado-requerimientos"
-          style={{
-            alignItems: "center",
-            display: "flex",
-            flexWrap: "wrap",
-            gap: 16,
-            justifyContent: "space-between",
-            marginBottom: 14,
-          }}
-        >
-          <div>
-            <h3 style={listTitleStyle}>Requerimientos</h3>
-            <span style={{ color: "#6b7280", fontSize: 13 }}>
-              {filteredRequirements.length} de {summary.total} registros
+            <div style={importHelpStyle}>
+              <strong>Formato Excel del proyecto</strong>
+              <p>
+                La primera fila debe contener <code> norma </code>, <code> item </code>,
+                <code> requerimiento </code>, <code> evidencia </code>, <code> estado </code>
+                y <code> fecha_limite </code>. También se aceptan encabezados con acentos,
+                como <code> descripción </code> o <code> fecha límite </code>.
+              </p>
+              <p>
+                Estados válidos: <code>total</code>, <code>parcial</code> y
+                <code>no_conforme</code>. Las fechas deben venir como fecha de Excel o en
+                formato <code>YYYY-MM-DD</code>.
+              </p>
+            </div>
+
+            {importingRequirements ? (
+              <Notice
+                tone="info"
+                message="Importando requisitos del proyecto. Mantén esta página abierta hasta que termine."
+                compact
+                style={{ marginTop: 14 }}
+              />
+            ) : null}
+
+            {importError ? (
+              <Notice
+                tone="error"
+                message={importError}
+                compact
+                style={{ marginTop: 14 }}
+              />
+            ) : null}
+
+            {importDetails.length > 0 ? (
+              <ul style={detailsListStyle}>
+                {importDetails.map((detail) => (
+                  <li key={detail}>{detail}</li>
+                ))}
+              </ul>
+            ) : null}
+
+            {importSuccess ? (
+              <Notice
+                tone="success"
+                message={importSuccess}
+                compact
+                style={{ marginTop: 14 }}
+              />
+            ) : null}
+          </section>
+        ) : null}
+
+        <div style={listSummaryStyle}>
+          <div style={{ alignItems: "center", display: "flex", flexWrap: "wrap", gap: 10 }}>
+            <span style={{ color: "#475569", fontSize: 13 }}>
+              {filteredRequirements.length} de {summary.total} requerimientos
             </span>
+            {activeFilterCount > 0 ? (
+              <button type="button" onClick={resetFilters} style={textButtonStyle}>
+                Quitar filtros
+              </button>
+            ) : null}
           </div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
             <StatusBadge
@@ -1270,19 +1398,9 @@ export default function ProjectClient({ projectId }: ProjectClientProps) {
           />
         )}
 
-        {!loading && !loadError && filteredRequirements.length > 0 && (
-          <div
-            style={{
-              alignItems: "start",
-              display: "grid",
-              gap: 14,
-              gridTemplateColumns:
-                panelDeCarga && !isMobile
-                  ? "minmax(0, 1fr) minmax(300px, 380px)"
-                  : "minmax(0, 1fr)",
-            }}
-          >
-            <div style={{ display: "grid", gap: 14 }}>
+        {!loading && !loadError && filteredRequirements.length > 0 ? (
+          isMobile ? (
+            <div style={{ display: "grid", gap: 12 }}>
               {filteredRequirements.map((requirement) => (
                 <Fragment key={requirement.id}>
                   <RequirementCard
@@ -1292,31 +1410,178 @@ export default function ProjectClient({ projectId }: ProjectClientProps) {
                     savingEdit={savingEdit}
                     deletingRequirement={deletingRequirementId === requirement.id}
                     evidencePanelOpen={requisitoAbierto === requirement.id}
-                    onToggleEvidencePanel={() =>
-                      setRequisitoAbierto(
-                        requirement.id === requisitoAbierto ? null : requirement.id
-                      )
-                    }
+                    onToggleEvidencePanel={() => alternarPanelDeCarga(requirement.id)}
                     onStartEditing={startEditing}
                     onCancelEditing={cancelEditing}
                     onSaveEditing={saveEditing}
                     onEditChange={setEditData}
                     onDeleteRequirement={deleteRequirement}
-                    compactLayout={isMobile}
                   />
                   {/* En movil el panel va bajo su tarjeta: al final de la lista quedaria lejos. */}
-                  {isMobile && requisitoAbierto === requirement.id ? panelDeCarga : null}
+                  {requisitoAbierto === requirement.id ? panelDeCarga : null}
                 </Fragment>
               ))}
             </div>
-            {!isMobile ? panelDeCarga : null}
-          </div>
-        )}
-      </section>
+          ) : (
+            <div style={tableWrapStyle}>
+              <table style={tableStyle} aria-label="Requerimientos del proyecto">
+                <colgroup>
+                  <col style={{ width: 128 }} />
+                  <col />
+                  <col style={{ width: 132 }} />
+                  <col style={{ width: 128 }} />
+                  <col style={{ width: 300 }} />
+                </colgroup>
+                <thead>
+                  <tr>
+                    <th scope="col" style={thStyle}>Ref.</th>
+                    <th scope="col" style={thStyle}>Requerimiento</th>
+                    <th scope="col" style={thStyle}>Estado</th>
+                    <th scope="col" style={thStyle}>Fecha límite</th>
+                    <th scope="col" style={{ ...thStyle, textAlign: "right" }}>
+                      Acciones
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredRequirements.map((requirement) => (
+                    <RequirementRow
+                      key={requirement.id}
+                      requirement={requirement}
+                      editing={editingId === requirement.id}
+                      editData={editData}
+                      savingEdit={savingEdit}
+                      deletingRequirement={deletingRequirementId === requirement.id}
+                      evidencePanel={
+                        requisitoAbierto === requirement.id ? panelDeCarga : null
+                      }
+                      onToggleEvidencePanel={() => alternarPanelDeCarga(requirement.id)}
+                      onStartEditing={startEditing}
+                      onCancelEditing={cancelEditing}
+                      onSaveEditing={saveEditing}
+                      onEditChange={setEditData}
+                      onDeleteRequirement={deleteRequirement}
+                    />
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )
+        ) : null}
+      </div>
+
+      <div
+        role="tabpanel"
+        id="vista-panel-documentacion"
+        aria-labelledby="vista-pestana-documentacion"
+        hidden={vista !== "documentacion"}
+      >
+        <ProjectDocumentsSection
+          projectId={projectId}
+          onTotalChange={setTotalPlantillas}
+        />
+      </div>
     </main>
   );
 }
 
+type RequirementItemProps = {
+  requirement: Requirement;
+  editing: boolean;
+  editData: EditData;
+  savingEdit: boolean;
+  deletingRequirement: boolean;
+  onToggleEvidencePanel: () => void;
+  onStartEditing: (requirement: Requirement) => void;
+  onCancelEditing: () => void;
+  onSaveEditing: () => void;
+  onEditChange: (data: EditData) => void;
+  onDeleteRequirement: (requirement: Requirement) => void;
+};
+
+// Escritorio: una fila de tabla por requisito. La edicion y el panel de documentos
+// se abren en una fila de ancho completo debajo, para no estrechar la tabla.
+function RequirementRow({
+  requirement,
+  editing,
+  editData,
+  savingEdit,
+  deletingRequirement,
+  evidencePanel,
+  onToggleEvidencePanel,
+  onStartEditing,
+  onCancelEditing,
+  onSaveEditing,
+  onEditChange,
+  onDeleteRequirement,
+}: RequirementItemProps & { evidencePanel: ReactNode }) {
+  const currentStatus = normalizeStatus(requirement.status);
+  const overdue = isRequirementOverdue(requirement);
+  const evidencia = requirement.evidencia?.trim();
+
+  if (editing) {
+    return (
+      <tr>
+        <td colSpan={5} style={{ ...tdStyle, background: "#f8fafc", padding: 16 }}>
+          <EditRequirementForm
+            editData={editData}
+            savingEdit={savingEdit}
+            onCancelEditing={onCancelEditing}
+            onSaveEditing={onSaveEditing}
+            onEditChange={onEditChange}
+            compactLayout={false}
+          />
+        </td>
+      </tr>
+    );
+  }
+
+  return (
+    <>
+      <tr style={{ background: overdue ? "#fff7f7" : undefined }}>
+        <td style={{ ...tdStyle, ...refCellStyle }}>
+          {getDisplayValue(requirement.norma, "Sin norma")} /{" "}
+          {getDisplayValue(requirement.item, "Sin item")}
+        </td>
+        <td style={tdStyle}>
+          <div style={requirementTitleStyle}>
+            {getDisplayValue(requirement.name, "Sin descripción")}
+          </div>
+          {evidencia ? (
+            <div style={evidenceLineStyle} title={evidencia}>
+              Evidencia: {evidencia}
+            </div>
+          ) : null}
+        </td>
+        <td style={tdStyle}>
+          <StatusBadge status={currentStatus} compact />
+        </td>
+        <td style={tdStyle}>
+          <DeadlineValue requirement={requirement} />
+        </td>
+        <td style={{ ...tdStyle, textAlign: "right" }}>
+          <RequirementActions
+            requirement={requirement}
+            deletingRequirement={deletingRequirement}
+            evidencePanelOpen={Boolean(evidencePanel)}
+            onToggleEvidencePanel={onToggleEvidencePanel}
+            onStartEditing={onStartEditing}
+            onDeleteRequirement={onDeleteRequirement}
+          />
+        </td>
+      </tr>
+      {evidencePanel ? (
+        <tr>
+          <td colSpan={5} style={{ ...tdStyle, background: "#f8fafc", padding: 12 }}>
+            {evidencePanel}
+          </td>
+        </tr>
+      ) : null}
+    </>
+  );
+}
+
+// Movil: la misma informacion en una ficha compacta.
 function RequirementCard({
   requirement,
   editing,
@@ -1330,37 +1595,18 @@ function RequirementCard({
   onSaveEditing,
   onEditChange,
   onDeleteRequirement,
-  compactLayout,
-}: {
-  requirement: Requirement;
-  editing: boolean;
-  editData: EditData;
-  savingEdit: boolean;
-  deletingRequirement: boolean;
-  evidencePanelOpen: boolean;
-  onToggleEvidencePanel: () => void;
-  onStartEditing: (requirement: Requirement) => void;
-  onCancelEditing: () => void;
-  onSaveEditing: () => void;
-  onEditChange: (data: EditData) => void;
-  onDeleteRequirement: (requirement: Requirement) => void;
-  compactLayout: boolean;
-}) {
+}: RequirementItemProps & { evidencePanelOpen: boolean }) {
   const currentStatus = normalizeStatus(requirement.status);
   const overdue = isRequirementOverdue(requirement);
-  const upcoming = isRequirementUpcoming(requirement);
+  const evidencia = requirement.evidencia?.trim();
 
   return (
     <article
       style={{
-        background: "white",
+        background: overdue ? "#fff7f7" : "white",
         border: `1px solid ${overdue ? "#fecaca" : "#dbe3f1"}`,
-        borderLeft: `3px solid ${
-          overdue ? "#dc2626" : STATUS_META[currentStatus].color
-        }`,
         borderRadius: 8,
-        boxShadow: "none",
-        padding: compactLayout ? 14 : 16,
+        padding: 14,
       }}
     >
       {editing ? (
@@ -1370,136 +1616,149 @@ function RequirementCard({
           onCancelEditing={onCancelEditing}
           onSaveEditing={onSaveEditing}
           onEditChange={onEditChange}
-          compactLayout={compactLayout}
+          compactLayout
         />
       ) : (
         <>
           <div
             style={{
-              alignItems: "flex-start",
-              display: compactLayout ? "grid" : "flex",
+              alignItems: "center",
+              display: "flex",
               flexWrap: "wrap",
-              gap: 12,
+              gap: 8,
               justifyContent: "space-between",
             }}
           >
-            <div style={{ minWidth: 0, flex: 1 }}>
-              <div
-                style={{
-                  alignItems: "center",
-                  color: "#6b7280",
-                  display: "flex",
-                  flexWrap: "wrap",
-                  fontSize: 12,
-                  fontWeight: 600,
-                  gap: 8,
-                  letterSpacing: 0,
-                  textTransform: "uppercase",
-                }}
-              >
-                <span>
-                  {getDisplayValue(requirement.norma, "Sin norma")} /{" "}
-                  {getDisplayValue(requirement.item, "Sin item")}
-                </span>
-                {overdue ? <OverdueBadge compact /> : null}
-                <StatusBadge status={currentStatus} compact />
-              </div>
-
-              <h4
-                style={{
-                  fontSize: 16,
-                  fontWeight: 500,
-                  lineHeight: 1.35,
-                  margin: "6px 0 0",
-                  maxWidth: compactLayout ? "100%" : "92%",
-                }}
-              >
-                {getDisplayValue(requirement.name, "Sin descripción")}
-              </h4>
-            </div>
-
-            <div
-              style={{
-                display: compactLayout ? "grid" : "flex",
-                gap: 8,
-                width: compactLayout ? "100%" : undefined,
-              }}
-            >
-              <button
-                type="button"
-                onClick={onToggleEvidencePanel}
-                aria-expanded={evidencePanelOpen}
-                style={{
-                  ...compactActionButtonStyle,
-                  width: compactLayout ? "100%" : undefined,
-                }}
-              >
-                Documentos ({requirement.evidenceLinks?.length ?? 0})
-              </button>
-              <button
-                onClick={() => onStartEditing(requirement)}
-                disabled={deletingRequirement}
-                aria-disabled={deletingRequirement}
-                style={{
-                  ...compactActionButtonStyle,
-                  ...getActionStateStyle(deletingRequirement),
-                  width: compactLayout ? "100%" : undefined,
-                }}
-              >
-                Editar
-              </button>
-              <button
-                onClick={() => onDeleteRequirement(requirement)}
-                disabled={deletingRequirement}
-                aria-disabled={deletingRequirement}
-                style={{
-                  ...compactDangerButtonStyle,
-                  ...getActionStateStyle(deletingRequirement),
-                  width: compactLayout ? "100%" : undefined,
-                }}
-              >
-                {deletingRequirement ? "Eliminando..." : "Eliminar"}
-              </button>
-            </div>
+            <span style={refCellStyle}>
+              {getDisplayValue(requirement.norma, "Sin norma")} /{" "}
+              {getDisplayValue(requirement.item, "Sin item")}
+            </span>
+            <StatusBadge status={currentStatus} compact />
           </div>
-
+          <div style={{ ...requirementTitleStyle, marginTop: 8 }}>
+            {getDisplayValue(requirement.name, "Sin descripción")}
+          </div>
+          {evidencia ? (
+            <div style={evidenceLineStyle} title={evidencia}>
+              Evidencia: {evidencia}
+            </div>
+          ) : null}
           <div
             style={{
-              display: "grid",
+              alignItems: "center",
+              display: "flex",
+              flexWrap: "wrap",
               gap: 10,
-              gridTemplateColumns: compactLayout
-                ? "minmax(0, 1fr)"
-                : "minmax(0, 1.4fr) repeat(3, minmax(120px, 0.8fr))",
+              justifyContent: "space-between",
               marginTop: 12,
             }}
           >
-            <InfoBlock
-              label="Evidencia"
-              value={getDisplayValue(requirement.evidencia, "Sin evidencia")}
+            <DeadlineValue requirement={requirement} inline />
+            <RequirementActions
+              requirement={requirement}
               compact
-            />
-            <InfoBlock
-              label="Fecha límite"
-              value={formatDate(requirement.deadline)}
-              tone={overdue ? "risk" : upcoming ? "warning" : "default"}
-              compact
-            />
-            <InfoBlock
-              label="Seguimiento"
-              value={overdue ? "Vencido" : upcoming ? "Proximo" : "En plazo"}
-              tone={overdue ? "risk" : upcoming ? "warning" : "default"}
-              compact
-            />
-            <InfoBlock
-              label="Estado"
-              value={STATUS_META[currentStatus].label}
-              tone={overdue ? "risk" : "default"}
-              compact
+              deletingRequirement={deletingRequirement}
+              evidencePanelOpen={evidencePanelOpen}
+              onToggleEvidencePanel={onToggleEvidencePanel}
+              onStartEditing={onStartEditing}
+              onDeleteRequirement={onDeleteRequirement}
             />
           </div>
         </>
       )}
     </article>
+  );
+}
+
+function RequirementActions({
+  requirement,
+  compact = false,
+  deletingRequirement,
+  evidencePanelOpen,
+  onToggleEvidencePanel,
+  onStartEditing,
+  onDeleteRequirement,
+}: {
+  requirement: Requirement;
+  compact?: boolean;
+  deletingRequirement: boolean;
+  evidencePanelOpen: boolean;
+  onToggleEvidencePanel: () => void;
+  onStartEditing: (requirement: Requirement) => void;
+  onDeleteRequirement: (requirement: Requirement) => void;
+}) {
+  return (
+    <div style={{ display: "inline-flex", flexWrap: compact ? "wrap" : "nowrap", gap: 6, justifyContent: "flex-end" }}>
+      <button
+        type="button"
+        onClick={onToggleEvidencePanel}
+        aria-expanded={evidencePanelOpen}
+        style={{
+          ...compactActionButtonStyle,
+          ...(evidencePanelOpen ? toggleActiveStyle : {}),
+        }}
+      >
+        Documentos ({requirement.evidenceLinks?.length ?? 0})
+      </button>
+      <button
+        type="button"
+        onClick={() => onStartEditing(requirement)}
+        disabled={deletingRequirement}
+        aria-disabled={deletingRequirement}
+        style={{
+          ...compactActionButtonStyle,
+          ...getActionStateStyle(deletingRequirement),
+        }}
+      >
+        Editar
+      </button>
+      <button
+        type="button"
+        onClick={() => onDeleteRequirement(requirement)}
+        disabled={deletingRequirement}
+        aria-disabled={deletingRequirement}
+        style={{
+          ...compactDangerButtonStyle,
+          ...getActionStateStyle(deletingRequirement),
+        }}
+      >
+        {deletingRequirement ? "Eliminando..." : "Eliminar"}
+      </button>
+    </div>
+  );
+}
+
+// Fecha y seguimiento en un solo dato: "Vencido" o "Proximo" encima de la fecha.
+function DeadlineValue({
+  requirement,
+  inline = false,
+}: {
+  requirement: Requirement;
+  inline?: boolean;
+}) {
+  const overdue = isRequirementOverdue(requirement);
+  const upcoming = isRequirementUpcoming(requirement);
+  const fecha = formatDate(requirement.deadline);
+
+  if (!requirement.deadline) {
+    return <span style={{ color: "#64748b", fontSize: 13 }}>Sin fecha</span>;
+  }
+
+  const aviso = overdue ? "Vencido" : upcoming ? "Próximo" : null;
+  const color = overdue ? "#b91c1c" : upcoming ? "#b45309" : "#1f2937";
+
+  return (
+    <span
+      style={{
+        color,
+        display: inline ? "inline-flex" : "grid",
+        fontSize: 13,
+        gap: inline ? 6 : 2,
+      }}
+    >
+      {aviso ? <strong style={{ fontWeight: 600 }}>{aviso}</strong> : null}
+      <span style={{ fontVariantNumeric: "tabular-nums" }}>{fecha}</span>
+    </span>
   );
 }
 
@@ -1705,13 +1964,9 @@ function FilterPanel({
   selectedStatuses,
   dateFilter,
   activeFilterCount,
-  totalCount,
-  filteredCount,
-  searchTerm,
   onNormaChange,
   onStatusToggle,
   onDateFilterChange,
-  onSearchTermChange,
   onReset,
   compactLayout,
   sortMode,
@@ -1722,13 +1977,9 @@ function FilterPanel({
   selectedStatuses: RequirementStatus[];
   dateFilter: DateFilter;
   activeFilterCount: number;
-  totalCount: number;
-  filteredCount: number;
-  searchTerm: string;
   onNormaChange: (value: string) => void;
   onStatusToggle: (status: RequirementStatus) => void;
   onDateFilterChange: (value: DateFilter) => void;
-  onSearchTermChange: (value: string) => void;
   onReset: () => void;
   compactLayout: boolean;
   sortMode: SortMode;
@@ -1742,7 +1993,7 @@ function FilterPanel({
         border: "1px solid #dbe3f1",
         borderRadius: 8,
         boxShadow: "none",
-        marginBottom: 20,
+        marginBottom: 16,
         padding: 16,
       }}
     >
@@ -1753,18 +2004,10 @@ function FilterPanel({
           flexWrap: "wrap",
           gap: 12,
           justifyContent: "space-between",
-          marginBottom: 16,
+          marginBottom: 14,
         }}
       >
-        <div>
-          <h3 style={listTitleStyle}>Filtros y ordenación</h3>
-          <p style={{ color: "#6b7280", fontSize: 13, margin: "6px 0 0" }}>
-            {filteredCount} de {totalCount} requerimientos visibles
-            {activeFilterCount > 0
-              ? ` - ${activeFilterCount} filtros activos`
-              : ""}
-          </p>
-        </div>
+        <h3 style={listTitleStyle}>Filtros y ordenación</h3>
 
         <button
           type="button"
@@ -1790,16 +2033,6 @@ function FilterPanel({
             : "repeat(auto-fit, minmax(220px, 1fr))",
         }}
       >
-        <label style={filterLabelStyle}>
-          Buscar
-          <input
-            value={searchTerm}
-            onChange={(event) => onSearchTermChange(event.target.value)}
-            placeholder="Norma, item, descripción o evidencia"
-            style={controlStyle}
-          />
-        </label>
-
         <label style={filterLabelStyle}>
           Norma
           <select
@@ -1903,21 +2136,37 @@ function buildProjectImportSuccessMessage(data: {
 }
 
 function SectionHeader({
-  eyebrow,
+  id,
   title,
   description,
+  onClose,
 }: {
-  eyebrow: string;
+  id: string;
   title: string;
   description: string;
+  onClose: () => void;
 }) {
   return (
-    <div style={{ marginBottom: 16 }}>
-      <div style={sectionEyebrowStyle}>{eyebrow}</div>
-      <h3 style={{ margin: "0 0 8px" }}>{title}</h3>
-      <p style={{ color: "#6b7280", lineHeight: 1.55, margin: 0 }}>
-        {description}
-      </p>
+    <div
+      style={{
+        alignItems: "flex-start",
+        display: "flex",
+        gap: 12,
+        justifyContent: "space-between",
+        marginBottom: 16,
+      }}
+    >
+      <div style={{ minWidth: 0 }}>
+        <h3 id={id} style={{ ...listTitleStyle, marginBottom: 6 }}>
+          {title}
+        </h3>
+        <p style={{ color: "#5b6b82", lineHeight: 1.5, margin: 0, maxWidth: "70ch" }}>
+          {description}
+        </p>
+      </div>
+      <button type="button" onClick={onClose} style={secondaryButtonStyle}>
+        Cerrar
+      </button>
     </div>
   );
 }
@@ -1932,16 +2181,9 @@ function MetricCard({
   tone?: "default" | "risk" | "warning";
 }) {
   return (
-    <div
-      style={{
-        background: "white",
-        border: "1px solid #dbe3f1",
-        borderRadius: 8,
-        padding: 16,
-      }}
-    >
-      <div style={{ color: "#5b6b82", fontSize: 12 }}>{label}</div>
-      <div
+    <div style={{ background: "white", minWidth: 0, padding: "10px 16px" }}>
+      <dt style={{ color: "#5b6b82", fontSize: 12 }}>{label}</dt>
+      <dd
         style={{
           color:
             tone === "risk"
@@ -1949,62 +2191,14 @@ function MetricCard({
               : tone === "warning"
                 ? "#b45309"
                 : "#111827",
-          fontSize: 24,
+          fontSize: 20,
+          fontVariantNumeric: "tabular-nums",
           fontWeight: 600,
-          marginTop: 6,
+          margin: "2px 0 0",
         }}
       >
         {value}
-      </div>
-    </div>
-  );
-}
-
-function InfoBlock({
-  label,
-  value,
-  tone = "default",
-  compact = false,
-}: {
-  label: string;
-  value: string;
-  tone?: "default" | "risk" | "warning";
-  compact?: boolean;
-}) {
-  return (
-    <div
-      style={{
-        background: "#f9fafb",
-        borderRadius: 8,
-        minWidth: 0,
-        padding: compact ? "10px 12px" : 12,
-      }}
-    >
-      <div
-        style={{
-          color: "#6b7280",
-          fontSize: 11,
-          marginBottom: compact ? 3 : 4,
-        }}
-      >
-        {label}
-      </div>
-      <div
-        style={{
-          color:
-            tone === "risk"
-              ? "#b91c1c"
-              : tone === "warning"
-                ? "#b45309"
-                : "#111827",
-          fontSize: compact ? 13 : 14,
-          fontWeight: 600,
-          lineHeight: 1.4,
-          wordBreak: "break-word",
-        }}
-      >
-        {value}
-      </div>
+      </dd>
     </div>
   );
 }
@@ -2032,23 +2226,6 @@ function StatusBadge({
       }}
     >
       {label || meta.label}
-    </span>
-  );
-}
-
-function OverdueBadge({ compact = false }: { compact?: boolean }) {
-  return (
-    <span
-      style={{
-        ...appBadgeBaseStyle,
-        background: "#fee2e2",
-        border: "1px solid #fca5a5",
-        color: "#991b1b",
-        fontSize: compact ? 11 : 12,
-        padding: compact ? "4px 8px" : "5px 10px",
-      }}
-    >
-      Vencido
     </span>
   );
 }
@@ -2125,50 +2302,6 @@ const projectRoleBadgeBaseStyle: React.CSSProperties = {
   ...appBadgeBaseStyle,
 };
 
-const projectIdentityStyle: React.CSSProperties = {
-  background: "#ffffff",
-  border: "1px solid #dbe3f1",
-  borderLeft: "3px solid #0025df",
-  borderRadius: 8,
-  boxShadow: "none",
-  maxWidth: 760,
-  padding: "16px 18px",
-};
-
-const projectIdentityHeaderStyle: React.CSSProperties = {
-  alignItems: "flex-start",
-  display: "flex",
-  flexWrap: "wrap",
-  gap: 14,
-  justifyContent: "space-between",
-};
-
-const projectIdentityLabelStyle: React.CSSProperties = {
-  color: "#0025df",
-  fontSize: 12,
-  fontWeight: 600,
-  letterSpacing: 0,
-  marginBottom: 8,
-  textTransform: "uppercase",
-};
-
-const projectIdentityTitleStyle: React.CSSProperties = {
-  color: "#002a4e",
-  fontSize: 28,
-  fontWeight: 500,
-  lineHeight: 1.16,
-  margin: 0,
-  overflowWrap: "anywhere",
-};
-
-const projectIdentityMetaRowStyle: React.CSSProperties = {
-  alignItems: "center",
-  display: "flex",
-  flexWrap: "wrap",
-  gap: 10,
-  marginTop: 14,
-};
-
 const projectCodeBadgeStyle: React.CSSProperties = {
   background: "#eff6ff",
   border: "1px solid #bfdbfe",
@@ -2205,62 +2338,11 @@ const panelStyle: React.CSSProperties = {
   padding: 18,
 };
 
-const quickNavStyle: React.CSSProperties = {
-  ...appPanelStyle,
-  alignItems: "center",
-  display: "flex",
-  flexWrap: "wrap",
-  gap: 14,
-  justifyContent: "space-between",
-  marginBottom: 20,
-  padding: 16,
-};
-
-const quickNavTitleStyle: React.CSSProperties = {
-  color: "#002a4e",
-  display: "block",
-  fontSize: 17,
-  fontWeight: 600,
-  marginBottom: 6,
-};
-
 const listTitleStyle: React.CSSProperties = {
   color: "#002a4e",
   fontSize: 18,
   fontWeight: 500,
   margin: 0,
-};
-
-const quickNavLinkStyle: React.CSSProperties = {
-  background: "#f8fafc",
-  border: "1px solid #dbe5f1",
-  borderRadius: 8,
-  color: "#1d4ed8",
-  display: "inline-flex",
-  fontSize: 13,
-  fontWeight: 600,
-  justifyContent: "center",
-  minHeight: 36,
-  padding: "8px 12px",
-  textDecoration: "none",
-};
-
-const eyebrowStyle: React.CSSProperties = {
-  color: "#0025df",
-  fontSize: 12,
-  fontWeight: 600,
-  letterSpacing: 0,
-  marginBottom: 10,
-  textTransform: "uppercase",
-};
-
-const sectionEyebrowStyle: React.CSSProperties = {
-  color: "#2563eb",
-  fontSize: 11,
-  fontWeight: 600,
-  letterSpacing: 0,
-  marginBottom: 8,
-  textTransform: "uppercase",
 };
 
 const textAreaStyle: React.CSSProperties = {
@@ -2278,8 +2360,8 @@ const compactActionButtonStyle: React.CSSProperties = {
   cursor: "pointer",
   fontSize: 13,
   fontWeight: 600,
-  minHeight: 36,
-  padding: "7px 12px",
+  minHeight: 32,
+  padding: "5px 10px",
   whiteSpace: "nowrap",
 };
 
@@ -2291,7 +2373,179 @@ const compactDangerButtonStyle: React.CSSProperties = {
   cursor: "pointer",
   fontSize: 13,
   fontWeight: 600,
-  minHeight: 36,
-  padding: "7px 12px",
+  minHeight: 32,
+  padding: "5px 10px",
+  whiteSpace: "nowrap",
+};
+
+const breadcrumbLinkStyle: React.CSSProperties = {
+  color: "#1d4ed8",
+  fontSize: 13,
+  fontWeight: 600,
+  textDecoration: "none",
+};
+
+const projectTitleStyle: React.CSSProperties = {
+  color: "#002a4e",
+  fontSize: 26,
+  fontWeight: 500,
+  lineHeight: 1.2,
+  margin: 0,
+  overflowWrap: "anywhere",
+  textWrap: "balance",
+};
+
+const projectMetaRowStyle: React.CSSProperties = {
+  alignItems: "center",
+  display: "flex",
+  flexWrap: "wrap",
+  gap: 8,
+  marginTop: 8,
+};
+
+// Una franja con divisiones de 1px: el fondo asoma por el hueco de la rejilla.
+const metricStripStyle: React.CSSProperties = {
+  background: "#dbe3f1",
+  border: "1px solid #dbe3f1",
+  borderRadius: 8,
+  display: "grid",
+  gap: 1,
+  margin: "0 0 18px",
+  overflow: "hidden",
+};
+
+const viewTabListStyle: React.CSSProperties = {
+  borderBottom: "1px solid #dbe3f1",
+  display: "flex",
+  gap: 4,
+  marginBottom: 18,
+  overflowX: "auto",
+  overflowY: "hidden",
+};
+
+const viewTabStyle: React.CSSProperties = {
+  alignItems: "center",
+  background: "transparent",
+  // Sin mezclar abreviadas y largas: React avisa al cambiar de pestana.
+  borderColor: "transparent",
+  borderStyle: "solid",
+  borderWidth: "0 0 3px",
+  color: "#334155",
+  cursor: "pointer",
+  display: "inline-flex",
+  flexShrink: 0,
+  fontSize: 15,
+  fontWeight: 500,
+  gap: 8,
+  marginBottom: -1,
+  minHeight: 46,
+  padding: "8px 16px",
+  whiteSpace: "nowrap",
+};
+
+const viewTabActiveStyle: React.CSSProperties = {
+  borderColor: "transparent transparent #0025df",
+  color: "#0025df",
+  fontWeight: 600,
+};
+
+const viewTabCountStyle: React.CSSProperties = {
+  background: "#eef2f7",
+  borderRadius: 999,
+  color: "#334155",
+  fontSize: 12,
+  fontVariantNumeric: "tabular-nums",
+  fontWeight: 600,
+  minWidth: 22,
+  padding: "1px 8px",
+  textAlign: "center",
+};
+
+const viewTabCountActiveStyle: React.CSSProperties = {
+  background: "#eef1ff",
+  color: "#0025df",
+};
+
+const toolbarStyle: React.CSSProperties = {
+  alignItems: "center",
+  display: "flex",
+  flexWrap: "wrap",
+  gap: 8,
+  marginBottom: 14,
+};
+
+const toggleActiveStyle: React.CSSProperties = {
+  background: "#eef1ff",
+  border: "1px solid #9fb0f5",
+  color: "#0025df",
+};
+
+const textButtonStyle: React.CSSProperties = {
+  background: "none",
+  border: "none",
+  color: "#1d4ed8",
+  cursor: "pointer",
+  fontSize: 13,
+  fontWeight: 600,
+  padding: 0,
+  textDecoration: "underline",
+};
+
+const listSummaryStyle: React.CSSProperties = {
+  alignItems: "center",
+  display: "flex",
+  flexWrap: "wrap",
+  gap: 10,
+  justifyContent: "space-between",
+  marginBottom: 10,
+};
+
+const tableWrapStyle: React.CSSProperties = {
+  ...appPanelStyle,
+  overflowX: "auto",
+};
+
+const tableStyle: React.CSSProperties = {
+  borderCollapse: "collapse",
+  minWidth: 860,
+  tableLayout: "fixed",
+  width: "100%",
+};
+
+const thStyle: React.CSSProperties = {
+  background: "#f8fafc",
+  borderBottom: "1px solid #dbe3f1",
+  color: "#475569",
+  fontSize: 12,
+  fontWeight: 600,
+  padding: "9px 12px",
+  textAlign: "left",
+};
+
+const tdStyle: React.CSSProperties = {
+  borderTop: "1px solid #e8edf5",
+  padding: "10px 12px",
+  verticalAlign: "middle",
+};
+
+const refCellStyle: React.CSSProperties = {
+  color: "#475569",
+  fontSize: 13,
+  fontVariantNumeric: "tabular-nums",
+  fontWeight: 600,
+};
+
+const requirementTitleStyle: React.CSSProperties = {
+  color: "#111827",
+  fontSize: 14,
+  lineHeight: 1.4,
+};
+
+const evidenceLineStyle: React.CSSProperties = {
+  color: "#5b6b82",
+  fontSize: 12,
+  marginTop: 3,
+  overflow: "hidden",
+  textOverflow: "ellipsis",
   whiteSpace: "nowrap",
 };

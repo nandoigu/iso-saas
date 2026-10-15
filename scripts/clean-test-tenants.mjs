@@ -47,6 +47,19 @@ if (!APPLY) {
   process.exit(0);
 }
 
+// Plantillas documentales SYNTHETIC: createdBy e importedBy son Restrict hacia User y
+// bloquearian el borrado de los usuarios de test. Versiones y vinculos caen en cascada.
+const plantillas = await prisma.documentTemplate.deleteMany({
+  where: { fichero: { startsWith: "SYNTHETIC-" } },
+});
+await prisma.documentTemplateRequirement.deleteMany({
+  where: { requirementTemplate: { norma: "SYNTHETIC-19650-9" } },
+});
+const requisitos = await prisma.requirementTemplate.deleteMany({
+  where: { norma: "SYNTHETIC-19650-9" },
+});
+console.log(`Plantillas SYNTHETIC borradas: ${plantillas.count}; requisitos SYNTHETIC: ${requisitos.count}`);
+
 for (const c of companies) {
   // AnalysisDocument es Restrict hacia EvidenceItem: tiene que irse antes.
   await prisma.analysisDocument.deleteMany({

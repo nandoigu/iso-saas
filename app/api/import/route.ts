@@ -3,6 +3,7 @@ import { forbidden, getAuthSession, isAdminRole, unauthorized } from "@/app/lib/
 import { readSafeXlsxUpload } from "@/app/lib/excelUpload";
 import { parseRequirementTemplateWorkbook } from "@/app/lib/requirementImport";
 import { prisma } from "@/app/lib/prisma";
+import { isForeignKeyError } from "@/app/lib/prismaErrors";
 
 export const runtime = "nodejs";
 
@@ -48,7 +49,22 @@ export async function POST(req: Request) {
     }
 
     if (replaceExisting) {
-      await prisma.requirementTemplate.deleteMany();
+      try {
+        await prisma.requirementTemplate.deleteMany();
+      } catch (error) {
+        // DocumentTemplateRequirement es Restrict hacia RequirementTemplate (domain model,
+        // decision del usuario 13-oct): el catalogo de requisitos no se reemplaza en silencio.
+        if (isForeignKeyError(error)) {
+          return NextResponse.json(
+            {
+              error:
+                "No se puede reemplazar el catálogo de requisitos: hay plantillas documentales que justifican algunos de ellos.",
+            },
+            { status: 409 }
+          );
+        }
+        throw error;
+      }
     }
 
     const result = await prisma.requirementTemplate.createMany({

@@ -50,6 +50,22 @@ const apiChecks = [
     expectedStatus: 401,
     name: "evidence signed URL without session",
   },
+  {
+    path: "/api/projects/test-project-id/document-templates",
+    expectedStatus: 401,
+    name: "document templates list without session",
+  },
+  {
+    path: "/api/projects/test-project-id/document-templates/test-template-id/file",
+    expectedStatus: 401,
+    name: "document template download without session",
+  },
+  {
+    path: "/api/admin/document-templates/import",
+    method: "POST",
+    expectedStatus: 401,
+    name: "document templates import without session",
+  },
 ];
 
 const failures = [];
@@ -112,8 +128,8 @@ async function checkProtectedRedirect(path) {
   console.log(`OK protected ${path}`);
 }
 
-async function checkApiStatus({ path, expectedStatus, name }) {
-  const response = await request(path, { redirect: "manual" });
+async function checkApiStatus({ path, expectedStatus, name, method = "GET" }) {
+  const response = await request(path, { redirect: "manual", method });
 
   if (response.status !== expectedStatus) {
     failures.push(
